@@ -1,1 +1,3 @@
 *.*~
+snapshots/*
+CMakeLists.txt.user*

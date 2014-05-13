@@ -24,5 +24,14 @@ catkin_package(
 )
 
 
-add_executable(plane_segmentation src/plane_segmentation.cpp)
-target_link_libraries(plane_segmentation ${catkin_LIBRARIES} ${PCL_LIBRARIES})
+add_executable(segmentation src/segmentation.cpp)
+target_link_libraries(segmentation ${catkin_LIBRARIES} ${PCL_LIBRARIES})
+
+add_executable(snapshot src/snapshot.cpp)
+target_link_libraries(snapshot ${catkin_LIBRARIES} ${PCL_LIBRARIES})
+add_dependencies(snapshot perception3d_gencpp)
+
+
+
+
+

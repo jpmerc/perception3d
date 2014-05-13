@@ -1,0 +1,6 @@
+<launch>
+    <node pkg="perception3d" type="snapshot" name="snapshot" respawn="false" output="screen">
+      <param name="directory" value="$(find perception3d)/snapshots/" />
+      <param name="filename"  value="snapshot" />
+    </node>
+</launch>
