@@ -23,7 +23,7 @@ pcl::PointCloud<pcl::PointXYZRGB>::Ptr segmented_cloud(new pcl::PointCloud<pcl::
 pcl::PointCloud<pcl::PointXYZRGB>::Ptr objects_cloud(new pcl::PointCloud<pcl::PointXYZRGB>);
 
 // PCL Viewer
-bool refreshUI = true;
+bool showUI = true;
 int l_count = 0;
 boost::shared_ptr<pcl::visualization::PCLVisualizer> pclViewer (new pcl::visualization::PCLVisualizer ("3D Viewer"));
 
@@ -161,19 +161,19 @@ void cloud_cb (const pcl::PCLPointCloud2ConstPtr& input){
     //   ==============  Euclidean Object Clustering  ==============  //
     // http://pointclouds.org/documentation/tutorials/cluster_extraction.php
 
-    // Here, the extracted planes are not included in cloud_filtered2 (extracted by plane_segmentation function)
-    std::vector<pcl::PointIndices> cluster_indices;
-    euclidean_object_segmentation(cloud_filtered2,cluster_indices);
-    std::cout << "Number of found objects: " << cluster_indices.size() << std::endl;
+//    // Here, the extracted planes are not included in cloud_filtered2 (extracted by plane_segmentation function)
+//    std::vector<pcl::PointIndices> cluster_indices;
+//    euclidean_object_segmentation(cloud_filtered2,cluster_indices);
+//    std::cout << "Number of found objects: " << cluster_indices.size() << std::endl;
 
-    pcl::PointCloud<pcl::PointXYZRGB>::Ptr object_clusters (new pcl::PointCloud<pcl::PointXYZRGB>);
-    for (int i=0; i<cluster_indices.size(); i++){
-        pcl::PointIndices cloud_indices = cluster_indices.at(i);
-        pcl::PointCloud<pcl::PointXYZRGB>::Ptr cloud_cluster(new pcl::PointCloud<pcl::PointXYZRGB>);
-        cloud_cluster = extract_object_from_indices(cloud_filtered2,cloud_indices);
-        *object_clusters += *cloud_cluster;
-    }
-    objects_cloud.swap(object_clusters);
+//    pcl::PointCloud<pcl::PointXYZRGB>::Ptr object_clusters (new pcl::PointCloud<pcl::PointXYZRGB>);
+//    for (int i=0; i<cluster_indices.size(); i++){
+//        pcl::PointIndices cloud_indices = cluster_indices.at(i);
+//        pcl::PointCloud<pcl::PointXYZRGB>::Ptr cloud_cluster(new pcl::PointCloud<pcl::PointXYZRGB>);
+//        cloud_cluster = extract_object_from_indices(cloud_filtered2,cloud_indices);
+//        *object_clusters += *cloud_cluster;
+//    }
+//    objects_cloud.swap(object_clusters);
 
     //   ===========================================================  //
 
@@ -189,7 +189,9 @@ void cloud_cb (const pcl::PCLPointCloud2ConstPtr& input){
     pub2.publish(not_segmented);
 
     //Update PCL Viewer
-    printToPCLViewer();
+    if(showUI){
+        printToPCLViewer();
+    }
 
 }
 
@@ -197,29 +199,48 @@ int main (int argc, char** argv)
 {
     // Initialize ROS
     ros::init (argc, argv, "segmentation");
-    ros::NodeHandle nh;
+    ros::NodeHandle n;
+    ros::NodeHandle nh("~");
 
     // Create a ROS subscriber for the input point cloud
-    ros::Subscriber sub = nh.subscribe ("/camera/depth_registered/points", 1, cloud_cb);
+    ros::Subscriber sub = n.subscribe ("/camera/depth_registered/points", 1, cloud_cb);
 
     // Create a ROS publisher for the output point cloud
-    pub = nh.advertise<sensor_msgs::PointCloud2> ("/extracted_planes", 1);
-    pub2 = nh.advertise<sensor_msgs::PointCloud2> ("/extracted_planes_not", 1);
+    pub = n.advertise<sensor_msgs::PointCloud2> ("/extracted_planes", 1);
+    pub2 = n.advertise<sensor_msgs::PointCloud2> ("/extracted_planes_not", 1);
+
+    // Load parameters from launch file
+    nh.param("pcl_visualizer",showUI,true);
 
 
     //PCL Viewer
-    pclViewer->setBackgroundColor (0, 0, 0);
-    pclViewer->initCameraParameters ();
-    pclViewer->setCameraPosition(0,0,0,0,0,1,0,-1,0);
-    vtkSmartPointer<vtkRenderWindow> renderWindow = pclViewer->getRenderWindow();
-    renderWindow->SetSize(800,450);
-    renderWindow->Render();
+    bool loop_condition = true;
+    if(showUI){
+        pclViewer->setBackgroundColor (0, 0, 0);
+        pclViewer->initCameraParameters ();
+        pclViewer->setCameraPosition(0,0,0,0,0,1,0,-1,0);
+        vtkSmartPointer<vtkRenderWindow> renderWindow = pclViewer->getRenderWindow();
+        renderWindow->SetSize(800,450);
+        renderWindow->Render();
+    }
+    else{ // Not very clean, but only solution I found to not show pclViewer
+        pclViewer->setBackgroundColor (0, 0, 0);
+        pclViewer->initCameraParameters ();
+        vtkSmartPointer<vtkRenderWindow> renderWindow = pclViewer->getRenderWindow();
+        renderWindow->SetSize(1,1);
+        renderWindow->Render();
+    }
 
     ros::Rate r(30);
-    while (ros::ok() && !pclViewer->wasStopped()) {
-        pclViewer->spinOnce (100);
+    while (loop_condition) {
         ros::spinOnce();
-        // boost::this_thread::sleep (boost::posix_time::microseconds (10000));
+        if(showUI){
+            pclViewer->spinOnce (100);
+            loop_condition = ros::ok() && !pclViewer->wasStopped();
+        }
+        else{
+            loop_condition = ros::ok();
+        }
         r.sleep();
     }
     return 0;
