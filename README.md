@@ -1,7 +1,7 @@
 perception3d
 ============
 
-To make it work :
+To run :
 
     roslaunch perception3d kinect.launch
     roslaunch perception3d plane_segmentation.launch
