@@ -20,6 +20,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 
+
 ros::Publisher pub;
 pcl::PointCloud<pcl::PointXYZRGB>::Ptr cloud(new pcl::PointCloud<pcl::PointXYZRGB>);
 std::vector<pcl::PointCloud<pcl::PointXYZRGB>::Ptr> object_vector;
@@ -42,7 +43,11 @@ void printToPCLViewer(){
     for(int i=0; i < object_vector.size(); i++){
         pcl::PointCloud<pcl::PointXYZRGB>::Ptr pc = object_vector[i];
         pcl::visualization::PointCloudColorHandlerRandom<pcl::PointXYZRGB> randColor(pc);
-        std::string pc_name = "object_" + i;
+        std::stringstream ss;
+        ss << i;
+        std::string ind = ss.str();
+        std::string pc_name = "object_" + ind;
+        std::cout << pc_name << std::endl;
         pclViewer->addPointCloud<pcl::PointXYZRGB>(pc,randColor,pc_name);
         pclViewer->setPointCloudRenderingProperties (pcl::visualization::PCL_VISUALIZER_POINT_SIZE, 1, pc_name);
     }
