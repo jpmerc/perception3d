@@ -17,6 +17,7 @@
 #include <pcl/segmentation/extract_clusters.h>
 #include <pcl/common/time.h>
 
+#include <stdio.h>
 #include <stdlib.h>
 
 ros::Publisher pub;
@@ -25,6 +26,7 @@ std::vector<pcl::PointCloud<pcl::PointXYZRGB>::Ptr> object_vector;
 
 // PCL Viewer
 bool showUI = true;
+int l_count = 0;
 boost::shared_ptr<pcl::visualization::PCLVisualizer> pclViewer (new pcl::visualization::PCLVisualizer ("3D Viewer 2"));
 
 //Function declarations
@@ -33,32 +35,45 @@ pcl::PointCloud<pcl::PointXYZRGB>::Ptr extract_object_from_indices(pcl::PointClo
 
 void printToPCLViewer(){
     pclViewer->removeAllPointClouds();
-    pcl::visualization::PointCloudColorHandlerRGBField<pcl::PointXYZRGB> rgb(cloud);
-    pclViewer->addPointCloud<pcl::PointXYZRGB>(cloud,rgb,"source cloud");
-    pclViewer->setPointCloudRenderingProperties (pcl::visualization::PCL_VISUALIZER_POINT_SIZE, 1, "source cloud");
+    //    pcl::visualization::PointCloudColorHandlerRGBField<pcl::PointXYZRGB> rgb(cloud);
+    //    pclViewer->addPointCloud<pcl::PointXYZRGB>(cloud,rgb,"source cloud");
+    //    pclViewer->setPointCloudRenderingProperties (pcl::visualization::PCL_VISUALIZER_POINT_SIZE, 1, "source cloud");
 
     for(int i=0; i < object_vector.size(); i++){
-        pcl::visualization::PointCloudColorHandlerRandom<pcl::PointXYZRGB> randColor;
         pcl::PointCloud<pcl::PointXYZRGB>::Ptr pc = object_vector[i];
-        std::string pc_name = "object_" + itoa(i);
+        pcl::visualization::PointCloudColorHandlerRandom<pcl::PointXYZRGB> randColor(pc);
+        std::string pc_name = "object_" + i;
         pclViewer->addPointCloud<pcl::PointXYZRGB>(pc,randColor,pc_name);
         pclViewer->setPointCloudRenderingProperties (pcl::visualization::PCL_VISUALIZER_POINT_SIZE, 1, pc_name);
     }
-
-
-//    pcl::visualization::PointCloudColorHandlerCustom<pcl::PointXYZRGB> red_color(segmented_cloud, 255, 0, 0);
-//    pclViewer->addPointCloud<pcl::PointXYZRGB>(segmented_cloud,red_color,"segmented cloud");
-//    pclViewer->setPointCloudRenderingProperties (pcl::visualization::PCL_VISUALIZER_POINT_SIZE, 1, "segmented cloud");
-//    pcl::visualization::PointCloudColorHandlerCustom<pcl::PointXYZRGB> blue_color(objects_cloud, 0, 0, 255);
-//    pclViewer->addPointCloud<pcl::PointXYZRGB>(objects_cloud,blue_color,"objects cloud");
-//    pclViewer->setPointCloudRenderingProperties (pcl::visualization::PCL_VISUALIZER_POINT_SIZE, 1, "objects cloud");
 }
 
-std::vector<pcl::PointCloud<pcl::PointXYZRGB>::Ptr> euclidean_object_segmentation(pcl::PointCloud<pcl::PointXYZRGB>::Ptr cloud_input,std::vector<pcl::PointIndices> &cluster_indices){
+void keyboardEventOccurred (const pcl::visualization::KeyboardEvent &event, void* viewer_void)
+{
+    l_count = l_count + 1;
+    if(l_count < 2){
+        boost::shared_ptr<pcl::visualization::PCLVisualizer> viewer = *static_cast<boost::shared_ptr<pcl::visualization::PCLVisualizer> *> (viewer_void);
+        if (event.getKeySym () == "p"){
+            if(showUI){
+                showUI=false;
+            }
+            else{
+                showUI=true;
+            }
+        }
+    }
+    else{
+        l_count = 0;
+    }
+
+}
+
+std::vector<pcl::PointCloud<pcl::PointXYZRGB>::Ptr> segment_objects(pcl::PointCloud<pcl::PointXYZRGB>::Ptr cloud_input, double tolerance, int minClusterSize, int maxClusterSize){
+    std::vector<pcl::PointIndices> cluster_indices;
     pcl::EuclideanClusterExtraction<pcl::PointXYZRGB> ec;
-    ec.setClusterTolerance (0.02); // 2cm
-    ec.setMinClusterSize (500);
-    ec.setMaxClusterSize (15000);
+    ec.setClusterTolerance (tolerance); // 2cm
+    ec.setMinClusterSize (minClusterSize);
+    ec.setMaxClusterSize (maxClusterSize);
     pcl::search::KdTree<pcl::PointXYZRGB>::Ptr tree (new pcl::search::KdTree<pcl::PointXYZRGB>);
     tree->setInputCloud (cloud_input);
     ec.setSearchMethod (tree);
@@ -90,15 +105,16 @@ pcl::PointCloud<pcl::PointXYZRGB>::Ptr extract_object_from_indices(pcl::PointClo
 void cloud_callback (const pcl::PCLPointCloud2ConstPtr& input){
     pcl::PointCloud<pcl::PointXYZRGB>::Ptr objects(new pcl::PointCloud<pcl::PointXYZRGB>);
     pcl::fromPCLPointCloud2(*input,*objects);
-    std::vector<pcl::PointIndices> cluster_indices;
     cloud = objects;
 
     //Extract objects
     if(!object_vector.empty()){object_vector.clear();}
-    object_vector = euclidean_object_segmentation(objects,cluster_indices);
+    object_vector = segment_objects(objects,0.02,200,15000);
 
     //Update viewer
-    printToPCLViewer();
+    if(showUI){
+        printToPCLViewer();
+    }
 }
 
 int main (int argc, char** argv)
@@ -116,7 +132,7 @@ int main (int argc, char** argv)
 
 
     // Load parameters from launch file
-   // nh.param("pcl_visualizer",showUI,true);
+    // nh.param("pcl_visualizer",showUI,true);
     showUI = true;
 
     //PCL Viewer
@@ -128,6 +144,7 @@ int main (int argc, char** argv)
         vtkSmartPointer<vtkRenderWindow> renderWindow = pclViewer->getRenderWindow();
         renderWindow->SetSize(800,450);
         renderWindow->Render();
+        pclViewer->registerKeyboardCallback (keyboardEventOccurred, (void*)&pclViewer);
     }
     else{ // Not very clean, but only solution I found to not show pclViewer
         pclViewer->setBackgroundColor (0, 0, 0);
@@ -140,13 +157,8 @@ int main (int argc, char** argv)
     ros::Rate r(30);
     while (loop_condition) {
         ros::spinOnce();
-        if(showUI){
-            pclViewer->spinOnce (100);
-            loop_condition = ros::ok() && !pclViewer->wasStopped();
-        }
-        else{
-            loop_condition = ros::ok();
-        }
+        pclViewer->spinOnce (100);
+        loop_condition = ros::ok() && !pclViewer->wasStopped();
         r.sleep();
     }
     return 0;
