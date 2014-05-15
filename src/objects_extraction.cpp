@@ -47,7 +47,6 @@ void printToPCLViewer(){
         ss << i;
         std::string ind = ss.str();
         std::string pc_name = "object_" + ind;
-        std::cout << pc_name << std::endl;
         pclViewer->addPointCloud<pcl::PointXYZRGB>(pc,randColor,pc_name);
         pclViewer->setPointCloudRenderingProperties (pcl::visualization::PCL_VISUALIZER_POINT_SIZE, 1, pc_name);
     }
@@ -137,8 +136,8 @@ int main (int argc, char** argv)
 
 
     // Load parameters from launch file
-    // nh.param("pcl_visualizer",showUI,true);
-    showUI = true;
+    nh.param("objects_visualizer",showUI,true);
+    //showUI = true;
 
     //PCL Viewer
     bool loop_condition = true;

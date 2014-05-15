@@ -1,0 +1,5 @@
+<launch>
+    <node pkg="perception3d" type="objects_extraction" name="objects_extraction" respawn="false" output="screen">
+      <param name="objects_visualizer"  value="true" />
+    </node>
+</launch>
