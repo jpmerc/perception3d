@@ -151,8 +151,6 @@ int main (int argc, char** argv)
         pclViewer->registerKeyboardCallback (keyboardEventOccurred, (void*)&pclViewer);
     }
     else{ // Not very clean, but only solution I found to not show pclViewer
-        pclViewer->setBackgroundColor (0, 0, 0);
-        pclViewer->initCameraParameters ();
         vtkSmartPointer<vtkRenderWindow> renderWindow = pclViewer->getRenderWindow();
         renderWindow->SetSize(1,1);
         renderWindow->Render();
