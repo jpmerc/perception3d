@@ -35,5 +35,9 @@ add_executable(objects_extraction src/objects_extraction.cpp)
 target_link_libraries(objects_extraction ${catkin_LIBRARIES} ${PCL_LIBRARIES})
 add_dependencies(objects_extraction perception3d_gencpp)
 
+add_executable(connected_segmentation src/connected_segmentation.cpp)
+target_link_libraries(connected_segmentation ${catkin_LIBRARIES} ${PCL_LIBRARIES})
+add_dependencies(connected_segmentation perception3d_gencpp)
+
 
 
