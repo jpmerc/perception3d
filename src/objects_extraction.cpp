@@ -16,11 +16,13 @@
 #include <pcl/search/kdtree.h>
 #include <pcl/segmentation/extract_clusters.h>
 #include <pcl/common/time.h>
-
 #include <stdio.h>
 #include <stdlib.h>
+#include <pcl/cloud_iterator.h>
+#include<pcl/common/centroid.h>
+#include<pcl/common/distances.h>
 
-
+typedef pcl::PointXYZRGB PointT;
 ros::Publisher pub;
 pcl::PointCloud<pcl::PointXYZRGB>::Ptr cloud(new pcl::PointCloud<pcl::PointXYZRGB>);
 std::vector<pcl::PointCloud<pcl::PointXYZRGB>::Ptr> object_vector;
@@ -104,6 +106,24 @@ pcl::PointCloud<pcl::PointXYZRGB>::Ptr extract_object_from_indices(pcl::PointClo
     return cloud_cluster;
 }
 
+// Compute centroid of an object
+Eigen::Matrix<float,4,1> compute_centroid_point(const pcl::PointCloud<PointT>& p_point_cloud)
+{
+   pcl::ConstCloudIterator<PointT> it(p_point_cloud);
+   Eigen::Matrix< float, 4, 1 > matrix;
+   pcl::compute3DCentroid(it, matrix);
+   return matrix;
+}
+
+
+// Compute the distance between the camera and the centroid
+float compute_distance_from_kinect(Eigen::Matrix<float, 4, 1> p_matrix)
+{
+   pcl::PointXYZ camera_origin(0,0,0);
+   pcl::PointXYZ object_position(p_matrix(0,0), p_matrix(1,0), p_matrix(3,0));
+   float distance = pcl::euclideanDistance(camera_origin, object_position);
+   return distance;
+}
 
 // Callback Function for the subscribed ROS topic
 void cloud_callback (const pcl::PCLPointCloud2ConstPtr& input){
