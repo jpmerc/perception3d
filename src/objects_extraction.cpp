@@ -16,12 +16,12 @@
 #include <pcl/search/kdtree.h>
 #include <pcl/segmentation/extract_clusters.h>
 #include <pcl/common/time.h>
-#include <stdio.h>
-#include <stdlib.h>
+
 #include <pcl/cloud_iterator.h>
 #include<pcl/common/centroid.h>
 #include<pcl/common/distances.h>
 
+<<<<<<< HEAD
 #include <pcl/tracking/tracking.h>
 #include <pcl/tracking/particle_filter.h>
 #include <pcl/tracking/kld_adaptive_particle_filter_omp.h>
@@ -37,6 +37,14 @@
 typedef pcl::PointXYZRGB PointT;
 typedef pcl::tracking::ParticleXYZRPY ParticleT;
 typedef pcl::tracking::ParticleFilterTracker<PointT, ParticleT> ParticleFilter;
+=======
+#include <stdio.h>
+#include <stdlib.h>
+
+
+
+typedef pcl::PointXYZRGB PointT;
+>>>>>>> 7b015cf9617750e251882e7f1e86d404ca565f7d
 
 ros::Publisher pub;
 pcl::PointCloud<PointT>::Ptr cloud(new pcl::PointCloud<PointT>);
@@ -214,11 +222,18 @@ Eigen::Matrix<float,4,1> compute_centroid_point(const pcl::PointCloud<PointT>& p
 // Compute the distance between the camera and the centroid
 float compute_distance_from_kinect(Eigen::Matrix<float, 4, 1> p_matrix)
 {
+<<<<<<< HEAD
     pcl::PointXYZ camera_origin(0,0,0);
     pcl::PointXYZ object_position(p_matrix(0,0), p_matrix(1,0), p_matrix(3,0));
     float distance = pcl::euclideanDistance(camera_origin, object_position);
+=======
+    pcl::PointXYZ camera_origine(0,0,0);
+    pcl::PointXYZ object_position(p_matrix(0,0), p_matrix(1,0), p_matrix(2,0));
+    float distance = pcl::euclideanDistance(camera_origine, object_position);
+>>>>>>> 7b015cf9617750e251882e7f1e86d404ca565f7d
     return distance;
 }
+
 
 // Callback Function for the subscribed ROS topic
 void cloud_callback (const pcl::PCLPointCloud2ConstPtr& input){
@@ -244,6 +259,15 @@ void cloud_callback (const pcl::PCLPointCloud2ConstPtr& input){
     if(showUI){
         printToPCLViewer();
     }
+
+    //calculate the distance for each objects in the vector
+    for(int i =0; i < object_vector.size(); i++)
+    {
+    Eigen::Matrix<float,4,1> matrix = compute_centroid_point(*(object_vector.at(i)));
+    compute_distance_from_kinect(matrix);
+    }
+
+
 }
 
 int main (int argc, char** argv)
