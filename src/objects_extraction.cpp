@@ -20,8 +20,10 @@
 #include <pcl/cloud_iterator.h>
 #include<pcl/common/centroid.h>
 #include<pcl/common/distances.h>
+#include<pcl_ros/point_cloud.h>
+#include <stdio.h>
+#include <stdlib.h>
 
-<<<<<<< HEAD
 #include <pcl/tracking/tracking.h>
 #include <pcl/tracking/particle_filter.h>
 #include <pcl/tracking/kld_adaptive_particle_filter_omp.h>
@@ -37,19 +39,15 @@
 typedef pcl::PointXYZRGB PointT;
 typedef pcl::tracking::ParticleXYZRPY ParticleT;
 typedef pcl::tracking::ParticleFilterTracker<PointT, ParticleT> ParticleFilter;
-=======
-#include <stdio.h>
-#include <stdlib.h>
 
 
 
-typedef pcl::PointXYZRGB PointT;
->>>>>>> 7b015cf9617750e251882e7f1e86d404ca565f7d
 
 ros::Publisher pub;
 pcl::PointCloud<PointT>::Ptr cloud(new pcl::PointCloud<PointT>);
 pcl::PointCloud<PointT>::Ptr object_to_track(new pcl::PointCloud<PointT>);
 pcl::PointCloud<PointT>::Ptr tracked_object(new pcl::PointCloud<PointT>);
+pcl::PointCloud<pcl::PointXYZRGB> corner_cloud;
 std::vector<pcl::PointCloud<pcl::PointXYZRGB>::Ptr> object_vector;
 boost::shared_ptr<ParticleFilter> tracker_(new ParticleFilter);
 int index_to_track = 0;
@@ -222,21 +220,64 @@ Eigen::Matrix<float,4,1> compute_centroid_point(const pcl::PointCloud<PointT>& p
 // Compute the distance between the camera and the centroid
 float compute_distance_from_kinect(Eigen::Matrix<float, 4, 1> p_matrix)
 {
-<<<<<<< HEAD
+
     pcl::PointXYZ camera_origin(0,0,0);
     pcl::PointXYZ object_position(p_matrix(0,0), p_matrix(1,0), p_matrix(3,0));
     float distance = pcl::euclideanDistance(camera_origin, object_position);
-=======
-    pcl::PointXYZ camera_origine(0,0,0);
-    pcl::PointXYZ object_position(p_matrix(0,0), p_matrix(1,0), p_matrix(2,0));
-    float distance = pcl::euclideanDistance(camera_origine, object_position);
->>>>>>> 7b015cf9617750e251882e7f1e86d404ca565f7d
+
     return distance;
 }
+
+void point_cloud_limit_finder (Eigen::Matrix<float, 4, 1> p_matrix, pcl::PointCloud<PointT>::Ptr p_ptr)
+{
+    pcl::PointCloud<PointT>::Ptr cloud_filtred = p_ptr;
+    float x = p_matrix(0,0);
+    float y = p_matrix(1,0);
+    float z = p_matrix(2,0);
+    pcl::PointXYZRGB left(255, 0, 0);
+    left.x = x;
+    left.y = y;
+    left.z = z;
+    pcl::PointXYZRGB right(0,255,0);
+    right.x = x;
+    right.y = y;
+    right.z = z;
+    pcl::PointXYZRGB top(0,0,255);
+    top.x = x;
+    top.y = y;
+    top.z = z;
+    pcl::PointXYZRGB bottom(0,0,0);
+    bottom.x = x;
+    bottom.y = y;
+    bottom.z = z;
+
+    for(int i = 0; i < cloud_filtred->size(); i++)
+    {
+        pcl::PointXYZRGB point(255,0,0);
+        point.x = cloud_filtred->at(i).x;
+        point.y = cloud_filtred->at(i).y;
+        point.z = cloud_filtred->at(i).z;
+        if(point.x > left.x)
+            left = point;
+        else if (point.x < right.x)
+            right = point;
+        if(point.y < top.y)
+            top = point;
+        else if(point.y > bottom.y)
+            bottom = point;
+    }
+    corner_cloud.push_back(left);
+    corner_cloud.push_back(right);
+    corner_cloud.push_back(top);
+    corner_cloud.push_back(bottom);
+}
+
+
 
 
 // Callback Function for the subscribed ROS topic
 void cloud_callback (const pcl::PCLPointCloud2ConstPtr& input){
+    corner_cloud.clear();
     pcl::PointCloud<pcl::PointXYZRGB>::Ptr objects(new pcl::PointCloud<pcl::PointXYZRGB>);
     pcl::fromPCLPointCloud2(*input,*objects);
     cloud = objects;
@@ -265,7 +306,9 @@ void cloud_callback (const pcl::PCLPointCloud2ConstPtr& input){
     {
     Eigen::Matrix<float,4,1> matrix = compute_centroid_point(*(object_vector.at(i)));
     compute_distance_from_kinect(matrix);
+    point_cloud_limit_finder(matrix, object_vector.at(i));
     }
+    pub.publish(corner_cloud.makeShared());
 
 
 }
@@ -282,6 +325,8 @@ int main (int argc, char** argv)
 
     // Create a ROS publisher for the output point cloud
     //pub = n.advertise<sensor_msgs::PointCloud2> ("/extracted_planes", 1);
+    //publish the objects limits
+    pub = n.advertise<pcl::PointCloud<PointT> > ("/corner_limits", 1);
 
 
     // Load parameters from launch file
