@@ -24,6 +24,8 @@ ros::Publisher pub3;
 pcl::PointCloud<pcl::PointXYZRGB>::Ptr segmented_cloud(new pcl::PointCloud<pcl::PointXYZRGB>), cloud(new pcl::PointCloud<pcl::PointXYZRGB>);
 pcl::PointCloud<pcl::PointXYZRGB>::Ptr objects_cloud(new pcl::PointCloud<pcl::PointXYZRGB>);
 
+std::string topic_in = "";
+
 // PCL Viewer
 bool showUI = true;
 boost::shared_ptr<pcl::visualization::PCLVisualizer> pclViewer (new pcl::visualization::PCLVisualizer ("3D Viewer"));
@@ -228,7 +230,8 @@ int main (int argc, char** argv)
     ros::NodeHandle nh("~");
 
     // Create a ROS subscriber for the input point cloud
-    ros::Subscriber sub = n.subscribe ("/camera/depth_registered/points", 1, cloud_callback);
+    nh.param("topic_in",topic_in,std::string("/camera/depth_registered/points"));
+    ros::Subscriber sub = n.subscribe (topic_in, 1, cloud_callback);
 
     // Create a ROS publisher for the output point cloud
     pub = n.advertise<sensor_msgs::PointCloud2> ("/custom/planes", 1);
