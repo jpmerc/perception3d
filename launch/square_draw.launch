@@ -1,0 +1,4 @@
+<launch>
+    <node pkg="perception3d" type="square_draw" name="square_draw" respawn="false" output="screen"> />
+    </node>
+</launch>

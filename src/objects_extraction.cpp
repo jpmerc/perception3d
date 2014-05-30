@@ -44,13 +44,17 @@ typedef pcl::tracking::ParticleFilterTracker<PointT, ParticleT> ParticleFilter;
 
 
 ros::Publisher pub;
+ros::Publisher pub2;
 pcl::PointCloud<PointT>::Ptr cloud(new pcl::PointCloud<PointT>);
 pcl::PointCloud<PointT>::Ptr object_to_track(new pcl::PointCloud<PointT>);
 pcl::PointCloud<PointT>::Ptr tracked_object(new pcl::PointCloud<PointT>);
-pcl::PointCloud<pcl::PointXYZRGB> corner_cloud;
+pcl::PointCloud<pcl::PointXYZRGB> CORNER_CLOUD;
 std::vector<pcl::PointCloud<pcl::PointXYZRGB>::Ptr> object_vector;
+std::vector<pcl::PointCloud<PointT>::Ptr> OBJECT_VECTOR_2D;
 boost::shared_ptr<ParticleFilter> tracker_(new ParticleFilter);
 int index_to_track = 0;
+
+
 
 // PCL Viewer
 bool showUI = true;
@@ -63,23 +67,23 @@ pcl::PointCloud<pcl::PointXYZRGB>::Ptr extract_object_from_indices(pcl::PointClo
 
 void printToPCLViewer(){
     pclViewer->removeAllPointClouds();
-    pcl::visualization::PointCloudColorHandlerRGBField<pcl::PointXYZRGB> rgb(cloud);
-    pclViewer->addPointCloud<pcl::PointXYZRGB>(cloud,rgb,"source cloud");
-    pclViewer->setPointCloudRenderingProperties (pcl::visualization::PCL_VISUALIZER_POINT_SIZE, 1, "source cloud");
-//    for(int i=0; i < object_vector.size(); i++){
-//        pcl::PointCloud<pcl::PointXYZRGB>::Ptr pc = object_vector[i];
-//        pcl::visualization::PointCloudColorHandlerRandom<pcl::PointXYZRGB> randColor(pc);
-//        std::stringstream ss;
-//        ss << i;
-//        std::string ind = ss.str();
-//        std::string pc_name = "object_" + ind;
-//        pclViewer->addPointCloud<pcl::PointXYZRGB>(pc,randColor,pc_name);
-//        pclViewer->setPointCloudRenderingProperties (pcl::visualization::PCL_VISUALIZER_POINT_SIZE, 1, pc_name);
-//    }
+    //pcl::visualization::PointCloudColorHandlerRGBField<pcl::PointXYZRGB> rgb(cloud);
+    //pclViewer->addPointCloud<pcl::PointXYZRGB>(cloud,rgb,"source cloud");
+    //pclViewer->setPointCloudRenderingProperties (pcl::visualization::PCL_VISUALIZER_POINT_SIZE, 1, "source cloud");
+    for(int i=0; i < object_vector.size(); i++){
+        pcl::PointCloud<pcl::PointXYZRGB>::Ptr pc = object_vector[i];
+        pcl::visualization::PointCloudColorHandlerRandom<pcl::PointXYZRGB> randColor(pc);
+        std::stringstream ss;
+        ss << i;
+        std::string ind = ss.str();
+        std::string pc_name = "object_" + ind;
+        pclViewer->addPointCloud<pcl::PointXYZRGB>(pc,randColor,pc_name);
+        pclViewer->setPointCloudRenderingProperties (pcl::visualization::PCL_VISUALIZER_POINT_SIZE, 1, pc_name);
+    }
 
-    pcl::visualization::PointCloudColorHandlerCustom<pcl::PointXYZRGB> yellow_color(tracked_object, 255, 255, 102);
-    pclViewer->addPointCloud<pcl::PointXYZRGB>(tracked_object,yellow_color,"tracked cloud");
-    pclViewer->setPointCloudRenderingProperties (pcl::visualization::PCL_VISUALIZER_POINT_SIZE, 1, "tracked cloud");
+//    pcl::visualization::PointCloudColorHandlerCustom<pcl::PointXYZRGB> yellow_color(tracked_object, 255, 255, 102);
+//    pclViewer->addPointCloud<pcl::PointXYZRGB>(tracked_object,yellow_color,"tracked cloud");
+//    pclViewer->setPointCloudRenderingProperties (pcl::visualization::PCL_VISUALIZER_POINT_SIZE, 1, "tracked cloud");
 }
 
 void initTracking(){
@@ -228,6 +232,7 @@ float compute_distance_from_kinect(Eigen::Matrix<float, 4, 1> p_matrix)
     return distance;
 }
 
+//find the point cloud limit and put it in CORNER_CLOUD global variable
 void point_cloud_limit_finder (Eigen::Matrix<float, 4, 1> p_matrix, pcl::PointCloud<PointT>::Ptr p_ptr)
 {
     pcl::PointCloud<PointT>::Ptr cloud_filtred = p_ptr;
@@ -266,18 +271,44 @@ void point_cloud_limit_finder (Eigen::Matrix<float, 4, 1> p_matrix, pcl::PointCl
         else if(point.y > bottom.y)
             bottom = point;
     }
-    corner_cloud.push_back(left);
-    corner_cloud.push_back(right);
-    corner_cloud.push_back(top);
-    corner_cloud.push_back(bottom);
+    CORNER_CLOUD.push_back(left);
+    CORNER_CLOUD.push_back(right);
+    CORNER_CLOUD.push_back(top);
+    CORNER_CLOUD.push_back(bottom);
 }
 
+//project from 3d to 2d in pixel coordinate a point from a martix
+Eigen::Matrix<float,4,1> projection2d_matrix(const Eigen::Matrix<float,4,1>& p_matrix)
+{
+    Eigen::Matrix<float,4,1> matrix_2d;
+    matrix_2d(0,0) = (((p_matrix(0,0) * 525)/p_matrix(2,0))+320);
+    matrix_2d(1,0) = (((p_matrix(1,0) * 525)/p_matrix(2,0))+240);
+    matrix_2d(2,0) = p_matrix(2,0)/p_matrix(2,0);
+    matrix_2d(3,0) = p_matrix(3,0);
+    return matrix_2d;
+}
 
+//project from 3d to 2d in pixel coordinate a point cloud put it in the global variable OBJECT_VECTOR_2D
+void projection2d_pointCloud(const pcl::PointCloud<PointT>& p_point_cloud)
+{
+    pcl::PointCloud<PointT>::Ptr point_cloud_2d(new pcl::PointCloud<PointT>);
+    for(int i = 0; i < p_point_cloud.size(); i++)
+    {
+        PointT point_3d = p_point_cloud.at(i);
+        PointT point(1,1,1);
+        point.x = (((point_3d.x * 525) / point_3d.z)+320);
+        point.y = (((point_3d.y * 525) / point_3d.z)+240);
+        point.z = point_3d.z / point_3d.z;
+        point_cloud_2d->push_back(point);
+    }
+    OBJECT_VECTOR_2D.push_back(point_cloud_2d);
+}
 
 
 // Callback Function for the subscribed ROS topic
 void cloud_callback (const pcl::PCLPointCloud2ConstPtr& input){
-    corner_cloud.clear();
+    CORNER_CLOUD.clear();
+    OBJECT_VECTOR_2D.clear();
     pcl::PointCloud<pcl::PointXYZRGB>::Ptr objects(new pcl::PointCloud<pcl::PointXYZRGB>);
     pcl::fromPCLPointCloud2(*input,*objects);
     cloud = objects;
@@ -285,7 +316,7 @@ void cloud_callback (const pcl::PCLPointCloud2ConstPtr& input){
     //Extract objects
     if(!object_vector.empty()){object_vector.clear();}
     object_vector = segment_objects(objects,0.02,200,15000);
-
+/*
     if(initialize_object_to_track){
         object_to_track = object_vector[index_to_track];
         object_to_track->height = 1;
@@ -295,23 +326,34 @@ void cloud_callback (const pcl::PCLPointCloud2ConstPtr& input){
     else{
         track(objects);
     }
-
+*/
     //Update viewer
     if(showUI){
         printToPCLViewer();
     }
 
+    //project all the objcect in 3d to a 2d plan
+    for(int i = 0; i < object_vector.size(); i++)
+    {
+        projection2d_pointCloud(*(object_vector.at(i)));
+    }
+
     //calculate the distance for each objects in the vector
     for(int i =0; i < object_vector.size(); i++)
     {
-    Eigen::Matrix<float,4,1> matrix = compute_centroid_point(*(object_vector.at(i)));
-    compute_distance_from_kinect(matrix);
-    point_cloud_limit_finder(matrix, object_vector.at(i));
-    }
-    pub.publish(corner_cloud.makeShared());
 
+        Eigen::Matrix<float,4,1> matrix = compute_centroid_point(*(object_vector.at(i)));
+        compute_distance_from_kinect(matrix);
+        Eigen::Matrix<float,4,1> matrix_2d = projection2d_matrix(matrix);
+        point_cloud_limit_finder(matrix_2d, OBJECT_VECTOR_2D.at(i));
+
+    }
+
+    CORNER_CLOUD.header.stamp = input->header.stamp;
+    pub.publish(CORNER_CLOUD.makeShared());
 
 }
+
 
 int main (int argc, char** argv)
 {
@@ -326,8 +368,7 @@ int main (int argc, char** argv)
     // Create a ROS publisher for the output point cloud
     //pub = n.advertise<sensor_msgs::PointCloud2> ("/extracted_planes", 1);
     //publish the objects limits
-    pub = n.advertise<pcl::PointCloud<PointT> > ("/corner_limits", 1);
-
+    pub = n.advertise<pcl::PointCloud<PointT> > ("/corner_limits", 1);//the one that I use right now
 
     // Load parameters from launch file
     nh.param("objects_visualizer",showUI,true);
