@@ -17,10 +17,15 @@
 #include <pcl/segmentation/extract_clusters.h>
 #include <pcl/common/time.h>
 
+#include<pcl/segmentation/extract_polygonal_prism_data.h>
+#include<pcl/surface/convex_hull.h>
 #include <pcl/cloud_iterator.h>
 #include<pcl/common/centroid.h>
 #include<pcl/common/distances.h>
 #include<pcl_ros/point_cloud.h>
+#include<sensor_msgs/Image.h>
+#include<std_msgs/UInt32MultiArray.h>
+#include<boost/thread/mutex.hpp>
 #include <stdio.h>
 #include <stdlib.h>
 
@@ -40,20 +45,27 @@ typedef pcl::PointXYZRGB PointT;
 typedef pcl::tracking::ParticleXYZRPY ParticleT;
 typedef pcl::tracking::ParticleFilterTracker<PointT, ParticleT> ParticleFilter;
 
-
-
-
 ros::Publisher pub;
-ros::Publisher pub2;
+ros::Publisher PUB2;
 pcl::PointCloud<PointT>::Ptr cloud(new pcl::PointCloud<PointT>);
 pcl::PointCloud<PointT>::Ptr object_to_track(new pcl::PointCloud<PointT>);
 pcl::PointCloud<PointT>::Ptr tracked_object(new pcl::PointCloud<PointT>);
-pcl::PointCloud<pcl::PointXYZRGB> CORNER_CLOUD;
+boost::shared_ptr<ParticleFilter> tracker_(new ParticleFilter);
+
 std::vector<pcl::PointCloud<pcl::PointXYZRGB>::Ptr> object_vector;
 std::vector<pcl::PointCloud<PointT>::Ptr> OBJECT_VECTOR_2D;
-boost::shared_ptr<ParticleFilter> tracker_(new ParticleFilter);
-int index_to_track = 0;
+pcl::PointCloud<PointT> CORNER_CLOUD;
+pcl::PointCloud<PointT>::Ptr POINT_CLOUD_CORNER(new pcl::PointCloud<PointT>);
 
+std::vector<pcl::PointCloud<pcl::PointXYZRGB>::Ptr> MEMORY_POINT_CLOUD;
+bool POINT_CLOUD_RECEIVED = false;
+sensor_msgs::Image IMAGE_RECEIVED_INPUT;
+sensor_msgs::Image IMAGE_MEMORY;
+
+boost::mutex MTX;
+int index_to_track = 0;
+bool COORDINATE_RECEIVED = false;
+std_msgs::UInt32MultiArray COORDINATE_USER_SENDED;
 
 
 // PCL Viewer
@@ -64,6 +76,7 @@ boost::shared_ptr<pcl::visualization::PCLVisualizer> pclViewer (new pcl::visuali
 
 //Function declarations
 pcl::PointCloud<pcl::PointXYZRGB>::Ptr extract_object_from_indices(pcl::PointCloud<pcl::PointXYZRGB>::Ptr cloud_input,pcl::PointIndices object_indices);
+void find_corner(const PointT& p_left, const PointT& p_right, const PointT& p_top, const PointT& p_bottom, pcl::PointCloud<PointT>::Ptr& p_point_cloud_output);
 
 void printToPCLViewer(){
     pclViewer->removeAllPointClouds();
@@ -233,9 +246,8 @@ float compute_distance_from_kinect(Eigen::Matrix<float, 4, 1> p_matrix)
 }
 
 //find the point cloud limit and put it in CORNER_CLOUD global variable
-void point_cloud_limit_finder (Eigen::Matrix<float, 4, 1> p_matrix, pcl::PointCloud<PointT>::Ptr p_ptr)
+void point_cloud_limit_finder (Eigen::Matrix<float, 4, 1> p_matrix, pcl::PointCloud<PointT>::Ptr p_ptr, pcl::PointCloud<PointT>& p_output)
 {
-    pcl::PointCloud<PointT>::Ptr cloud_filtred = p_ptr;
     float x = p_matrix(0,0);
     float y = p_matrix(1,0);
     float z = p_matrix(2,0);
@@ -256,12 +268,12 @@ void point_cloud_limit_finder (Eigen::Matrix<float, 4, 1> p_matrix, pcl::PointCl
     bottom.y = y;
     bottom.z = z;
 
-    for(int i = 0; i < cloud_filtred->size(); i++)
+    for(int i = 0; i < p_ptr->size(); i++)
     {
         pcl::PointXYZRGB point(255,0,0);
-        point.x = cloud_filtred->at(i).x;
-        point.y = cloud_filtred->at(i).y;
-        point.z = cloud_filtred->at(i).z;
+        point.x = p_ptr->at(i).x;
+        point.y = p_ptr->at(i).y;
+        point.z = p_ptr->at(i).z;
         if(point.x > left.x)
             left = point;
         else if (point.x < right.x)
@@ -271,11 +283,40 @@ void point_cloud_limit_finder (Eigen::Matrix<float, 4, 1> p_matrix, pcl::PointCl
         else if(point.y > bottom.y)
             bottom = point;
     }
-    CORNER_CLOUD.push_back(left);
-    CORNER_CLOUD.push_back(right);
-    CORNER_CLOUD.push_back(top);
-    CORNER_CLOUD.push_back(bottom);
+
+    find_corner(left,right,top,bottom,POINT_CLOUD_CORNER);
 }
+
+//find the square corner for an object
+void find_corner(const PointT& p_left, const PointT& p_right, const PointT& p_top, const PointT& p_bottom, pcl::PointCloud<PointT>::Ptr& p_point_cloud_output)
+{
+    PointT top_right(255,0,0);
+    top_right.x = p_left.x;
+    top_right.y = p_top.y;
+    top_right.z = 1;
+
+    PointT top_left(0,255,0);
+    top_left.x = p_right.x;
+    top_left.y = p_top.y;
+    top_left.z = 1;
+
+    PointT bottom_right(0,0,255);
+    bottom_right.x = p_left.x;
+    bottom_right.y = p_bottom.y;
+    bottom_right.z = 1;
+
+    PointT bottom_left(255,255,0);
+    bottom_left.x = p_right.x;
+    bottom_left.y = p_bottom.y;
+    bottom_left.z = 1;
+
+    p_point_cloud_output->points.push_back(top_left);
+    p_point_cloud_output->points.push_back(top_right);
+    p_point_cloud_output->points.push_back(bottom_left);
+    p_point_cloud_output->points.push_back(bottom_right);
+}
+
+
 
 //project from 3d to 2d in pixel coordinate a point from a martix
 Eigen::Matrix<float,4,1> projection2d_matrix(const Eigen::Matrix<float,4,1>& p_matrix)
@@ -289,7 +330,7 @@ Eigen::Matrix<float,4,1> projection2d_matrix(const Eigen::Matrix<float,4,1>& p_m
 }
 
 //project from 3d to 2d in pixel coordinate a point cloud put it in the global variable OBJECT_VECTOR_2D
-void projection2d_pointCloud(const pcl::PointCloud<PointT>& p_point_cloud)
+void projection2d_pointCloud(const pcl::PointCloud<PointT>& p_point_cloud, std::vector<pcl::PointCloud<PointT>::Ptr>& p_vector_output)
 {
     pcl::PointCloud<PointT>::Ptr point_cloud_2d(new pcl::PointCloud<PointT>);
     for(int i = 0; i < p_point_cloud.size(); i++)
@@ -301,12 +342,97 @@ void projection2d_pointCloud(const pcl::PointCloud<PointT>& p_point_cloud)
         point.z = point_3d.z / point_3d.z;
         point_cloud_2d->push_back(point);
     }
-    OBJECT_VECTOR_2D.push_back(point_cloud_2d);
+    p_vector_output.push_back(point_cloud_2d);
 }
+
+//modifie the pixel at the given coordinate
+void change_pixel_color(std::vector<unsigned char>& p_array, int p_x, int p_y, int p_b = 255, int p_g = 0, int p_r = 0)
+{
+    if(p_x < 0)
+        p_x = 0;
+    else if(p_x > 640)
+        p_x = 640;
+    if(p_y < 0)
+        p_y = 0;
+    if(p_y > 480)
+        p_y = 480;
+
+
+    int row = 3*p_x + 1920*p_y;
+    p_array[row] = p_b;
+    p_array[row + 1] = p_g;
+    p_array[row + 2] = p_r;
+}
+
+
+//draw the square into the rgb image
+void draw_square(std::vector<unsigned char>& p_array, PointT p_top_left, PointT p_top_right, PointT p_bottom_left, PointT p_bottom_right)
+{
+    if(p_array.size() == 921600)
+    {
+        //draw the upper line
+        for(int i = p_top_left.x; i <= p_top_right.x; i++)
+        {
+            change_pixel_color(p_array, i, p_top_left.y);
+        }
+        //draw the down line
+        for(int i = p_bottom_left.x; i <= p_bottom_right.x; i++)
+        {
+            change_pixel_color(p_array, i, p_bottom_left.y,0,255,0);
+        }
+        //draw the left line
+        for(int i = p_top_left.y; i <= p_bottom_left.y; i++)
+        {
+            change_pixel_color(p_array, p_top_left.x, i,0,0,255);
+        }
+        //draw the right line
+        for(int i = p_top_right.y; i <=p_bottom_right.y; i++)
+        {
+            change_pixel_color(p_array, p_top_right.x, i,255,255,0);
+        }
+    }
+}
+
+void image_processing(pcl::PointCloud<PointT>::Ptr p_point_cloud_corner, sensor_msgs::Image p_image_input)
+{
+    int compteur = 0;
+    PointT top_left(255,0,0);
+    PointT top_right(255,0,0);
+    PointT bottom_left(255,0,0);
+    PointT bottom_right(255,0,0);
+    for(int i = 0; i < p_point_cloud_corner->size(); i++)
+    {
+        switch(compteur)
+        {
+        case(0):top_left = p_point_cloud_corner->at(i); compteur++; break;
+        case(1):top_right = p_point_cloud_corner->at(i);compteur++;break;
+        case(2):bottom_left = p_point_cloud_corner->at(i);compteur++;break;
+        case(3):bottom_right = p_point_cloud_corner->at(i);
+            draw_square(p_image_input.data, top_left, top_right, bottom_left, bottom_right);
+            compteur = 0;
+            break;
+        }
+    }
+    IMAGE_MEMORY.header = p_image_input.header;
+    IMAGE_MEMORY.encoding = p_image_input.encoding;
+    IMAGE_MEMORY.width = 640;
+    IMAGE_MEMORY.height = 480;
+    for(int  i =0; i < p_image_input.data.size(); i ++)
+    {
+        IMAGE_MEMORY.data.push_back(p_image_input.data.at(i));
+    }
+    PUB2.publish(p_image_input);
+}
+
 
 
 // Callback Function for the subscribed ROS topic
 void cloud_callback (const pcl::PCLPointCloud2ConstPtr& input){
+
+    POINT_CLOUD_RECEIVED = true;
+
+    boost::unique_lock<boost::mutex> scoped_lock(MTX);
+
     CORNER_CLOUD.clear();
     OBJECT_VECTOR_2D.clear();
     pcl::PointCloud<pcl::PointXYZRGB>::Ptr objects(new pcl::PointCloud<pcl::PointXYZRGB>);
@@ -316,6 +442,7 @@ void cloud_callback (const pcl::PCLPointCloud2ConstPtr& input){
     //Extract objects
     if(!object_vector.empty()){object_vector.clear();}
     object_vector = segment_objects(objects,0.02,200,15000);
+
 /*
     if(initialize_object_to_track){
         object_to_track = object_vector[index_to_track];
@@ -335,24 +462,68 @@ void cloud_callback (const pcl::PCLPointCloud2ConstPtr& input){
     //project all the objcect in 3d to a 2d plan
     for(int i = 0; i < object_vector.size(); i++)
     {
-        projection2d_pointCloud(*(object_vector.at(i)));
+        projection2d_pointCloud(*(object_vector.at(i)), OBJECT_VECTOR_2D);
     }
 
     //calculate the distance for each objects in the vector
+    POINT_CLOUD_CORNER->clear();
     for(int i =0; i < object_vector.size(); i++)
     {
 
         Eigen::Matrix<float,4,1> matrix = compute_centroid_point(*(object_vector.at(i)));
         compute_distance_from_kinect(matrix);
         Eigen::Matrix<float,4,1> matrix_2d = projection2d_matrix(matrix);
-        point_cloud_limit_finder(matrix_2d, OBJECT_VECTOR_2D.at(i));
+        point_cloud_limit_finder(matrix_2d, OBJECT_VECTOR_2D.at(i), CORNER_CLOUD);
 
     }
 
-    CORNER_CLOUD.header.stamp = input->header.stamp;
-    pub.publish(CORNER_CLOUD.makeShared());
+/*
+    //find the corner on the 2d plan////////
+    PointT left;
+    PointT right;
+    PointT top;
+    PointT bottom;
+    int compteur = 0;
+    for(int i = 0; i < CORNER_CLOUD.points.size(); i++)
+    {
+        switch(compteur)
+        {
+        case 0: left = CORNER_CLOUD.points.at(i); break;
+        case 1: right = CORNER_CLOUD.points.at(i); break;
+        case 2: top = CORNER_CLOUD.points.at(i); break;
+        case 3: bottom = CORNER_CLOUD.points.at(i); break;
+        }
+
+        compteur++;
+        if(compteur == 4)
+        {
+            find_corner(left, right, top, bottom, POINT_CLOUD_CORNER);
+            compteur = 0;
+        }
+    }
+    */
+
+    //CORNER_CLOUD.header.stamp = input->header.stamp;
+    //pub.publish(CORNER_CLOUD.makeShared());
 
 }
+
+void callback_function2(const sensor_msgs::Image& p_input)
+{
+
+    boost::unique_lock<boost::mutex> scoped_lock(MTX);
+
+    IMAGE_RECEIVED_INPUT = p_input;
+
+}
+
+void callback_function3(const std_msgs::UInt32MultiArray& p_input)
+{
+    COORDINATE_USER_SENDED = p_input;
+    COORDINATE_RECEIVED = true;
+
+}
+
 
 
 int main (int argc, char** argv)
@@ -364,11 +535,14 @@ int main (int argc, char** argv)
 
     // Create a ROS subscriber for the input point cloud
     ros::Subscriber sub = n.subscribe ("/custom/not_planes", 1, cloud_callback);
+    ros::Subscriber sub2 = n.subscribe("/camera/rgb/image_color", 1, callback_function2);
+    ros::Subscriber sub3 = n.subscribe("/image_coordinate_rgb", 1, callback_function3);
 
     // Create a ROS publisher for the output point cloud
     //pub = n.advertise<sensor_msgs::PointCloud2> ("/extracted_planes", 1);
     //publish the objects limits
     pub = n.advertise<pcl::PointCloud<PointT> > ("/corner_limits", 1);//the one that I use right now
+    PUB2 = n.advertise<sensor_msgs::Image>("/square_image", 1);
 
     // Load parameters from launch file
     nh.param("objects_visualizer",showUI,true);
@@ -394,12 +568,30 @@ int main (int argc, char** argv)
         renderWindow->Render();
     }
 
-    ros::Rate r(30);
+    ros::Rate r(5);
     while (loop_condition) {
         ros::spinOnce();
         pclViewer->spinOnce (100);
+        if(COORDINATE_RECEIVED)
+        {
+            //coordinate traitement on the memory cloud + memory image
+        }
+        if(POINT_CLOUD_RECEIVED)
+        {
+            image_processing(POINT_CLOUD_CORNER, IMAGE_RECEIVED_INPUT);
+
+            MEMORY_POINT_CLOUD = OBJECT_VECTOR_2D; // verify what are the best cloud to keep in memory
+        }
+        else
+        {
+            PUB2.publish(IMAGE_MEMORY);
+        }
+
+        POINT_CLOUD_RECEIVED = false;
+        COORDINATE_RECEIVED = false;
         loop_condition = ros::ok() && !pclViewer->wasStopped();
         r.sleep();
     }
     return 0;
 }
+
