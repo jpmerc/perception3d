@@ -115,8 +115,9 @@
 
 
   <!-- My node for plane segmentation -->
+  <!--
   <node pkg="perception3d" type="segmentation" name="segmentation" respawn="false" output="screen">
     <param name="pcl_visualizer"  value="false" />
   </node>
-
+  -->
 </launch>
