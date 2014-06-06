@@ -9,6 +9,7 @@ find_package(catkin REQUIRED COMPONENTS
   sensor_msgs
   std_msgs
   pcl_msgs
+  image_transport
 )
 
 find_package( PCL REQUIRED )
@@ -46,3 +47,7 @@ add_dependencies(square_draw perception3d_gencpp)
 add_executable(find_cloud src/find_cloud.cpp)
 target_link_libraries(find_cloud ${catkin_LIBRARIES} ${PCL_LIBRARIES})
 add_dependencies(find_cloud perception3d_gencpp)
+
+add_executable(image_transport_node src/image_transport_node.cpp)
+target_link_libraries(image_transport_node ${catkin_LIBRARIES} ${PCL_LIBRARIES})
+add_dependencies(image_transport_node perception3d_gencpp)
