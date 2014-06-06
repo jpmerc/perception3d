@@ -26,7 +26,7 @@ std_msgs::UInt32MultiArray COORDINATE_USER_SENDED;
 ros::Publisher PUB;
 ros::Publisher PUB2;
 
-boost::mutex mtx;
+boost::mutex MTX;
 
 //find the square corner for an object
 void find_corner(const PointT& p_left, const PointT& p_right, const PointT& p_top, const PointT& p_bottom)
@@ -108,34 +108,16 @@ void object_recognition()
 
 }
 
-
-
-
-void projection2d_pointCloud(const pcl::PointCloud<PointT>& p_input, pcl::PointCloud<PointT>& p_output)
-{
-    p_output.clear();
-    for(int i = 0; i < p_input.size(); i++)
-    {
-        PointT point_3d = p_input.at(i);
-        PointT point(1,1,1);
-        point.x = point_3d.x / point_3d.z;
-        point.y = point_3d.y / point_3d.z;
-        point.z = point_3d.z / point_3d.z;
-        p_output.push_back(point);
-    }
-}
-
 /*
   input: point cloud with the object limits
-  process: find the objetcs corners
+  process: find the objetcs corners and update the POINT_CLOUD_CORNER
   publish: point cloud with the all the corner in order top left, top right, bottom left, bottom right
 */
 void callback_function(const pcl::PCLPointCloud2ConstPtr& p_input)
 {
-    ros::Duration d = ros::Duration(0,5);
-    d.sleep();
+    std::cout << "call back 1:" << std::endl;
 
-    boost::unique_lock<boost::mutex> scoped_lock(mtx);
+    boost::unique_lock<boost::mutex> scoped_lock(MTX);
     POINT_CLOUD_CORNER->clear();
     pcl::fromPCLPointCloud2(*p_input, *POINT_CLOUD_INPUT);
     //find the corner on the 2d plan////////
@@ -180,14 +162,15 @@ void callback_function(const pcl::PCLPointCloud2ConstPtr& p_input)
 
 void callback_function2(const sensor_msgs::Image& p_input)
 {
-    ros::Duration d = ros::Duration(0,5);
-    d.sleep();
+
+    std::cout << "call back 2:" << std::endl;
+
     if(COORDINATE_RECEIVED)
     {
         object_recognition();
     }
 
-    boost::unique_lock<boost::mutex> scoped_lock(mtx);
+    boost::unique_lock<boost::mutex> scoped_lock(MTX);
     sensor_msgs::Image im = p_input;
 
     int compteur = 0;
@@ -217,6 +200,10 @@ void callback_function2(const sensor_msgs::Image& p_input)
 
 void callback_function3(const std_msgs::UInt32MultiArray& p_input)
 {
+    boost::unique_lock<boost::mutex> scoped_lock(MTX);
+
+    COORDINATE_USER_SENDED = p_input;
+    COORDINATE_RECEIVED = true;
 
 }
 
@@ -234,7 +221,7 @@ int main(int argc, char** argv)
     PUB = nh.advertise<sensor_msgs::PointCloud2> ("/corner_limits", 1);
     PUB2 = nh.advertise<sensor_msgs::Image> ("/square_image", 1);
 
-    ros::Rate r(30);
+    ros::Rate r(1);
     while(ros::ok())
     {
         ros::spinOnce();

@@ -168,7 +168,7 @@ void cloud_callback (const pcl::PCLPointCloud2ConstPtr& input){
     *cloud = *cloud_filtered2;
 
     // Plane segmentation
-    segmented_cloud = plane_segmentation(cloud_filtered2,3);
+    segmented_cloud = plane_segmentation(cloud_filtered2,5);
     if(segmented_cloud->size() == 0) return;
     // std::cout << "PointCloud representing the planar components: " << segmented_cloud->width * segmented_cloud->height << " data points." << std::endl;
 
