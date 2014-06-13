@@ -46,3 +46,7 @@ add_dependencies(square_draw perception3d_gencpp)
 add_executable(find_cloud src/find_cloud.cpp)
 target_link_libraries(find_cloud ${catkin_LIBRARIES} ${PCL_LIBRARIES})
 add_dependencies(find_cloud perception3d_gencpp)
+
+add_executable(tracking src/tracking.cpp)
+target_link_libraries(tracking ${catkin_LIBRARIES} ${PCL_LIBRARIES})
+add_dependencies(tracking perception3d_gencpp)

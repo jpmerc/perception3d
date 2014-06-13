@@ -1,0 +1,26 @@
+<launch>
+
+  <!-- Launch Kinect -->
+	<include file="$(find perception3d)/launch/kinect.launch"></include> 
+	
+	<!-- Link Kinect to JACO -->
+	<!--<node pkg="tf" type="static_transform_publisher" name="jaco_kinect" args="-0.60 0.385 0.54 0 0.30 0  arm_base camera_link 100" /> -->
+	<node pkg="tf" type="static_transform_publisher" name="jaco_kinect" args="-0.587 0.386 0.533 0 0.30 0  arm_base camera_link 100" />
+	
+	<!-- Link AR_TAG to joint_6 (useful when calibrating) -->
+	<node pkg="tf" type="static_transform_publisher" name="ARtag" args="0 0.03 -0.06 0 0 0 jaco_joint_6 ARtag 100" /> 
+	
+	<!-- Plane Segmentation -->
+  <node pkg="perception3d" type="segmentation" name="segmentation" respawn="false" output="screen">
+    <param name="pcl_visualizer"  value="false" />
+    <param name="topic_in" value="/camera/depth_registered/points" />
+  </node>
+	
+	<!-- Euclidean Object Extraction -->
+  <node pkg="perception3d" type="objects_extraction" name="objects_extraction" respawn="false" output="screen">
+    <param name="objects_visualizer"  value="true" />
+  </node>
+	
+</launch>
+
+
