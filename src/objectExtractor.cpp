@@ -25,7 +25,7 @@ void ObjectExtractor::extraction_callback(const pcl::PCLPointCloud2ConstPtr& inp
 
 
     // Initialize object to grasp
-    if(initialize_object_to_grasp){
+    if((!object_vector.empty()) && initialize_object_to_grasp){
         object_to_grasp = object_vector[index_to_grasp];
         initialize_object_to_grasp = false;
     }
@@ -51,8 +51,12 @@ void ObjectExtractor::printToPCLViewer(){
         pclViewer->setPointCloudRenderingProperties (pcl::visualization::PCL_VISUALIZER_POINT_SIZE, 1, pc_name);
     }
 
-    pcl::visualization::PointCloudColorHandlerRGBField<PointT> rgb(object_to_grasp);
-    pclViewer->addPointCloud<PointT>(object_to_grasp,rgb,"source cloud");
+//    pcl::visualization::PointCloudColorHandlerRGBField<PointT> rgb(object_to_grasp);
+//    pclViewer->addPointCloud<PointT>(object_to_grasp,rgb,"object_to_grasp");
+//    pclViewer->setPointCloudRenderingProperties (pcl::visualization::PCL_VISUALIZER_POINT_SIZE, 1, "object_to_grasp");
+
+    pcl::visualization::PointCloudColorHandlerCustom<PointT> yellow_color(object_to_grasp, 255, 255, 102);
+    pclViewer->addPointCloud<PointT>(object_to_grasp,yellow_color,"object_to_grasp");
     pclViewer->setPointCloudRenderingProperties (pcl::visualization::PCL_VISUALIZER_POINT_SIZE, 1, "object_to_grasp");
 }
 
