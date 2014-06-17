@@ -32,24 +32,31 @@ class ObjectExtractor{
 public:
     typedef pcl::PointXYZRGB PointT;
 
-    //methods
+    //Methods
     ObjectExtractor(bool showViewer);
     void extraction_callback(const pcl::PCLPointCloud2ConstPtr& input);
-    std::vector<pcl::PointCloud<PointT>::Ptr> segment_objects(pcl::PointCloud<PointT>::Ptr cloud_input, double tolerance, int minClusterSize, int maxClusterSize);
-    pcl::PointCloud<PointT>::Ptr extract_object_from_indices(pcl::PointCloud<PointT>::Ptr cloud_input,pcl::PointIndices object_indices);
-    bool* get_showUI();
+    bool get_showUI();
     void set_showUI(bool show);
+    void toggle_showUI();
 
-    //variables
+
+    // Variables
+    boost::shared_ptr<pcl::visualization::PCLVisualizer> pclViewer;
 
 private:
+    // Methods
+    void printToPCLViewer();
+    void keyboard_callback (const pcl::visualization::KeyboardEvent &event, void* viewer_void);
+    std::vector<pcl::PointCloud<PointT>::Ptr> segment_objects(pcl::PointCloud<PointT>::Ptr cloud_input, double tolerance, int minClusterSize, int maxClusterSize);
+    pcl::PointCloud<PointT>::Ptr extract_object_from_indices(pcl::PointCloud<PointT>::Ptr cloud_input,pcl::PointIndices object_indices);
+    void setPCLViewer();
 
-    //variables
+    // Variables
     pcl::PointCloud<PointT>::Ptr cloud;
-    boost::shared_ptr<pcl::visualization::PCLVisualizer> pclViewer;
     std::vector<pcl::PointCloud<PointT>::Ptr> object_vector;
-    pcl::PointCloud<PointT>::Ptr object_to_track;
-    int index_to_track;
+    pcl::PointCloud<PointT>::Ptr object_to_grasp;
+    int index_to_grasp;
+    bool initialize_object_to_grasp;
     bool showUI;
     int l_count;
 
