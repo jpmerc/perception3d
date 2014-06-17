@@ -39,7 +39,7 @@ public:
     bool get_showUI();
     void set_showUI(bool show);
     void toggle_showUI();
-    Eigen::Vector4f getCentroid();
+    Eigen::Vector4f getGraspCentroid();
 
     // Variables
     boost::shared_ptr<pcl::visualization::PCLVisualizer> pclViewer;

@@ -25,6 +25,7 @@ int main (int argc, char** argv){
 
     // Spin threads
     ros::Rate r(5);
+
     while (ros::ok() && !obj_extractor->pclViewer->wasStopped()) {
         ros::spinOnce();
         obj_extractor->pclViewer->spinOnce (100);

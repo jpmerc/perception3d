@@ -1,6 +1,8 @@
 #include <objectExtractor.h>
 typedef pcl::PointXYZRGB PointT;
 
+
+// -------------------------------------------------------------------------------------------------------- //
 ObjectExtractor::ObjectExtractor(bool showViewer){
     cloud.reset(new pcl::PointCloud<PointT>);
     pclViewer.reset(new pcl::visualization::PCLVisualizer ("3DViewer"));
@@ -13,6 +15,7 @@ ObjectExtractor::ObjectExtractor(bool showViewer){
     setPCLViewer();
 }
 
+// -------------------------------------------------------------------------------------------------------- //
 void ObjectExtractor::extraction_callback(const pcl::PCLPointCloud2ConstPtr& input){
 
     pcl::PointCloud<PointT>::Ptr objects(new pcl::PointCloud<PointT>);
@@ -33,10 +36,9 @@ void ObjectExtractor::extraction_callback(const pcl::PCLPointCloud2ConstPtr& inp
     if(showUI){
         printToPCLViewer();
     }
-
 }
 
-
+// -------------------------------------------------------------------------------------------------------- //
 void ObjectExtractor::printToPCLViewer(){
     pclViewer->removeAllPointClouds();
 
@@ -60,6 +62,7 @@ void ObjectExtractor::printToPCLViewer(){
     pclViewer->setPointCloudRenderingProperties (pcl::visualization::PCL_VISUALIZER_POINT_SIZE, 1, "object_to_grasp");
 }
 
+// -------------------------------------------------------------------------------------------------------- //
 void ObjectExtractor::keyboard_callback(const pcl::visualization::KeyboardEvent &event, void* viewer_void){
     l_count = l_count + 1;
     if(l_count < 2){
@@ -89,7 +92,7 @@ void ObjectExtractor::keyboard_callback(const pcl::visualization::KeyboardEvent 
 
 }
 
-
+// -------------------------------------------------------------------------------------------------------- //
 std::vector<pcl::PointCloud<PointT>::Ptr> ObjectExtractor::segment_objects(pcl::PointCloud<PointT>::Ptr cloud_input, double tolerance, int minClusterSize, int maxClusterSize){
     std::vector<pcl::PointIndices> cluster_indices;
     pcl::EuclideanClusterExtraction<PointT> ec;
@@ -114,7 +117,7 @@ std::vector<pcl::PointCloud<PointT>::Ptr> ObjectExtractor::segment_objects(pcl::
     return object_vector_temp;
 }
 
-
+// -------------------------------------------------------------------------------------------------------- //
 pcl::PointCloud<PointT>::Ptr ObjectExtractor::extract_object_from_indices(pcl::PointCloud<PointT>::Ptr cloud_input,pcl::PointIndices object_indices){
     pcl::PointCloud<PointT>::Ptr cloud_cluster(new pcl::PointCloud<PointT>);
     for (int j=0; j<object_indices.indices.size(); j++){
@@ -123,21 +126,25 @@ pcl::PointCloud<PointT>::Ptr ObjectExtractor::extract_object_from_indices(pcl::P
     return cloud_cluster;
 }
 
+// -------------------------------------------------------------------------------------------------------- //
 // Get showUI
 bool ObjectExtractor::get_showUI(){
     return showUI;
 }
 
+// -------------------------------------------------------------------------------------------------------- //
 // Set the value of showUI
 void ObjectExtractor::set_showUI(bool show){
     showUI = show;
 }
 
+// -------------------------------------------------------------------------------------------------------- //
 void ObjectExtractor::toggle_showUI(){
     set_showUI(!get_showUI());
     setPCLViewer();
 }
 
+// -------------------------------------------------------------------------------------------------------- //
 void ObjectExtractor::setPCLViewer(){
     if(showUI){
         pclViewer->setBackgroundColor (0, 0, 0);
@@ -153,6 +160,13 @@ void ObjectExtractor::setPCLViewer(){
         renderWindow->SetSize(1,1);
         renderWindow->Render();
     }
+}
+
+// -------------------------------------------------------------------------------------------------------- //
+Eigen::Vector4f ObjectExtractor::getGraspCentroid(){
+    Eigen::Vector4f c;
+    pcl::compute3DCentroid<PointT>(*object_to_grasp,c);
+    return c;
 }
 
 
