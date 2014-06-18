@@ -12,7 +12,7 @@
 	
 	<!-- Plane Segmentation -->
   <node pkg="perception3d" type="segmentation" name="segmentation" respawn="false" output="screen">
-    <param name="pcl_visualizer"  value="false" />
+    <param name="pcl_visualizer"  value="true" />
     <param name="topic_in" value="/camera/depth_registered/points" />
   </node>
 	

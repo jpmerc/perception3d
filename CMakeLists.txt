@@ -57,8 +57,10 @@ target_link_libraries(image_transport_node ${catkin_LIBRARIES} ${PCL_LIBRARIES})
 add_dependencies(image_transport_node perception3d_gencpp)
 
 add_executable(perception
-  src/nodes/perception.cpp
-  src/objectExtractor.cpp
+  src/perception/perception.cpp
+  src/perception/objectExtractor.cpp
+  src/perception/jaco_custom.cpp
+  src/perception/teacher.cpp
 )
 target_link_libraries(perception ${catkin_LIBRARIES} ${PCL_LIBRARIES})
 add_dependencies(perception perception3d_gencpp)
