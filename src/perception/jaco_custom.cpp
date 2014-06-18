@@ -52,11 +52,11 @@ void JacoCustom::fingers_position_callback(const jaco_msgs::FingerPositionConstP
 
 
 void JacoCustom::open_fingers(){
-    boost::thread t(&JacoCustom::open_fingers_thread,this,this);
+    boost::thread t(&JacoCustom::open_fingers_thread,this);
     t.join();
 }
 
-void JacoCustom::open_fingers_thread(JacoCustom* ptr){
+void JacoCustom::open_fingers_thread(){
     actionlib::SimpleActionClient<jaco_msgs::SetFingersPositionAction> action_client("jaco/finger_joint_angles",true);
     action_client.waitForServer();
     jaco_msgs::SetFingersPositionGoal fingers = jaco_msgs::SetFingersPositionGoal();
@@ -64,16 +64,16 @@ void JacoCustom::open_fingers_thread(JacoCustom* ptr){
     fingers.fingers.Finger_2 = 0;
     fingers.fingers.Finger_3 = 0;
     action_client.sendGoal(fingers);
-    ptr->wait_for_fingers_stopped();
+    this->wait_for_fingers_stopped();
 }
 
 
 void JacoCustom::close_fingers(){
-    boost::thread t(&JacoCustom::close_fingers_thread,this,this);
-    t.join();
+    boost::thread t(&JacoCustom::close_fingers_thread,this);
+    //t.join();
 }
 
-void JacoCustom::close_fingers_thread(JacoCustom* ptr){
+void JacoCustom::close_fingers_thread(){
     actionlib::SimpleActionClient<jaco_msgs::SetFingersPositionAction> action_client("jaco/finger_joint_angles",true);
     action_client.waitForServer();
     jaco_msgs::SetFingersPositionGoal fingers = jaco_msgs::SetFingersPositionGoal();
@@ -81,27 +81,37 @@ void JacoCustom::close_fingers_thread(JacoCustom* ptr){
     fingers.fingers.Finger_2 = 60;
     fingers.fingers.Finger_3 = 60;
     action_client.sendGoal(fingers);
-    ptr->wait_for_fingers_stopped();
+    this->wait_for_fingers_stopped();
 }
 
 
 void JacoCustom::move_up(double distance){
+    boost::thread t(&JacoCustom::move_up_thread,this,distance);
+    //t.join();
+}
+
+void JacoCustom::move_up_thread(double distance){
     actionlib::SimpleActionClient<jaco_msgs::ArmPoseAction> action_client("/jaco/arm_pose",true);
     action_client.waitForServer();
     jaco_msgs::ArmPoseGoal pose_goal = jaco_msgs::ArmPoseGoal();
 
-    arm_mutex.lock();
-    pose_goal.pose = arm_pose;
+    this->arm_mutex.lock();
+    pose_goal.pose = this->arm_pose;
     pose_goal.pose.header.frame_id = "/jaco_api_origin";
     pose_goal.pose.pose.position.z += distance;
-    arm_mutex.unlock();
+    this->arm_mutex.unlock();
 
     action_client.sendGoal(pose_goal);
-    wait_for_arm_stopped();
+    this->wait_for_arm_stopped();
 }
 
 
 void JacoCustom::moveToPoint(double x, double y, double z, double rotx, double roty, double rotz, double rotw){
+    boost::thread t(&JacoCustom::moveToPoint_thread,this,x,y,z,rotx,roty,rotz,rotw);
+    t.join();
+}
+
+void JacoCustom::moveToPoint_thread(double x, double y, double z, double rotx, double roty, double rotz, double rotw){
     actionlib::SimpleActionClient<jaco_msgs::ArmPoseAction> action_client("/jaco/arm_pose",true);
     action_client.waitForServer();
     jaco_msgs::ArmPoseGoal pose_goal = jaco_msgs::ArmPoseGoal();
@@ -116,7 +126,7 @@ void JacoCustom::moveToPoint(double x, double y, double z, double rotx, double r
     pose_goal.pose.pose.orientation.w = rotw;
     action_client.sendGoal(pose_goal);
 
-    wait_for_arm_stopped();
+    this->wait_for_arm_stopped();
 }
 
 geometry_msgs::PoseStamped JacoCustom::getArmPosition(){

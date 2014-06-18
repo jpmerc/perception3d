@@ -23,15 +23,21 @@ public:
     jaco_msgs::FingerPosition getFingersPosition();
 
 
+
+
+
 private:
 
     bool is_same_pose(geometry_msgs::PoseStamped* pose1, const geometry_msgs::PoseStampedConstPtr pose2);
     bool is_same_pose(jaco_msgs::FingerPosition* pose1, jaco_msgs::FingerPositionConstPtr pose2);
+
     void wait_for_arm_stopped();
     void wait_for_fingers_stopped();
 
-    void open_fingers_thread(JacoCustom* ptr);
-    void close_fingers_thread(JacoCustom* ptr);
+    void open_fingers_thread();
+    void close_fingers_thread();
+    void move_up_thread(double distance);
+    void moveToPoint_thread(double x, double y, double z, double rotx, double roty, double rotz, double rotw);
 
     geometry_msgs::PoseStamped arm_pose;
     jaco_msgs::FingerPosition fingers_pose;
