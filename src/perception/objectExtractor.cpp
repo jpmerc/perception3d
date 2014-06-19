@@ -12,11 +12,21 @@ ObjectExtractor::ObjectExtractor(bool showViewer){
     index_to_grasp = 0;
     object_to_grasp.reset(new pcl::PointCloud<PointT>);
     initialize_object_to_grasp = true;
+
+    m_point_cloud_corner_ptr.reset(new pcl::PointCloud<PointT>);
+    m_memory_point_cloud_corner_ptr.reset(new pcl::PointCloud<PointT>);
+
     setPCLViewer();
 }
 
 // -------------------------------------------------------------------------------------------------------- //
 void ObjectExtractor::extraction_callback(const pcl::PCLPointCloud2ConstPtr& input){
+
+    m_point_cloud_received = true;
+
+    m_corner_cloud.clear();
+    m_object_vector_2d.clear();
+
 
     pcl::PointCloud<PointT>::Ptr objects(new pcl::PointCloud<PointT>);
     pcl::fromPCLPointCloud2(*input,*objects);
@@ -36,6 +46,21 @@ void ObjectExtractor::extraction_callback(const pcl::PCLPointCloud2ConstPtr& inp
     if(showUI){
         printToPCLViewer();
     }
+
+    for(int i = 0; i < object_vector.size(); i++)
+    {
+        projection2d_pointCloud(*(object_vector.at(i)), m_object_vector_2d);
+    }
+
+    m_point_cloud_corner_ptr->clear();
+    for(int i = 0; i < object_vector.size(); i++)
+    {
+        Eigen::Matrix<float,4,1> matrix = compute_centroid_point(*(object_vector.at(i)));
+        m_distance_vector.push_back(compute_distance_from_kinect(matrix));
+        Eigen::Matrix<float,4,1> matrix_2d = projection2d_matrix(matrix);
+        point_cloud_limit_finder(matrix_2d, m_object_vector_2d.at(i));
+    }
+
 }
 
 // -------------------------------------------------------------------------------------------------------- //
@@ -169,5 +194,313 @@ Eigen::Vector4f ObjectExtractor::getGraspCentroid(){
     return c;
 }
 
+//---------------------------------------------------------------------------------------------------------//
+void ObjectExtractor::callback_rgb_camera(const sensor_msgs::Image& p_input)
+{
+    m_image_received_input = p_input;
+    m_image_received_input.header = p_input.header;
+}
+
+//---------------------------------------------------------------------------------------------------------//
+void ObjectExtractor::callback_coordinate_android(const std_msgs::String& p_input)
+{
+    std::string string_temp = "";
+    for(int i = 0; i < p_input.data.size(); i ++)
+    {
+        if(p_input.data.at(i) == '_')
+        {
+            m_coordinate_user_sended[0] = atof(string_temp.c_str());
+            string_temp.clear();
+        }
+        else
+            string_temp += p_input.data.at(i);
+
+    }
+    m_coordinate_user_sended[1] = atof(string_temp.c_str());
+    m_coordinate_user_sended[0] = m_coordinate_user_sended[0]*640;
+    m_coordinate_user_sended[1] = m_coordinate_user_sended[1]*480;
+    m_coordinate_received = true;
+
+}
+
+//-------------------------------------------------------------------------------------------------------//
+float ObjectExtractor::compute_distance_from_kinect(Eigen::Matrix<float, 4, 1> p_matrix)
+{
+    pcl::PointXYZ camera_origin(0,0,0);
+    pcl::PointXYZ object_position(p_matrix(0,0), p_matrix(1,0), p_matrix(3,0));
+    float distance = pcl::euclideanDistance(camera_origin, object_position);
+
+    return distance;
+}
+
+Eigen::Matrix<float,4,1> ObjectExtractor::compute_centroid_point(const pcl::PointCloud<PointT>& p_point_cloud)
+{
+    pcl::ConstCloudIterator<PointT> it(p_point_cloud);
+    Eigen::Matrix< float, 4, 1 > matrix;
+    pcl::compute3DCentroid(it, matrix);
+    return matrix;
+}
+
+//--------------------------------------------------------------------------------------------------------//
+void ObjectExtractor::point_cloud_limit_finder (Eigen::Matrix<float, 4, 1> p_matrix, pcl::PointCloud<PointT>::Ptr p_ptr)
+{
+    float x = p_matrix(0,0);
+    float y = p_matrix(1,0);
+    float z = p_matrix(2,0);
+    pcl::PointXYZRGB left(255, 0, 0);
+    left.x = x;
+    left.y = y;
+    left.z = z;
+    pcl::PointXYZRGB right(0,255,0);
+    right.x = x;
+    right.y = y;
+    right.z = z;
+    pcl::PointXYZRGB top(0,0,255);
+    top.x = x;
+    top.y = y;
+    top.z = z;
+    pcl::PointXYZRGB bottom(0,0,0);
+    bottom.x = x;
+    bottom.y = y;
+    bottom.z = z;
+
+    for(int i = 0; i < p_ptr->size(); i++)
+    {
+        pcl::PointXYZRGB point(255,0,0);
+        point.x = p_ptr->at(i).x;
+        point.y = p_ptr->at(i).y;
+        point.z = p_ptr->at(i).z;
+        if(point.x > left.x)
+            left = point;
+        else if (point.x < right.x)
+            right = point;
+        if(point.y < top.y)
+            top = point;
+        else if(point.y > bottom.y)
+            bottom = point;
+    }
+
+    find_corner(left,right,top,bottom,m_point_cloud_corner_ptr);
+}
+
+//------------------------------------------------------------------------------------------------------------------//
+void ObjectExtractor::find_corner(const PointT& p_left, const PointT& p_right, const PointT& p_top, const PointT& p_bottom, pcl::PointCloud<PointT>::Ptr& p_point_cloud_output)
+{
+    PointT top_right(255,0,0);
+    top_right.x = p_left.x;
+    top_right.y = p_top.y;
+    top_right.z = 1;
+
+    PointT top_left(0,255,0);
+    top_left.x = p_right.x;
+    top_left.y = p_top.y;
+    top_left.z = 1;
+
+    PointT bottom_right(0,0,255);
+    bottom_right.x = p_left.x;
+    bottom_right.y = p_bottom.y;
+    bottom_right.z = 1;
+
+    PointT bottom_left(255,255,0);
+    bottom_left.x = p_right.x;
+    bottom_left.y = p_bottom.y;
+    bottom_left.z = 1;
+
+    p_point_cloud_output->points.push_back(top_left);
+    p_point_cloud_output->points.push_back(top_right);
+    p_point_cloud_output->points.push_back(bottom_left);
+    p_point_cloud_output->points.push_back(bottom_right);
+}
+
+//------------------------------------------------------------------------------------------------------------//
+Eigen::Matrix<float,4,1> ObjectExtractor::projection2d_matrix(const Eigen::Matrix<float,4,1>& p_matrix)
+{
+    Eigen::Matrix<float,4,1> matrix_2d;
+    matrix_2d(0,0) = (((p_matrix(0,0) * 525)/p_matrix(2,0))+320);
+    matrix_2d(1,0) = (((p_matrix(1,0) * 525)/p_matrix(2,0))+240);
+    matrix_2d(2,0) = p_matrix(2,0)/p_matrix(2,0);
+    matrix_2d(3,0) = p_matrix(3,0);
+    return matrix_2d;
+}
+
+//------------------------------------------------------------------------------------------------------------------//
+void ObjectExtractor::projection2d_pointCloud(const pcl::PointCloud<PointT>& p_point_cloud, std::vector<pcl::PointCloud<PointT>::Ptr>& p_vector_output)
+{
+    pcl::PointCloud<PointT>::Ptr point_cloud_2d(new pcl::PointCloud<PointT>);
+    for(int i = 0; i < p_point_cloud.size(); i++)
+    {
+        PointT point_3d = p_point_cloud.at(i);
+        PointT point(1,1,1);
+        point.x = (((point_3d.x * 525) / point_3d.z)+320);
+        point.y = (((point_3d.y * 525) / point_3d.z)+240);
+        point.z = point_3d.z / point_3d.z;
+        point_cloud_2d->push_back(point);
+    }
+    p_vector_output.push_back(point_cloud_2d);
+}
+
+//-------------------------------------------------------------------------------------------------//
+void ObjectExtractor::change_pixel_color(std::vector<unsigned char>& p_array, int p_x, int p_y, int p_b, int p_g, int p_r)
+{
+    if(p_x < 0)
+        p_x = 0;
+    else if(p_x > 640)
+        p_x = 640;
+    if(p_y < 0)
+        p_y = 0;
+    if(p_y > 480)
+        p_y = 480;
 
 
+    int row = 3*p_x + 1920*p_y;
+    p_array[row] = p_b;
+    p_array[row + 1] = p_g;
+    p_array[row + 2] = p_r;
+}
+
+//------------------------------------------------------------------------------------------------------------------------//
+void ObjectExtractor::draw_square(std::vector<unsigned char>& p_array, PointT p_top_left, PointT p_top_right, PointT p_bottom_left, PointT p_bottom_right)
+{
+    if(p_array.size() == 921600)
+    {
+        //draw the upper line
+        for(int i = p_top_left.x; i <= p_top_right.x; i++)
+        {
+            change_pixel_color(p_array, i, p_top_left.y);
+        }
+        //draw the down line
+        for(int i = p_bottom_left.x; i <= p_bottom_right.x; i++)
+        {
+            change_pixel_color(p_array, i, p_bottom_left.y,0,255,0);
+        }
+        //draw the left line
+        for(int i = p_top_left.y; i <= p_bottom_left.y; i++)
+        {
+            change_pixel_color(p_array, p_top_left.x, i,0,0,255);
+        }
+        //draw the right line
+        for(int i = p_top_right.y; i <=p_bottom_right.y; i++)
+        {
+            change_pixel_color(p_array, p_top_right.x, i,255,255,0);
+        }
+    }
+}
+
+//-----------------------------------------------------------------------------------------------------//
+void ObjectExtractor::image_processing(pcl::PointCloud<PointT>::Ptr p_point_cloud_corner, sensor_msgs::Image p_image_input)
+{
+    int compteur = 0;
+    PointT top_left(255,0,0);
+    PointT top_right(255,0,0);
+    PointT bottom_left(255,0,0);
+    PointT bottom_right(255,0,0);
+    for(int i = 0; i < p_point_cloud_corner->size(); i++)
+    {
+        switch(compteur)
+        {
+        case(0):top_left = p_point_cloud_corner->at(i); compteur++; break;
+        case(1):top_right = p_point_cloud_corner->at(i);compteur++;break;
+        case(2):bottom_left = p_point_cloud_corner->at(i);compteur++;break;
+        case(3):bottom_right = p_point_cloud_corner->at(i);
+            draw_square(p_image_input.data, top_left, top_right, bottom_left, bottom_right);
+            compteur = 0;
+            break;
+        }
+    }
+    m_image_memory.data.clear();
+    m_image_memory.header = p_image_input.header;
+    m_image_memory.encoding = p_image_input.encoding;
+    m_image_memory.width = p_image_input.width;
+    m_image_memory.height = p_image_input.height;
+    m_image_memory.step = p_image_input.step;
+    for(int  i =0; i < p_image_input.data.size(); i ++)
+    {
+        m_image_memory.data.push_back(p_image_input.data.at(i));
+    }
+    //publih in the main
+}
+
+//---------------------------------------------------------------------------------------------------------------//
+int ObjectExtractor::position_finder_vector(const float p_coordinate[], const pcl::PointCloud<PointT>& p_point_cloud_corner, const std::vector<float> p_distance_vector)
+{
+    std::vector<int> position_vector;
+    for(int i = 0; i < p_point_cloud_corner.size(); i += 4)
+    {
+        PointT point_temps_top_left = p_point_cloud_corner.at(i);
+        PointT point_temps_bottom_right = p_point_cloud_corner.at(i+3);
+        if(p_coordinate[0] >= point_temps_top_left.x and p_coordinate[0] <= point_temps_bottom_right.x)
+        {
+            if(p_coordinate[1] >= point_temps_top_left.y and p_coordinate[1] <= point_temps_bottom_right.y)
+            {
+                position_vector.push_back(i/4);
+            }
+        }
+    }
+    if(position_vector.size() > 0)
+    {
+        float distance = position_vector.at(0);
+        int indice = position_vector.at(0);
+        for(int i = 0; i < position_vector.size(); i++)
+        {
+            if(p_distance_vector.at(position_vector.at(i)) < distance)
+            {
+                distance = position_vector.at(i);
+                indice = position_vector.at(i);
+            }
+        }
+        return indice;
+    }
+    return -1;
+}
+
+//-----------------------------------------------------------------------------------------------------------------------//
+bool ObjectExtractor::is_coordinate_received()
+{
+    return m_coordinate_received;
+}
+
+//-----------------------------------------------------------------------------------------------------------------------//
+bool ObjectExtractor::is_point_cloud_received()
+{
+    return m_point_cloud_received;
+}
+
+//-------------------------------------------------------------------------------------------------------------------//
+sensor_msgs::Image ObjectExtractor::get_image_input()
+{
+    return m_image_received_input;
+}
+
+//-----------------------------------------------------------------------------------------------------------------------//
+sensor_msgs::Image ObjectExtractor::get_image_memory()
+{
+    return m_image_memory;
+}
+
+//----------------------------------------------------------------------------------------------------------------------//
+void ObjectExtractor::coordinate_processing()
+{
+    //a  concerver dans un attribut ou autre element pour pouvoir l'utiliser apres
+    int position_in_vector = position_finder_vector(m_coordinate_user_sended, *m_memory_point_cloud_corner_ptr, m_memory_distance_vector);
+}
+
+//----------------------------------------------------------------------------------------------------------------------------//
+void ObjectExtractor::point_cloud_processing()
+{
+    image_processing(m_point_cloud_corner_ptr, m_image_received_input);
+    *m_memory_point_cloud_corner_ptr = *m_point_cloud_corner_ptr;
+    m_memory_distance_vector = m_distance_vector;
+    m_memory_point_cloud = object_vector;
+}
+
+//--------------------------------------------------------------------------------------------------------------------------------//
+void ObjectExtractor::set_point_cloud_received(bool p_bool)
+{
+    m_point_cloud_received = p_bool;
+}
+
+//------------------------------------------------------------------------------------------------------------------------------------//
+void ObjectExtractor::set_coordinate_received(bool p_bool)
+{
+    m_coordinate_received = false;
+}

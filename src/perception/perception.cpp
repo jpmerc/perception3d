@@ -39,6 +39,11 @@ int main (int argc, char** argv){
     ros::Subscriber sub2 = n.subscribe("/jaco/tool_position", 1, &JacoCustom::arm_position_callback, JACO_PTR);
     ros::Subscriber sub3 = n.subscribe("/jaco/finger_position", 1, &JacoCustom::fingers_position_callback, JACO_PTR);
 
+    ros::Subscriber sub4 = n.subscribe("/camera/rgb/image_color", 1, &ObjectExtractor::callback_rgb_camera, OBJ_EXTRACTOR_PTR);
+    ros::Subscriber sub5 = n.subscribe("/image_coordinate_rgb", 1, &ObjectExtractor::callback_coordinate_android, OBJ_EXTRACTOR_PTR);
+
+    ros::Publisher pub_image = n.advertise<sensor_msgs::Image>("/square_image",1);
+
    // boost::thread thread_(sendCommandsToJaco,JACO_PTR,2.3);
     JACO_PTR->close_fingers();
 
@@ -48,6 +53,21 @@ int main (int argc, char** argv){
     while (ros::ok() && !OBJ_EXTRACTOR_PTR->pclViewer->wasStopped()) {
         ros::spinOnce();
         OBJ_EXTRACTOR_PTR->pclViewer->spinOnce (100);
+        if(OBJ_EXTRACTOR_PTR->is_coordinate_received())
+        {
+            OBJ_EXTRACTOR_PTR->coordinate_processing();
+        }
+        if(OBJ_EXTRACTOR_PTR->is_point_cloud_received())
+        {
+            OBJ_EXTRACTOR_PTR->point_cloud_processing();
+            pub_image.publish(OBJ_EXTRACTOR_PTR->get_image_input());
+        }
+        else
+        {
+            pub_image.publish(OBJ_EXTRACTOR_PTR->get_image_memory());
+        }
+        OBJ_EXTRACTOR_PTR->set_point_cloud_received();
+        OBJ_EXTRACTOR_PTR->set_coordinate_received();
         r.sleep();
     }
 
