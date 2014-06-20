@@ -441,6 +441,7 @@ void ObjectExtractor::coordinate_processing(const float p_coordinate[])
 {
     //a  concerver dans un attribut ou autre element pour pouvoir l'utiliser apres
     int position_in_vector = position_finder_vector(p_coordinate, *m_memory_point_cloud_corner_ptr, m_memory_distance_vector);
+    //debug response to android
     std_msgs::String send_string;
     send_string.data = "p_un;deux";
     m_pub_android.publish(send_string);

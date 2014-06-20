@@ -42,7 +42,7 @@ int main (int argc, char** argv){
     ros::Subscriber sub3 = n.subscribe("/jaco/finger_position", 1, &JacoCustom::fingers_position_callback, JACO_PTR);
 
     ros::Subscriber sub4 = n.subscribe("/camera/rgb/image_color", 1, &ObjectExtractor::callback_rgb_camera, OBJ_EXTRACTOR_PTR);
-    ros::Subscriber sub5 = n.subscribe("/coordinate_sender", 1, &Communication::callback_android_listener, communication_ptr);
+    ros::Subscriber sub5 = n.subscribe("/android_sender", 1, &Communication::callback_android_listener, communication_ptr);
 
    // boost::thread thread_(sendCommandsToJaco,JACO_PTR,2.3);
     JACO_PTR->close_fingers();
