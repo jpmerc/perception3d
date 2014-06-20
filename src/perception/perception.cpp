@@ -7,26 +7,12 @@
 ObjectExtractor *OBJ_EXTRACTOR_PTR;
 JacoCustom *JACO_PTR;
 
-//void sendCommandsToJaco(JacoCustom* jaco,double x){
-//    if(ros::ok()){
-//         jaco->open_fingers();
-////        move_to_grasp_point(-0.24, 0.366, -0.003, 0.064, -0.658, -0.035, 0.75);
-//        //jaco->close_fingers();
-////        move_up(0.4);
-////        end_program = true;
-//    }
-//}
-
-
-
 using namespace std;
 
 int main (int argc, char** argv){
     ros::init (argc, argv, "perception");
     ros::NodeHandle n;
     ros::NodeHandle nh("~");
-
-
 
     // Load parameters from launch file
     bool show_objects_in_viewer;
@@ -44,10 +30,6 @@ int main (int argc, char** argv){
     ros::Subscriber sub4 = n.subscribe("/camera/rgb/image_color", 1, &ObjectExtractor::callback_rgb_camera, OBJ_EXTRACTOR_PTR);
     ros::Subscriber sub5 = n.subscribe("/android_sender", 1, &Communication::callback_android_listener, communication_ptr);
 
-   // boost::thread thread_(sendCommandsToJaco,JACO_PTR,2.3);
-    JACO_PTR->close_fingers();
-
-
     // Spin threads
     ros::Rate r(5);
     while (ros::ok() && !OBJ_EXTRACTOR_PTR->pclViewer->wasStopped()) {
@@ -57,7 +39,6 @@ int main (int argc, char** argv){
         r.sleep();
     }
 
-//    thread_.join();
 
     return 0;
 }
