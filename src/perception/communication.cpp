@@ -17,6 +17,7 @@ void Communication::callback_android_listener(const std_msgs::String &p_input)
         case('c'):coordinate_processing(p_input);break;
         case('t'):train_processing(p_input);break;
         case('g'):grasp_processing(p_input);break;
+    default:break;
     }
 }
 
@@ -98,4 +99,7 @@ void Communication::spin_once()
     {
         m_object_ex_ptr->spin_once();
     }
+    m_coordinate_received = false;
+    m_grasp_received = false;
+    m_train_received = false;
 }
