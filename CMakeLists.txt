@@ -64,3 +64,10 @@ add_executable(perception
 )
 target_link_libraries(perception ${catkin_LIBRARIES} ${PCL_LIBRARIES})
 add_dependencies(perception perception3d_gencpp)
+
+add_executable(communication
+  src/communication/communication.cpp
+  src/communication/communication_node.cpp
+)
+target_link_libraries(communication ${catkin_LIBRARIES} ${PCL_LIBRAIRES})
+add_dependencies(communication perception3d_gencpp)
