@@ -1,5 +1,6 @@
 #include <ros/ros.h>
 #include <objectExtractor.h>
+#include <communication.h>
 #include <jaco_custom.h>
 
 
@@ -32,7 +33,8 @@ int main (int argc, char** argv){
     nh.param("objects_visualizer",show_objects_in_viewer,true);
 
 
-    OBJ_EXTRACTOR_PTR = new ObjectExtractor(show_objects_in_viewer);
+    OBJ_EXTRACTOR_PTR = new ObjectExtractor(show_objects_in_viewer, n);
+    Communication* communication_ptr = new Communication(OBJ_EXTRACTOR_PTR);
     ros::Subscriber sub = n.subscribe("/custom/not_planes", 1, &ObjectExtractor::extraction_callback, OBJ_EXTRACTOR_PTR);
 
     JACO_PTR = new JacoCustom();
@@ -40,11 +42,7 @@ int main (int argc, char** argv){
     ros::Subscriber sub3 = n.subscribe("/jaco/finger_position", 1, &JacoCustom::fingers_position_callback, JACO_PTR);
 
     ros::Subscriber sub4 = n.subscribe("/camera/rgb/image_color", 1, &ObjectExtractor::callback_rgb_camera, OBJ_EXTRACTOR_PTR);
-    ros::Subscriber sub5 = n.subscribe("/coordinate_sender", 1, &ObjectExtractor::callback_coordinate_android, OBJ_EXTRACTOR_PTR);
-
-    ros::Publisher pub_image = n.advertise<sensor_msgs::Image>("/square_image",1);
-
-    ros::Publisher pub_android = n.advertise<std_msgs::String>("/android_listener",1);
+    ros::Subscriber sub5 = n.subscribe("/coordinate_sender", 1, &Communication::callback_android_listener, communication_ptr);
 
    // boost::thread thread_(sendCommandsToJaco,JACO_PTR,2.3);
     JACO_PTR->close_fingers();
@@ -55,26 +53,7 @@ int main (int argc, char** argv){
     while (ros::ok() && !OBJ_EXTRACTOR_PTR->pclViewer->wasStopped()) {
         ros::spinOnce();
         OBJ_EXTRACTOR_PTR->pclViewer->spinOnce (100);
-        if(OBJ_EXTRACTOR_PTR->is_coordinate_received())
-        {
-            OBJ_EXTRACTOR_PTR->coordinate_processing();
-            std_msgs::String response;
-            response.data = "p_un;";
-            pub_android.publish(response);
-            response.data = "object_recon";
-            pub_android.publish(response);
-        }
-        if(OBJ_EXTRACTOR_PTR->is_point_cloud_received())
-        {
-            OBJ_EXTRACTOR_PTR->point_cloud_processing();
-            pub_image.publish(OBJ_EXTRACTOR_PTR->get_image_input());
-        }
-        else
-        {
-            pub_image.publish(OBJ_EXTRACTOR_PTR->get_image_memory());
-        }
-        OBJ_EXTRACTOR_PTR->set_point_cloud_received();
-        OBJ_EXTRACTOR_PTR->set_coordinate_received();
+        communication_ptr->spin_once();
         r.sleep();
     }
 

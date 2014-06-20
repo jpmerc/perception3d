@@ -21,6 +21,9 @@
 #include <pcl/cloud_iterator.h>
 #include <pcl/common/centroid.h>
 #include <pcl/common/distances.h>
+#ifndef objectExtractor_H
+#define objectExtractor_H
+
 #include <pcl_ros/point_cloud.h>
 #include <sensor_msgs/Image.h>
 #include <std_msgs/UInt32MultiArray.h>
@@ -35,7 +38,7 @@ public:
     typedef pcl::PointXYZRGB PointT;
 
     //Methods
-    ObjectExtractor(bool showViewer);
+    ObjectExtractor(bool showViewer, ros::NodeHandle p_nh);
     void extraction_callback(const pcl::PCLPointCloud2ConstPtr& input);
     bool get_showUI();
     void set_showUI(bool show);
@@ -43,7 +46,6 @@ public:
     Eigen::Vector4f getGraspCentroid();
 
     void callback_rgb_camera(const sensor_msgs::Image& p_input);
-    void callback_coordinate_android(const std_msgs::String& p_input);
     Eigen::Matrix<float,4,1> compute_centroid_point(const pcl::PointCloud<PointT>& p_point_cloud);
     float compute_distance_from_kinect(Eigen::Matrix<float, 4, 1> p_matrix);
     void point_cloud_limit_finder (Eigen::Matrix<float, 4, 1> p_matrix, pcl::PointCloud<PointT>::Ptr p_ptr);
@@ -54,14 +56,11 @@ public:
     void draw_square(std::vector<unsigned char>& p_array, PointT p_top_left, PointT p_top_right, PointT p_bottom_left, PointT p_bottom_right);
     void image_processing(pcl::PointCloud<PointT>::Ptr p_point_cloud_corner, sensor_msgs::Image p_image_input);
     int position_finder_vector(const float p_coordinate[], const pcl::PointCloud<PointT>& p_point_cloud_corner, const std::vector<float> p_distance_vector);
-    bool is_coordinate_received();
-    bool is_point_cloud_received();
-    void coordinate_processing();
+
+    void coordinate_processing(const float p_coordinate[]);
     void point_cloud_processing();
-    sensor_msgs::Image get_image_input();
-    sensor_msgs::Image get_image_memory();
-    void set_point_cloud_received(bool p_bool = false);
-    void set_coordinate_received(bool p_bool = false);
+
+    void spin_once();
 
     // Variables
     boost::shared_ptr<pcl::visualization::PCLVisualizer> pclViewer;
@@ -86,6 +85,9 @@ private:
     bool showUI;
     int l_count;
 
+    ros::Publisher m_pub_image;
+    ros::Publisher m_pub_android;
+
     std::vector<pcl::PointCloud<PointT>::Ptr> m_object_vector_2d;
     pcl::PointCloud<PointT> m_corner_cloud;
     pcl::PointCloud<PointT>::Ptr m_point_cloud_corner_ptr;
@@ -103,3 +105,5 @@ private:
 
 
 };
+
+#endif

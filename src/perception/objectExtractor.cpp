@@ -3,7 +3,7 @@ typedef pcl::PointXYZRGB PointT;
 
 
 // -------------------------------------------------------------------------------------------------------- //
-ObjectExtractor::ObjectExtractor(bool showViewer){
+ObjectExtractor::ObjectExtractor(bool showViewer, ros::NodeHandle p_nh){
     cloud.reset(new pcl::PointCloud<PointT>);
     pclViewer.reset(new pcl::visualization::PCLVisualizer ("3DViewer"));
     pclViewer->registerKeyboardCallback(&ObjectExtractor::keyboard_callback,*this, (void*)&pclViewer);
@@ -15,6 +15,11 @@ ObjectExtractor::ObjectExtractor(bool showViewer){
 
     m_point_cloud_corner_ptr.reset(new pcl::PointCloud<PointT>);
     m_memory_point_cloud_corner_ptr.reset(new pcl::PointCloud<PointT>);
+
+    m_pub_image = p_nh.advertise<sensor_msgs::Image>("/square_image",1);
+
+    m_pub_android = p_nh.advertise<std_msgs::String>("/android_listener",1);
+
 
     setPCLViewer();
 }
@@ -199,28 +204,6 @@ void ObjectExtractor::callback_rgb_camera(const sensor_msgs::Image& p_input)
 {
     m_image_received_input = p_input;
     m_image_received_input.header = p_input.header;
-}
-
-//---------------------------------------------------------------------------------------------------------//
-void ObjectExtractor::callback_coordinate_android(const std_msgs::String& p_input)
-{
-    std::string string_temp = "";
-    for(int i = 0; i < p_input.data.size(); i ++)
-    {
-        if(p_input.data.at(i) == '_')
-        {
-            m_coordinate_user_sended[0] = atof(string_temp.c_str());
-            string_temp.clear();
-        }
-        else
-            string_temp += p_input.data.at(i);
-
-    }
-    m_coordinate_user_sended[1] = atof(string_temp.c_str());
-    m_coordinate_user_sended[0] = m_coordinate_user_sended[0]*640;
-    m_coordinate_user_sended[1] = m_coordinate_user_sended[1]*480;
-    m_coordinate_received = true;
-
 }
 
 //-------------------------------------------------------------------------------------------------------//
@@ -417,7 +400,6 @@ void ObjectExtractor::image_processing(pcl::PointCloud<PointT>::Ptr p_point_clou
     {
         m_image_memory.data.push_back(p_image_input.data.at(i));
     }
-    //publih in the main
 }
 
 //---------------------------------------------------------------------------------------------------------------//
@@ -453,35 +435,17 @@ int ObjectExtractor::position_finder_vector(const float p_coordinate[], const pc
     return -1;
 }
 
-//-----------------------------------------------------------------------------------------------------------------------//
-bool ObjectExtractor::is_coordinate_received()
-{
-    return m_coordinate_received;
-}
-
-//-----------------------------------------------------------------------------------------------------------------------//
-bool ObjectExtractor::is_point_cloud_received()
-{
-    return m_point_cloud_received;
-}
-
-//-------------------------------------------------------------------------------------------------------------------//
-sensor_msgs::Image ObjectExtractor::get_image_input()
-{
-    return m_image_received_input;
-}
-
-//-----------------------------------------------------------------------------------------------------------------------//
-sensor_msgs::Image ObjectExtractor::get_image_memory()
-{
-    return m_image_memory;
-}
 
 //----------------------------------------------------------------------------------------------------------------------//
-void ObjectExtractor::coordinate_processing()
+void ObjectExtractor::coordinate_processing(const float p_coordinate[])
 {
     //a  concerver dans un attribut ou autre element pour pouvoir l'utiliser apres
-    int position_in_vector = position_finder_vector(m_coordinate_user_sended, *m_memory_point_cloud_corner_ptr, m_memory_distance_vector);
+    int position_in_vector = position_finder_vector(p_coordinate, *m_memory_point_cloud_corner_ptr, m_memory_distance_vector);
+    std_msgs::String send_string;
+    send_string.data = "p_un;deux";
+    m_pub_android.publish(send_string);
+    send_string.data = "object_recon";
+    m_pub_android.publish(send_string);
 }
 
 //----------------------------------------------------------------------------------------------------------------------------//
@@ -493,14 +457,19 @@ void ObjectExtractor::point_cloud_processing()
     m_memory_point_cloud = object_vector;
 }
 
-//--------------------------------------------------------------------------------------------------------------------------------//
-void ObjectExtractor::set_point_cloud_received(bool p_bool)
+
+//---------------------------------------------------------------------------------------------------------------------------------------//
+void ObjectExtractor::spin_once()
 {
-    m_point_cloud_received = p_bool;
+    if(m_point_cloud_received)
+    {
+        point_cloud_processing();
+        m_pub_image.publish(m_image_received_input);
+    }
+    else
+    {
+        m_pub_image.publish(m_image_memory);
+    }
+    m_point_cloud_received = false;
 }
 
-//------------------------------------------------------------------------------------------------------------------------------------//
-void ObjectExtractor::set_coordinate_received(bool p_bool)
-{
-    m_coordinate_received = false;
-}
