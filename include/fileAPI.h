@@ -21,8 +21,9 @@ struct Object{
 
 class fileAPI{
 public:
-    fileAPI(string url);
+    fileAPI(string directory);
     Object createObject(string name,pcl::PointCloud<pcl::PointXYZRGB>::Ptr object_pointcloud,geometry_msgs::PoseStampedConstPtr relative_arm_pose,geometry_msgs::PoseStampedConstPtr object_pose);
+    string findDefaultName(); //Parse the directory and find a new name for the object
     void saveObject(Object obj);
     void save(string name,pcl::PointCloud<pcl::PointXYZRGB>::Ptr object_pointcloud,geometry_msgs::PoseStampedConstPtr relative_arm_pose,geometry_msgs::PoseStampedConstPtr object_pose);
     vector<Object> getAllObjects();
@@ -34,3 +35,5 @@ private:
     int highest_index;
 
 };
+
+#endif

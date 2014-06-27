@@ -199,6 +199,11 @@ Eigen::Vector4f ObjectExtractor::getGraspCentroid(){
     return c;
 }
 
+// -------------------------------------------------------------------------------------------------------- //
+pcl::PointCloud<PointT>::Ptr ObjectExtractor::getObjectToGrasp(){
+    return object_to_grasp;
+}
+
 //---------------------------------------------------------------------------------------------------------//
 void ObjectExtractor::callback_rgb_camera(const sensor_msgs::Image& p_input)
 {

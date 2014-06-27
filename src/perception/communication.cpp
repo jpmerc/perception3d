@@ -1,11 +1,13 @@
 #include <communication.h>
 
-Communication::Communication(ObjectExtractor* p_obj_e)
+Communication::Communication(ObjectExtractor *p_obj_e, fileAPI *p_api, JacoCustom *p_jaco)
 {
+    m_object_ex_ptr = p_obj_e;
+    m_api_ptr = p_api;
+    m_jaco_ptr = p_jaco;
     m_coordinate_received = false;
     m_grasp_received = false;
     m_train_received = false;
-    m_object_ex_ptr = p_obj_e;
 }
 
 //-----------------------------------------------------------------------------------//
@@ -87,13 +89,13 @@ void Communication::spin_once()
         m_object_ex_ptr->coordinate_processing(m_coordinate_user_sended);
         m_object_ex_ptr->spin_once();
     }
-    else if(m_grasp_received)
-    {
-        //do the process
-    }
     else if(m_train_received)
     {
-        //do the process
+        train();
+    }
+    else if(m_grasp_received)
+    {
+
     }
     else
     {
@@ -103,3 +105,56 @@ void Communication::spin_once()
     m_grasp_received = false;
     m_train_received = false;
 }
+
+//-----------------------------------------------------------------------------------------------//
+void Communication::train(){
+    //
+    Object obj;
+    obj.name = m_api_ptr->findDefaultName();
+    obj.object_pointcloud = m_object_ex_ptr->getObjectToGrasp();
+
+    //obj.object_pose = ; // find object pose
+
+    geometry_msgs::PoseStamped arm_pose_before_grasp = m_jaco_ptr->getGraspArmPosition();
+
+    // find the arm pose in the camera frame and then compute the difference between the 2 poses
+
+
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

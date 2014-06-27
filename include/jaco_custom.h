@@ -1,3 +1,6 @@
+#ifndef jaco_custom_H
+#define jaco_custom_H
+
 #include <ros/ros.h>
 
 #include <actionlib/client/simple_action_client.h>
@@ -12,7 +15,7 @@
 
 class JacoCustom{
 public:
-    JacoCustom();
+    JacoCustom(ros::NodeHandle &node);
     void arm_position_callback (const geometry_msgs::PoseStampedConstPtr& input_pose);
     void fingers_position_callback(const jaco_msgs::FingerPositionConstPtr& input_fingers);
     void open_fingers();
@@ -22,9 +25,7 @@ public:
     geometry_msgs::PoseStamped getArmPosition();
     jaco_msgs::FingerPosition getFingersPosition();
 
-
-
-
+    geometry_msgs::PoseStamped getGraspArmPosition();
 
 private:
 
@@ -33,11 +34,6 @@ private:
 
     void wait_for_arm_stopped();
     void wait_for_fingers_stopped();
-
-    void open_fingers_thread();
-    void close_fingers_thread();
-    void move_up_thread(double distance);
-    void moveToPoint_thread(double x, double y, double z, double rotx, double roty, double rotz, double rotw);
 
     geometry_msgs::PoseStamped arm_pose;
     jaco_msgs::FingerPosition fingers_pose;
@@ -54,4 +50,7 @@ private:
     bool check_fingers_status;
     int fingers_are_stopped_counter;
 
+
 };
+
+#endif

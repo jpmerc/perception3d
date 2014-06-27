@@ -1,7 +1,8 @@
 #include "jaco_custom.h"
 
+using namespace std;
 
-JacoCustom::JacoCustom(){
+JacoCustom::JacoCustom(ros::NodeHandle &node){
     end_program = false;
 
     arm_is_stopped = false;
@@ -30,6 +31,7 @@ void JacoCustom::arm_position_callback (const geometry_msgs::PoseStampedConstPtr
     arm_mutex.lock();
     arm_pose = *input_pose;
     arm_mutex.unlock();
+
 }
 
 
@@ -48,15 +50,13 @@ void JacoCustom::fingers_position_callback(const jaco_msgs::FingerPositionConstP
     fingers_mutex.lock();
     fingers_pose = *input_fingers;
     fingers_mutex.unlock();
+
+    cout << "finger 1 : " << input_fingers->Finger_1 << endl;
+
 }
 
 
 void JacoCustom::open_fingers(){
-    boost::thread t(&JacoCustom::open_fingers_thread,this);
-    t.join();
-}
-
-void JacoCustom::open_fingers_thread(){
     actionlib::SimpleActionClient<jaco_msgs::SetFingersPositionAction> action_client("jaco/finger_joint_angles",true);
     action_client.waitForServer();
     jaco_msgs::SetFingersPositionGoal fingers = jaco_msgs::SetFingersPositionGoal();
@@ -64,16 +64,10 @@ void JacoCustom::open_fingers_thread(){
     fingers.fingers.Finger_2 = 0;
     fingers.fingers.Finger_3 = 0;
     action_client.sendGoal(fingers);
-    this->wait_for_fingers_stopped();
+    wait_for_fingers_stopped();
 }
-
 
 void JacoCustom::close_fingers(){
-    boost::thread t(&JacoCustom::close_fingers_thread,this);
-    //t.join();
-}
-
-void JacoCustom::close_fingers_thread(){
     actionlib::SimpleActionClient<jaco_msgs::SetFingersPositionAction> action_client("jaco/finger_joint_angles",true);
     action_client.waitForServer();
     jaco_msgs::SetFingersPositionGoal fingers = jaco_msgs::SetFingersPositionGoal();
@@ -81,37 +75,26 @@ void JacoCustom::close_fingers_thread(){
     fingers.fingers.Finger_2 = 60;
     fingers.fingers.Finger_3 = 60;
     action_client.sendGoal(fingers);
-    this->wait_for_fingers_stopped();
+    wait_for_fingers_stopped();
 }
 
 
 void JacoCustom::move_up(double distance){
-    boost::thread t(&JacoCustom::move_up_thread,this,distance);
-    //t.join();
-}
-
-void JacoCustom::move_up_thread(double distance){
     actionlib::SimpleActionClient<jaco_msgs::ArmPoseAction> action_client("/jaco/arm_pose",true);
     action_client.waitForServer();
     jaco_msgs::ArmPoseGoal pose_goal = jaco_msgs::ArmPoseGoal();
 
-    this->arm_mutex.lock();
+    arm_mutex.lock();
     pose_goal.pose = this->arm_pose;
     pose_goal.pose.header.frame_id = "/jaco_api_origin";
     pose_goal.pose.pose.position.z += distance;
-    this->arm_mutex.unlock();
+    arm_mutex.unlock();
 
     action_client.sendGoal(pose_goal);
-    this->wait_for_arm_stopped();
+    wait_for_arm_stopped();
 }
-
 
 void JacoCustom::moveToPoint(double x, double y, double z, double rotx, double roty, double rotz, double rotw){
-    boost::thread t(&JacoCustom::moveToPoint_thread,this,x,y,z,rotx,roty,rotz,rotw);
-    t.join();
-}
-
-void JacoCustom::moveToPoint_thread(double x, double y, double z, double rotx, double roty, double rotz, double rotw){
     actionlib::SimpleActionClient<jaco_msgs::ArmPoseAction> action_client("/jaco/arm_pose",true);
     action_client.waitForServer();
     jaco_msgs::ArmPoseGoal pose_goal = jaco_msgs::ArmPoseGoal();
@@ -126,8 +109,9 @@ void JacoCustom::moveToPoint_thread(double x, double y, double z, double rotx, d
     pose_goal.pose.pose.orientation.w = rotw;
     action_client.sendGoal(pose_goal);
 
-    this->wait_for_arm_stopped();
+    wait_for_arm_stopped();
 }
+
 
 geometry_msgs::PoseStamped JacoCustom::getArmPosition(){
     return arm_pose;
@@ -136,6 +120,11 @@ geometry_msgs::PoseStamped JacoCustom::getArmPosition(){
 jaco_msgs::FingerPosition JacoCustom::getFingersPosition(){
     return fingers_pose;
 }
+
+geometry_msgs::PoseStamped JacoCustom::getGraspArmPosition(){
+
+}
+
 
 bool JacoCustom::is_same_pose(geometry_msgs::PoseStamped* pose1, geometry_msgs::PoseStampedConstPtr pose2){
     bool cond1 = pose1->pose.position.x == pose2->pose.position.x;
@@ -195,9 +184,6 @@ void JacoCustom::wait_for_fingers_stopped(){
     std::cout << "Finished moving the fingers!" << std::endl;
     check_fingers_status = false;
 }
-
-
-
 
 
 

@@ -1,3 +1,6 @@
+#ifndef objectExtractor_H
+#define objectExtractor_H
+
 #include <ros/ros.h>
 
 #include <pcl_conversions/pcl_conversions.h>
@@ -21,8 +24,7 @@
 #include <pcl/cloud_iterator.h>
 #include <pcl/common/centroid.h>
 #include <pcl/common/distances.h>
-#ifndef objectExtractor_H
-#define objectExtractor_H
+
 
 #include <pcl_ros/point_cloud.h>
 #include <sensor_msgs/Image.h>
@@ -44,6 +46,7 @@ public:
     void set_showUI(bool show);
     void toggle_showUI();
     Eigen::Vector4f getGraspCentroid();
+    pcl::PointCloud<PointT>::Ptr getObjectToGrasp();
 
     void callback_rgb_camera(const sensor_msgs::Image& p_input);
     Eigen::Matrix<float,4,1> compute_centroid_point(const pcl::PointCloud<PointT>& p_point_cloud);
