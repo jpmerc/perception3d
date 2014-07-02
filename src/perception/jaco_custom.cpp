@@ -114,15 +114,54 @@ void JacoCustom::moveToPoint(double x, double y, double z, double rotx, double r
 
 
 geometry_msgs::PoseStamped JacoCustom::getArmPosition(){
-    return arm_pose;
+    arm_mutex.lock();
+    geometry_msgs::PoseStamped arm = arm_pose;
+    arm_mutex.unlock();
+    return arm;
 }
 
 jaco_msgs::FingerPosition JacoCustom::getFingersPosition(){
-    return fingers_pose;
+    fingers_mutex.lock();
+    jaco_msgs::FingerPosition pose = fingers_pose;
+    fingers_mutex.unlock();
+    return pose;
 }
 
 geometry_msgs::PoseStamped JacoCustom::getGraspArmPosition(){
+    // It is supposed that the fingers are open at the beginning and that the user is teaching the grasp
+    // position when the fingers are closing
 
+    jaco_msgs::FingerPosition old_pose = getFingersPosition();
+    jaco_msgs::FingerPosition new_pose;
+
+    // If the fingers are closed by more than threshold angle, open the fingers
+    double treshold = 10.0;
+    if(old_pose.Finger_1 > treshold || old_pose.Finger_2 > treshold || old_pose.Finger_3 > treshold){
+        open_fingers();
+    }
+
+    bool cond = true;
+    ros::Rate r(4);
+    int closing_count = 0;
+    double closed_threshold = 45;
+    while(cond){
+        r.sleep();
+        new_pose = getFingersPosition();
+
+        // break the loop if the count is bigger or equal than 5 or if the angle of the fingers are bigger than a certain angle (threshold)
+        if(closing_count >= 5 || new_pose.Finger_1 > closed_threshold || new_pose.Finger_2 > closed_threshold || new_pose.Finger_3 > closed_threshold){
+            cond = false;
+        }
+        // increment the counter if the angles of the fingers are bigger than the previous iteration
+        else if(new_pose.Finger_1 > old_pose.Finger_1 || new_pose.Finger_2 > old_pose.Finger_2 || new_pose.Finger_3 > old_pose.Finger_3){
+            closing_count++;
+        }
+        else{
+            closing_count = 0;
+        }
+    }
+
+    return getArmPosition();
 }
 
 
