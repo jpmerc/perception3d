@@ -120,6 +120,15 @@ geometry_msgs::PoseStamped JacoCustom::getArmPosition(){
     return arm;
 }
 
+tf::StampedTransform JacoCustom::getArmPositionFromCamera(){
+    tf::TransformListener listener;
+    tf::StampedTransform transform;
+    listener.waitForTransform("camera_link","jaco_link_hand",ros::Time(0),ros::Duration(1.0));
+    listener.lookupTransform("camera_link","jaco_link_hand",ros::Time(0),transform);
+    return transform;
+}
+
+
 jaco_msgs::FingerPosition JacoCustom::getFingersPosition(){
     fingers_mutex.lock();
     jaco_msgs::FingerPosition pose = fingers_pose;
@@ -127,7 +136,7 @@ jaco_msgs::FingerPosition JacoCustom::getFingersPosition(){
     return pose;
 }
 
-geometry_msgs::PoseStamped JacoCustom::getGraspArmPosition(){
+tf::StampedTransform JacoCustom::getGraspArmPosition(){
     // It is supposed that the fingers are open at the beginning and that the user is teaching the grasp
     // position when the fingers are closing
 
@@ -161,7 +170,7 @@ geometry_msgs::PoseStamped JacoCustom::getGraspArmPosition(){
         }
     }
 
-    return getArmPosition();
+    return getArmPositionFromCamera();
 }
 
 

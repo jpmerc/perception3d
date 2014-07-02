@@ -110,12 +110,12 @@ void Communication::spin_once()
 void Communication::train(){
     //
     Object obj;
-    obj.name = m_api_ptr->findDefaultName();
-    obj.object_pointcloud = m_object_ex_ptr->getObjectToGrasp();
+    //obj.name = m_api_ptr->findDefaultName();
+    //obj.object_pointcloud = m_object_ex_ptr->getObjectToGrasp();
 
     //obj.object_pose = ; // find object pose
 
-    geometry_msgs::PoseStamped arm_pose_before_grasp = m_jaco_ptr->getGraspArmPosition();
+    tf::StampedTransform arm_pose_before_grasp = m_jaco_ptr->getGraspArmPosition();
 
     // find the arm pose in the camera frame and then compute the difference between the 2 poses
 

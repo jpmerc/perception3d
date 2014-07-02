@@ -12,6 +12,10 @@
 #include <boost/thread/mutex.hpp>
 #include <boost/thread/thread.hpp>
 
+#include <tf/transform_datatypes.h>
+#include <tf/tf.h>
+#include <tf/transform_listener.h>
+
 
 class JacoCustom{
 public:
@@ -24,8 +28,8 @@ public:
     void moveToPoint(double x, double y, double z, double rotx, double roty, double rotz, double rotw);
     geometry_msgs::PoseStamped getArmPosition();
     jaco_msgs::FingerPosition getFingersPosition();
-
-    geometry_msgs::PoseStamped getGraspArmPosition();
+    tf::StampedTransform getArmPositionFromCamera();
+    tf::StampedTransform getGraspArmPosition();
 
 private:
 
