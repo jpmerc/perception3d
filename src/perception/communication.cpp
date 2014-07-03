@@ -16,9 +16,9 @@ void Communication::callback_android_listener(const std_msgs::String &p_input)
 
     switch(p_input.data[0])
     {
-        case('c'):coordinate_processing(p_input);break;
-        case('t'):train_processing(p_input);break;
-        case('g'):grasp_processing(p_input);break;
+    case('c'):coordinate_processing(p_input);break;
+    case('t'):train_processing(p_input);break;
+    case('g'):grasp_processing(p_input);break;
     default:break;
     }
 }
@@ -117,8 +117,24 @@ void Communication::train(){
 
     tf::StampedTransform arm_pose_before_grasp = m_jaco_ptr->getGraspArmPosition();
 
-    // find the arm pose in the camera frame and then compute the difference between the 2 poses
+    // For testing purposes only, comment the following line and uncomment previous one
+   // tf::StampedTransform arm_pose_before_grasp = m_jaco_ptr->getArmPositionFromCamera();
 
+
+    cout << "arm pose : [" <<   arm_pose_before_grasp.getOrigin().getX() << ", " <<
+            arm_pose_before_grasp.getOrigin().getY() << ", " <<
+            arm_pose_before_grasp.getOrigin().getZ() << "]" << endl;
+
+
+    // find the arm pose in the camera frame and then compute the difference between the 2 poses
+    Eigen::Vector4f object_pose = m_object_ex_ptr->getGraspCentroid();
+    cout << "object pose : [" <<  object_pose[2] << ", " << -object_pose[0] << ", " << -object_pose[1] << "]" << endl;
+
+    tf::Pose tf_pose;
+    tf_pose.setIdentity();
+    tf_pose.setOrigin(tf::Vector3(object_pose[2],-object_pose[0],-object_pose[1]));
+    static tf::TransformBroadcaster br;
+    br.sendTransform(tf::StampedTransform(tf_pose, ros::Time::now(), "camera_rgb_frame", "detected_object_centroids"));
 
 }
 

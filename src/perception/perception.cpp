@@ -20,6 +20,14 @@ void callbackThread(){
     }
 }
 
+void trainFunctionTestThread(Communication *communication_ptr){
+    ros::NodeHandle n;ros::Rate r(1);
+    while(n.ok()){
+        communication_ptr->train();
+        r.sleep();
+    }
+}
+
 int main (int argc, char** argv){
     ros::init (argc, argv, "perception");
     ros::NodeHandle n;
@@ -50,6 +58,9 @@ int main (int argc, char** argv){
     ros::SubscribeOptions arm = ros::SubscribeOptions::create<geometry_msgs::PoseStamped>(arm_topic,1,boost::bind(&JacoCustom::arm_position_callback,JACO_PTR,_1),ros::VoidPtr(),&jaco_callbacks);
     ros::Subscriber sub_a = n.subscribe(arm);
     boost::thread spin_thread(callbackThread);
+
+    // Thread to test the training phase of the system
+    boost::thread trainTest(trainFunctionTestThread,communication_ptr);
 
     // Spin threads
     ros::Rate r(5);

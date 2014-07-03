@@ -51,7 +51,7 @@ void JacoCustom::fingers_position_callback(const jaco_msgs::FingerPositionConstP
     fingers_pose = *input_fingers;
     fingers_mutex.unlock();
 
-    cout << "finger 1 : " << input_fingers->Finger_1 << endl;
+    //cout << "finger 1 : " << input_fingers->Finger_1 << endl;
 
 }
 
@@ -123,8 +123,8 @@ geometry_msgs::PoseStamped JacoCustom::getArmPosition(){
 tf::StampedTransform JacoCustom::getArmPositionFromCamera(){
     tf::TransformListener listener;
     tf::StampedTransform transform;
-    listener.waitForTransform("camera_link","jaco_link_hand",ros::Time(0),ros::Duration(1.0));
-    listener.lookupTransform("camera_link","jaco_link_hand",ros::Time(0),transform);
+    listener.waitForTransform("camera_rgb_frame","jaco_end_effector",ros::Time(0),ros::Duration(1.0));
+    listener.lookupTransform("camera_rgb_frame","jaco_end_effector",ros::Time(0),transform);
     return transform;
 }
 

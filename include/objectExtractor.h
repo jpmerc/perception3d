@@ -75,7 +75,7 @@ private:
     std::vector<pcl::PointCloud<PointT>::Ptr> segment_objects(pcl::PointCloud<PointT>::Ptr cloud_input, double tolerance, int minClusterSize, int maxClusterSize);
     pcl::PointCloud<PointT>::Ptr extract_object_from_indices(pcl::PointCloud<PointT>::Ptr cloud_input,pcl::PointIndices object_indices);
     void setPCLViewer();
-    
+    void refreshObjectCentroid();
 
 
 
@@ -83,6 +83,7 @@ private:
     pcl::PointCloud<PointT>::Ptr cloud;
     std::vector<pcl::PointCloud<PointT>::Ptr> object_vector;
     pcl::PointCloud<PointT>::Ptr object_to_grasp;
+    pcl::PointCloud<PointT>::Ptr tracked_object_centroid;
     int index_to_grasp;
     bool initialize_object_to_grasp;
     bool showUI;
