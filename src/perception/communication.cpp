@@ -1,11 +1,13 @@
 #include <communication.h>
 
-Communication::Communication(ObjectExtractor* p_obj_e)
+Communication::Communication(ObjectExtractor *p_obj_e, fileAPI *p_api, JacoCustom *p_jaco)
 {
+    m_object_ex_ptr = p_obj_e;
+    m_api_ptr = p_api;
+    m_jaco_ptr = p_jaco;
     m_coordinate_received = false;
     m_grasp_received = false;
     m_train_received = false;
-    m_object_ex_ptr = p_obj_e;
 }
 
 //-----------------------------------------------------------------------------------//
@@ -14,9 +16,9 @@ void Communication::callback_android_listener(const std_msgs::String &p_input)
 
     switch(p_input.data[0])
     {
-        case('c'):coordinate_processing(p_input);break;
-        case('t'):train_processing(p_input);break;
-        case('g'):grasp_processing(p_input);break;
+    case('c'):coordinate_processing(p_input);break;
+    case('t'):train_processing(p_input);break;
+    case('g'):grasp_processing(p_input);break;
     default:break;
     }
 }
@@ -87,13 +89,13 @@ void Communication::spin_once()
         m_object_ex_ptr->coordinate_processing(m_coordinate_user_sended);
         m_object_ex_ptr->spin_once();
     }
-    else if(m_grasp_received)
-    {
-        //do the process
-    }
     else if(m_train_received)
     {
-        //do the process
+        train();
+    }
+    else if(m_grasp_received)
+    {
+
     }
     else
     {
@@ -103,3 +105,72 @@ void Communication::spin_once()
     m_grasp_received = false;
     m_train_received = false;
 }
+
+//-----------------------------------------------------------------------------------------------//
+void Communication::train(){
+    //
+    Object obj;
+    //obj.name = m_api_ptr->findDefaultName();
+    //obj.object_pointcloud = m_object_ex_ptr->getObjectToGrasp();
+
+    //obj.object_pose = ; // find object pose
+
+    tf::StampedTransform arm_pose_before_grasp = m_jaco_ptr->getGraspArmPosition();
+
+    // For testing purposes only, comment the following line and uncomment previous one
+   // tf::StampedTransform arm_pose_before_grasp = m_jaco_ptr->getArmPositionFromCamera();
+
+
+    cout << "arm pose : [" <<   arm_pose_before_grasp.getOrigin().getX() << ", " <<
+            arm_pose_before_grasp.getOrigin().getY() << ", " <<
+            arm_pose_before_grasp.getOrigin().getZ() << "]" << endl;
+
+
+    // find the arm pose in the camera frame and then compute the difference between the 2 poses
+    Eigen::Vector4f object_pose = m_object_ex_ptr->getGraspCentroid();
+    cout << "object pose : [" <<  object_pose[2] << ", " << -object_pose[0] << ", " << -object_pose[1] << "]" << endl;
+
+    tf::Pose tf_pose;
+    tf_pose.setIdentity();
+    tf_pose.setOrigin(tf::Vector3(object_pose[2],-object_pose[0],-object_pose[1]));
+    static tf::TransformBroadcaster br;
+    br.sendTransform(tf::StampedTransform(tf_pose, ros::Time::now(), "camera_rgb_frame", "detected_object_centroids"));
+
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

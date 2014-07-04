@@ -11,6 +11,7 @@ ObjectExtractor::ObjectExtractor(bool showViewer, ros::NodeHandle p_nh){
     l_count = 0;
     index_to_grasp = 0;
     object_to_grasp.reset(new pcl::PointCloud<PointT>);
+    tracked_object_centroid.reset(new pcl::PointCloud<PointT>);
     initialize_object_to_grasp = true;
 
     m_point_cloud_corner_ptr.reset(new pcl::PointCloud<PointT>);
@@ -45,7 +46,7 @@ void ObjectExtractor::extraction_callback(const pcl::PCLPointCloud2ConstPtr& inp
 
     // Initialize object to grasp
     if((!object_vector.empty()) && initialize_object_to_grasp){
-        object_to_grasp = object_vector[index_to_grasp];
+        refreshObjectCentroid();
         initialize_object_to_grasp = false;
     }
 
@@ -84,13 +85,17 @@ void ObjectExtractor::printToPCLViewer(){
         pclViewer->setPointCloudRenderingProperties (pcl::visualization::PCL_VISUALIZER_POINT_SIZE, 1, pc_name);
     }
 
-//    pcl::visualization::PointCloudColorHandlerRGBField<PointT> rgb(object_to_grasp);
-//    pclViewer->addPointCloud<PointT>(object_to_grasp,rgb,"object_to_grasp");
-//    pclViewer->setPointCloudRenderingProperties (pcl::visualization::PCL_VISUALIZER_POINT_SIZE, 1, "object_to_grasp");
+    //    pcl::visualization::PointCloudColorHandlerRGBField<PointT> rgb(object_to_grasp);
+    //    pclViewer->addPointCloud<PointT>(object_to_grasp,rgb,"object_to_grasp");
+    //    pclViewer->setPointCloudRenderingProperties (pcl::visualization::PCL_VISUALIZER_POINT_SIZE, 1, "object_to_grasp");
 
     pcl::visualization::PointCloudColorHandlerCustom<PointT> yellow_color(object_to_grasp, 255, 255, 102);
     pclViewer->addPointCloud<PointT>(object_to_grasp,yellow_color,"object_to_grasp");
     pclViewer->setPointCloudRenderingProperties (pcl::visualization::PCL_VISUALIZER_POINT_SIZE, 1, "object_to_grasp");
+
+    pcl::visualization::PointCloudColorHandlerCustom<PointT> centroid_color (tracked_object_centroid, 255, 0, 255);
+    pclViewer->addPointCloud<PointT> (tracked_object_centroid, centroid_color, "centroid");
+    pclViewer->setPointCloudRenderingProperties (pcl::visualization::PCL_VISUALIZER_POINT_SIZE, 12, "centroid");
 }
 
 // -------------------------------------------------------------------------------------------------------- //
@@ -114,7 +119,8 @@ void ObjectExtractor::keyboard_callback(const pcl::visualization::KeyboardEvent 
                 index_to_grasp = 0;
             }
             // object_to_track = addNormalsToPointCloud(object_vector[index_to_track]);
-            object_to_grasp = object_vector[index_to_grasp];
+            refreshObjectCentroid();
+
         }
     }
     else{
@@ -198,6 +204,11 @@ Eigen::Vector4f ObjectExtractor::getGraspCentroid(){
     Eigen::Vector4f c;
     pcl::compute3DCentroid<PointT>(*object_to_grasp,c);
     return c;
+}
+
+// -------------------------------------------------------------------------------------------------------- //
+pcl::PointCloud<PointT>::Ptr ObjectExtractor::getObjectToGrasp(){
+    return object_to_grasp;
 }
 
 //---------------------------------------------------------------------------------------------------------//
@@ -475,3 +486,16 @@ void ObjectExtractor::spin_once()
     }
     m_point_cloud_received = false;
 }
+
+void ObjectExtractor::refreshObjectCentroid(){
+    // Change object to grasp
+    object_to_grasp = object_vector[index_to_grasp];
+
+    // Refresh the position of the object centroid
+    Eigen::Vector4f c = getGraspCentroid();
+    PointT pt;
+    pt.x = c[0]; pt.y = c[1]; pt.z = c[2];
+    tracked_object_centroid->clear();
+    tracked_object_centroid->push_back(pt);
+}
+

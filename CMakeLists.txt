@@ -57,7 +57,6 @@ add_executable(perception
   src/perception/perception.cpp
   src/perception/objectExtractor.cpp
   src/perception/jaco_custom.cpp
-  src/perception/teacher.cpp
   src/perception/communication.cpp
   src/perception/fileAPI.cpp
   src/perception/object_recognition.cpp

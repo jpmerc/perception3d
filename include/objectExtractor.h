@@ -48,6 +48,7 @@ public:
     void set_showUI(bool show);
     void toggle_showUI();
     Eigen::Vector4f getGraspCentroid();
+    pcl::PointCloud<PointT>::Ptr getObjectToGrasp();
 
     void callback_rgb_camera(const sensor_msgs::Image& p_input);
     Eigen::Matrix<float,4,1> compute_centroid_point(const pcl::PointCloud<PointT>& p_point_cloud);
@@ -77,7 +78,7 @@ private:
     std::vector<pcl::PointCloud<PointT>::Ptr> segment_objects(pcl::PointCloud<PointT>::Ptr cloud_input, double tolerance, int minClusterSize, int maxClusterSize);
     pcl::PointCloud<PointT>::Ptr extract_object_from_indices(pcl::PointCloud<PointT>::Ptr cloud_input,pcl::PointIndices object_indices);
     void setPCLViewer();
-    
+    void refreshObjectCentroid();
 
 
 
@@ -85,6 +86,7 @@ private:
     pcl::PointCloud<PointT>::Ptr cloud;
     std::vector<pcl::PointCloud<PointT>::Ptr> object_vector;
     pcl::PointCloud<PointT>::Ptr object_to_grasp;
+    pcl::PointCloud<PointT>::Ptr tracked_object_centroid;
     int index_to_grasp;
     bool initialize_object_to_grasp;
     bool showUI;
