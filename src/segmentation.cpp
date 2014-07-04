@@ -18,6 +18,10 @@
 #include <pcl/segmentation/extract_clusters.h>
 #include <pcl/common/time.h>
 
+#include<pcl/surface/convex_hull.h>
+#include <pcl/segmentation/extract_polygonal_prism_data.h>
+
+
 ros::Publisher pub;
 ros::Publisher pub2;
 ros::Publisher pub3;
@@ -60,7 +64,22 @@ pcl::PCLPointCloud2Ptr passthrough_filter(pcl::PCLPointCloud2Ptr cloud_input, do
     pt_filter.setInputCloud (cloud_input);
     pcl::PCLPointCloud2::Ptr cloud_filtered(new pcl::PCLPointCloud2);
     pt_filter.filter (*cloud_filtered);
-    return cloud_filtered;
+
+    //added by JeanJean
+    pt_filter.setInputCloud(cloud_filtered);
+    pt_filter.setFilterFieldName("x");
+    pt_filter.setFilterLimits(-1.0, 1.0);
+    pcl::PCLPointCloud2::Ptr ptr_cloud_filtered_x(new pcl::PCLPointCloud2);
+    pt_filter.filter(*ptr_cloud_filtered_x);
+
+    pt_filter.setInputCloud(ptr_cloud_filtered_x);
+    pt_filter.setFilterFieldName("y");
+    pt_filter.setFilterLimits(-1.0, 1.0);
+    pcl::PCLPointCloud2::Ptr ptr_cloud_filtered_y(new pcl::PCLPointCloud2);
+    pt_filter.filter(*ptr_cloud_filtered_y);
+    /////////////////////////////////////////////////
+
+    return ptr_cloud_filtered_y;
 }
 
 pcl::PointCloud<pcl::PointXYZRGB>::Ptr radius_outlier_removal_filter(pcl::PointCloud<pcl::PointXYZRGB>::Ptr cloud_input, double radius, int minNN){
@@ -125,6 +144,29 @@ pcl::PointCloud<pcl::PointXYZRGB>::Ptr plane_segmentation(pcl::PointCloud<pcl::P
         iterationNumber++;
     }
 
+    //extraction with polygon extractor
+    pcl::PointCloud<pcl::PointXYZRGB>::Ptr table_hull_ptr(new pcl::PointCloud<pcl::PointXYZRGB>);
+    pcl::ConvexHull<pcl::PointXYZRGB> hull;
+
+    hull.setInputCloud(segmented_planes);
+    hull.reconstruct(*table_hull_ptr);
+
+    pcl::ExtractPolygonalPrismData<pcl::PointXYZRGB> prism;
+    pcl::PointIndices::Ptr indices_ptr(new pcl::PointIndices);
+
+    prism.setInputCloud(segmented_planes);
+    prism.setInputPlanarHull(table_hull_ptr);
+    prism.setHeightLimits(0.1, 0.5);
+    prism.segment(*indices_ptr);
+
+    pcl::PointCloud<pcl::PointXYZRGB>::Ptr object_point_cloud_ptr(new pcl::PointCloud<pcl::PointXYZRGB>);
+    pcl::ExtractIndices<pcl::PointXYZRGB> extract2;
+    extract2.setInputCloud(segmented_planes);
+    extract2.setIndices(indices_ptr);
+    extract2.filter(*object_point_cloud_ptr);
+    return object_point_cloud_ptr;
+
+    ////////////////
     return segmented_planes;
 }
 

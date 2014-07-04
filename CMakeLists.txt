@@ -40,9 +40,6 @@ target_link_libraries(segmentation ${catkin_LIBRARIES} ${PCL_LIBRARIES})
 #target_link_libraries(connected_segmentation ${catkin_LIBRARIES} ${PCL_LIBRARIES})
 #add_dependencies(connected_segmentation perception3d_gencpp)
 
-#add_executable(square_draw src/square_draw.cpp)
-#target_link_libraries(square_draw ${catkin_LIBRARIES} ${PCL_LIBRARIES})
-#add_dependencies(square_draw perception3d_gencpp)
 
 #add_executable(find_cloud src/find_cloud.cpp)
 #target_link_libraries(find_cloud ${catkin_LIBRARIES} ${PCL_LIBRARIES})
@@ -63,6 +60,7 @@ add_executable(perception
   src/perception/teacher.cpp
   src/perception/communication.cpp
   src/perception/fileAPI.cpp
+  src/perception/object_recognition.cpp
 )
 target_link_libraries(perception ${catkin_LIBRARIES} ${PCL_LIBRARIES})
 add_dependencies(perception perception3d_gencpp)

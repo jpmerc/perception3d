@@ -1,3 +1,6 @@
+#ifndef objectExtractor_H
+#define objectExtractor_H
+
 #include <ros/ros.h>
 
 #include <pcl_conversions/pcl_conversions.h>
@@ -21,8 +24,7 @@
 #include <pcl/cloud_iterator.h>
 #include <pcl/common/centroid.h>
 #include <pcl/common/distances.h>
-#ifndef objectExtractor_H
-#define objectExtractor_H
+
 
 #include <pcl_ros/point_cloud.h>
 #include <sensor_msgs/Image.h>
@@ -31,6 +33,8 @@
 #include <boost/thread/mutex.hpp>
 #include <stdio.h>
 #include <stdlib.h>
+
+#include<object_recognition.h>
 
 
 class ObjectExtractor{
@@ -61,6 +65,7 @@ public:
     void point_cloud_processing();
 
     void spin_once();
+
 
     // Variables
     boost::shared_ptr<pcl::visualization::PCLVisualizer> pclViewer;
@@ -101,6 +106,8 @@ private:
     std::vector<float> m_distance_vector;
     sensor_msgs::Image m_image_received_input;
     sensor_msgs::Image m_image_memory;
+
+    Object_recognition m_object_recognition;
 
 
 

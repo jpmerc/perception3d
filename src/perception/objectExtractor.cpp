@@ -21,6 +21,7 @@ ObjectExtractor::ObjectExtractor(bool showViewer, ros::NodeHandle p_nh){
     m_pub_android = p_nh.advertise<std_msgs::String>("/android_listener",1);
 
 
+
     setPCLViewer();
 }
 
@@ -439,8 +440,9 @@ int ObjectExtractor::position_finder_vector(const float p_coordinate[], const pc
 //----------------------------------------------------------------------------------------------------------------------//
 void ObjectExtractor::coordinate_processing(const float p_coordinate[])
 {
-    //a  concerver dans un attribut ou autre element pour pouvoir l'utiliser apres
     int position_in_vector = position_finder_vector(p_coordinate, *m_memory_point_cloud_corner_ptr, m_memory_distance_vector);
+    //fait la reconnaisance d'object avec le point cloud qui se trouve a la position
+    m_object_recognition.object_recon(object_vector.at(position_in_vector));
     //debug response to android
     std_msgs::String send_string;
     send_string.data = "p_un;deux";
@@ -473,4 +475,3 @@ void ObjectExtractor::spin_once()
     }
     m_point_cloud_received = false;
 }
-
