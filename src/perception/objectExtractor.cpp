@@ -499,3 +499,14 @@ void ObjectExtractor::refreshObjectCentroid(){
     tracked_object_centroid->push_back(pt);
 }
 
+void ObjectExtractor::refreshObjectCentroid(){
+    // Change object to grasp
+    object_to_grasp = object_vector[index_to_grasp];
+
+    // Refresh the position of the object centroid
+    Eigen::Vector4f c = getGraspCentroid();
+    PointT pt;
+    pt.x = c[0]; pt.y = c[1]; pt.z = c[2];
+    tracked_object_centroid->clear();
+    tracked_object_centroid->push_back(pt);
+}
