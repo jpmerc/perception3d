@@ -23,11 +23,11 @@ typedef pcl::PointXYZRGB PointT;
 typedef pcl::PointCloud<pcl::PointXYZRGB> PCPointT;
 
 
-class planSegmentor
+class PlanSegmentor
 {
 public:
 
-    planSegmentor(ros::NodeHandle p_nh);
+    PlanSegmentor(ros::NodeHandle p_nh);
 
     void cloud_callback(const pcl::PCLPointCloud2ConstPtr& p_input);
 
@@ -58,6 +58,8 @@ public:
     void viewerSpinOnce() const;
 
     void spinOnceTestFile();
+
+    void showPointCloud(pcl::PCLPointCloud2Ptr p_ptr);
 
 
 private:

@@ -9,7 +9,7 @@ int main(int argc, char** argv)
     ros::NodeHandle n;
     ros::NodeHandle nh("~");
 
-    planSegmentor* planExtractor_ptr = new planSegmentor(n);
+    PlanSegmentor* planExtractor_ptr = new PlanSegmentor(n);
 
     bool testValidation;
     nh.param("test", testValidation, false);
@@ -32,7 +32,7 @@ int main(int argc, char** argv)
         nh.param("topic_in",topic_in,std::string("/camera/depth_registered/points"));
         ros::Subscriber sub = n.subscribe (topic_in,
                                            1,
-                                           &planSegmentor::cloud_callback,
+                                           &PlanSegmentor::cloud_callback,
                                            planExtractor_ptr);
 
         while (loop_condition)
@@ -55,11 +55,12 @@ int main(int argc, char** argv)
         std::string path;
         nh.param("file_path", path, std::string(""));
         planExtractor_ptr->loadFile(path);
-
+        std::cout << path << std::endl;
         while (loop_condition)
         {
             ros::spinOnce();
             planExtractor_ptr->spinOnceTestFile();
+            planExtractor_ptr->viewerSpinOnce();
             r.sleep();
             loop_condition = ros::ok();
         }

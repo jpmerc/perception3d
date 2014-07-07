@@ -1,23 +1,27 @@
 #include "fileAPI.h"
 
+using namespace std;
 
-fileAPI::fileAPI(string directory){
-
-}
-
-Object fileAPI::createObject(string name,pcl::PointCloud<pcl::PointXYZRGB>::Ptr object_pointcloud,geometry_msgs::PoseStampedConstPtr relative_arm_pose,geometry_msgs::PoseStampedConstPtr object_pose){
-
-}
-
-string fileAPI::findDefaultName(){
+FileAPI::FileAPI(const string & directory)
+{
+    boost::filesystem3::path directory_path(directory);
+    boost::filesystem3::directory_iterator it(directory_path);
 
 }
 
-void fileAPI::saveObject(Object obj){
+Object FileAPI::createObject(string name,pcl::PointCloud<pcl::PointXYZRGB>::Ptr object_pointcloud,geometry_msgs::PoseStampedConstPtr relative_arm_pose,geometry_msgs::PoseStampedConstPtr object_pose){
 
 }
 
-void fileAPI::save(string name,pcl::PointCloud<pcl::PointXYZRGB>::Ptr object_pointcloud,geometry_msgs::PoseStampedConstPtr relative_arm_pose,geometry_msgs::PoseStampedConstPtr object_pose){
+string FileAPI::findDefaultName(){
+
+}
+
+void FileAPI::saveObject(Object obj){
+
+}
+
+void FileAPI::save(string name,pcl::PointCloud<pcl::PointXYZRGB>::Ptr object_pointcloud,geometry_msgs::PoseStampedConstPtr relative_arm_pose,geometry_msgs::PoseStampedConstPtr object_pose){
     Object obj;
     obj.name = name;
     obj.object_pointcloud = object_pointcloud;
@@ -26,14 +30,14 @@ void fileAPI::save(string name,pcl::PointCloud<pcl::PointXYZRGB>::Ptr object_poi
     saveObject(obj);
 }
 
-vector<Object> fileAPI::getAllObjects(){
+vector<Object> FileAPI::getAllObjects(){
 
 }
 
-Object fileAPI::getObjectByIndex(int index){
+Object FileAPI::getObjectByIndex(int index){
 
 }
 
-void fileAPI::parseDirectory(){
+void FileAPI::parseDirectory(){
 
 }

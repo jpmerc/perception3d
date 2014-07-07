@@ -1,6 +1,6 @@
 #include <communication.h>
 
-Communication::Communication(ObjectExtractor *p_obj_e, fileAPI *p_api, JacoCustom *p_jaco)
+Communication::Communication(ObjectExtractor *p_obj_e, FileAPI *p_api, JacoCustom *p_jaco)
 {
     m_object_ex_ptr = p_obj_e;
     m_api_ptr = p_api;

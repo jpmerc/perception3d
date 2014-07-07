@@ -7,7 +7,7 @@
 
 ObjectExtractor *OBJ_EXTRACTOR_PTR;
 JacoCustom *JACO_PTR;
-fileAPI *API_PTR;
+FileAPI *API_PTR;
 ros::CallbackQueue jaco_callbacks;
 
 using namespace std;
@@ -42,7 +42,7 @@ int main (int argc, char** argv){
     // Class Instances
     JACO_PTR = new JacoCustom(n);
     OBJ_EXTRACTOR_PTR = new ObjectExtractor(show_objects_in_viewer, n);
-    API_PTR = new fileAPI(directory_url);
+    API_PTR = new FileAPI(directory_url);
     Communication* communication_ptr = new Communication(OBJ_EXTRACTOR_PTR, API_PTR, JACO_PTR);
 
     // Ros Subscribers (global callbacks)

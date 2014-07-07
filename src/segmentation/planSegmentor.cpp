@@ -1,6 +1,6 @@
 #include <planSegmentor.h>
 
-planSegmentor::planSegmentor(ros::NodeHandle p_nh)
+PlanSegmentor::PlanSegmentor(ros::NodeHandle p_nh)
 {
     m_showUI = true;
 
@@ -17,7 +17,7 @@ planSegmentor::planSegmentor(ros::NodeHandle p_nh)
 }
 
 
-void planSegmentor::cloud_callback(const pcl::PCLPointCloud2ConstPtr &p_input)
+void PlanSegmentor::cloud_callback(const pcl::PCLPointCloud2ConstPtr &p_input)
 {
     // Create the filtering object: downsample the dataset using a leaf size of 0.5cm
     pcl::PCLPointCloud2Ptr cloud_filtered = voxelgrid_filter(p_input, 0.005f);
@@ -88,7 +88,7 @@ void planSegmentor::cloud_callback(const pcl::PCLPointCloud2ConstPtr &p_input)
     }
 }
 
-pcl::PCLPointCloud2Ptr planSegmentor::voxelgrid_filter(const pcl::PCLPointCloud2ConstPtr p_cloud,
+pcl::PCLPointCloud2Ptr PlanSegmentor::voxelgrid_filter(const pcl::PCLPointCloud2ConstPtr p_cloud,
                                                        float p_leaf_size)
 {
     pcl::VoxelGrid<pcl::PCLPointCloud2> vx_grid;
@@ -99,7 +99,7 @@ pcl::PCLPointCloud2Ptr planSegmentor::voxelgrid_filter(const pcl::PCLPointCloud2
     return cloud_filtered;
 }
 
-pcl::PCLPointCloud2Ptr planSegmentor::passthrough_filter(pcl::PCLPointCloud2Ptr p_input,
+pcl::PCLPointCloud2Ptr PlanSegmentor::passthrough_filter(pcl::PCLPointCloud2Ptr p_input,
                                                           double p_min_distance,
                                                           double p_max_distance)
 {
@@ -128,7 +128,7 @@ pcl::PCLPointCloud2Ptr planSegmentor::passthrough_filter(pcl::PCLPointCloud2Ptr 
     return ptr_cloud_filtered_y;
 }
 
-PCPointT::Ptr planSegmentor::plane_segmentation(PCPointT::Ptr p_cloud,
+PCPointT::Ptr PlanSegmentor::plane_segmentation(PCPointT::Ptr p_cloud,
                                                 int p_maxNumberOfPlanesToExtract)
 {
     pcl::SACSegmentation<pcl::PointXYZRGB> seg;
@@ -203,7 +203,7 @@ PCPointT::Ptr planSegmentor::plane_segmentation(PCPointT::Ptr p_cloud,
     return segmented_planes;
 }
 
-PCPointT::Ptr planSegmentor::radius_outlier_removal_filter(PCPointT::Ptr p_input,
+PCPointT::Ptr PlanSegmentor::radius_outlier_removal_filter(PCPointT::Ptr p_input,
                                                            double p_radius,
                                                            int p_minNN)
 {
@@ -219,7 +219,7 @@ PCPointT::Ptr planSegmentor::radius_outlier_removal_filter(PCPointT::Ptr p_input
     return cloud_filtered;
 }
 
-void planSegmentor::printToPCLViewer()
+void PlanSegmentor::printToPCLViewer()
 {
     m_pclViewer->removeAllPointClouds();
     pcl::visualization::PointCloudColorHandlerRGBField<pcl::PointXYZRGB> rgb(m_cloud);
@@ -234,7 +234,7 @@ void planSegmentor::printToPCLViewer()
 }
 
 
-void planSegmentor::setPCLViewer()
+void PlanSegmentor::setPCLViewer()
 {
     if(m_showUI){
         m_pclViewer->setBackgroundColor (0, 0, 0);
@@ -251,7 +251,7 @@ void planSegmentor::setPCLViewer()
     }
 }
 
-int planSegmentor::loadFile(const std::string &p_string)
+int PlanSegmentor::loadFile(const std::string &p_string)
 {
     unsigned int stringSize = p_string.size();
     std::string extention = p_string.substr(stringSize-3);
@@ -288,26 +288,38 @@ int planSegmentor::loadFile(const std::string &p_string)
         confirmation = -1;
     }
 
-
     return confirmation;
 }
 
-void planSegmentor::setShowUi(bool p_input)
+void PlanSegmentor::setShowUi(bool p_input)
 {
     m_showUI = p_input;
 }
 
-bool planSegmentor::viewerStoped() const
+bool PlanSegmentor::viewerStoped() const
 {
     return m_pclViewer->wasStopped();
 }
 
-void planSegmentor::viewerSpinOnce() const
+void PlanSegmentor::viewerSpinOnce() const
 {
     m_pclViewer->spinOnce(100);
 }
 
-void planSegmentor::spinOnceTestFile()
+void PlanSegmentor::spinOnceTestFile()
 {
     cloud_callback(m_loaded_cloud);
+}
+
+void PlanSegmentor::showPointCloud(pcl::PCLPointCloud2Ptr p_ptr)
+{
+    PCPointT::Ptr cloud (new PCPointT);
+    pcl::fromPCLPointCloud2(*p_ptr, *cloud);
+    boost::shared_ptr<pcl::visualization::PCLVisualizer> viewer(new pcl::visualization::PCLVisualizer("simple cloud"));
+    viewer->addPointCloud<PointT>(cloud);
+    viewer->setBackgroundColor(0,0,0);
+    while(!viewer->wasStopped())
+    {
+        viewer->spinOnce();
+    }
 }
