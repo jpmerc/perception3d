@@ -1,8 +1,7 @@
 #include <object_recognition.h>
 
 
-Object_recognition::Object_recognition():
-    m_bd("path to the object")
+Object_recognition::Object_recognition()
 {
     ros::Time::init();
 

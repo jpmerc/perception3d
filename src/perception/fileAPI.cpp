@@ -4,8 +4,8 @@ using namespace std;
 
 FileAPI::FileAPI(const string & directory)
 {
-    boost::filesystem3::path directory_path(directory);
-    boost::filesystem3::directory_iterator it(directory_path);
+    //boost::filesystem3::path directory_path(directory);
+    //boost::filesystem3::directory_iterator it(directory_path);
 
 }
 

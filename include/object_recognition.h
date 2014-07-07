@@ -129,7 +129,7 @@ private:
     ros::Time m_us_bd_fpfh_time;
     ros::Time m_us_bd_shot_time;
 
-    FileAPI m_bd;
+    //FileAPI m_bd;
 
 };
 
