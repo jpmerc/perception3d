@@ -72,3 +72,16 @@ target_link_libraries(segmentation ${catkin_LIBRARIES} ${PCL_LIBRARIES})
 add_dependencies(segmentation perception3d_gencpp)
 
 
+
+#add_executable(grasp src/jacoTests/grasp.cpp)
+#target_link_libraries(grasp ${catkin_LIBRARIES} ${PCL_LIBRARIES})
+#add_dependencies(grasp perception3d_gencpp)
+
+#add_executable(jaco_joint_states src/jacoTests/jaco_joint_states.cpp)
+#target_link_libraries(jaco_joint_states ${catkin_LIBRARIES} ${PCL_LIBRARIES})
+#add_dependencies(jaco_joint_states perception3d_gencpp)
+
+add_executable(jaco_calibration src/jacoTests/calibration.cpp)
+target_link_libraries(jaco_calibration ${catkin_LIBRARIES} ${PCL_LIBRARIES})
+add_dependencies(jaco_calibration perception3d_gencpp)
+
