@@ -81,7 +81,7 @@ add_dependencies(segmentation perception3d_gencpp)
 #target_link_libraries(jaco_joint_states ${catkin_LIBRARIES} ${PCL_LIBRARIES})
 #add_dependencies(jaco_joint_states perception3d_gencpp)
 
-add_executable(calibration src/jacoTests/calibration.cpp)
-target_link_libraries(calibration ${catkin_LIBRARIES} ${PCL_LIBRARIES})
-add_dependencies(calibration perception3d_gencpp)
+add_executable(jaco_calibration src/jacoTests/calibration.cpp)
+target_link_libraries(jaco_calibration ${catkin_LIBRARIES} ${PCL_LIBRARIES})
+add_dependencies(jaco_calibration perception3d_gencpp)
 
