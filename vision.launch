@@ -4,8 +4,9 @@
 	<include file="$(find perception3d)/launch/kinect.launch"></include> 
 	
 	<!-- Link Kinect to JACO -->
-	<!--<node pkg="tf" type="static_transform_publisher" name="jaco_kinect" args="-0.60 0.385 0.54 0 0.30 0  arm_base camera_link 100" /> -->
-	<node pkg="tf" type="static_transform_publisher" name="jaco_kinect" args="-0.587 0.386 0.533 0 0.30 0  arm_base camera_link 100" />
+	<!--<node pkg="tf" type="static_transform_publisher" name="jaco_kinect" args="-0.60 0.385 0.54 0 0.30 0  arm_base camera_link 100" /> 
+	<node pkg="tf" type="static_transform_publisher" name="jaco_kinect" args="-0.587 0.386 0.533 0 0.30 0  arm_base camera_link 100" /> -->
+	<node pkg="tf" type="static_transform_publisher" name="jaco_kinect" args="-0.61 0.40 0.52 -0.02 0.299 0.01178  arm_base camera_link 100" />
 	
 	<!-- Link AR_TAG to joint_6 (useful when calibrating) -->
 	<node pkg="tf" type="static_transform_publisher" name="ARtag" args="0 0.03 -0.06 0 0 0 jaco_joint_6 ARtag 100" /> 

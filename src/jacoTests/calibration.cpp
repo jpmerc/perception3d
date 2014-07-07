@@ -81,6 +81,7 @@ void printJacoKinectTF(){
     tf::TransformListener listener;
     tf::StampedTransform ar_kinect;
     tf::StampedTransform ar_jaco;
+    tf::StampedTransform ar_jaco2;
     tf::Transform add;
     static tf::TransformBroadcaster br;
 
@@ -94,12 +95,15 @@ void printJacoKinectTF(){
             listener.waitForTransform("arm_base","AR_OBJECT_REORIENTED",ros::Time(0),ros::Duration(3.0));
             listener.lookupTransform("arm_base","AR_OBJECT_REORIENTED",ros::Time(0),ar_jaco);
 
+            listener.waitForTransform("arm_base","ARtag_REORIENTED",ros::Time(0),ros::Duration(3.0));
+            listener.lookupTransform("arm_base","ARtag_REORIENTED",ros::Time(0),ar_jaco2);
+
            // printPose("kinect",ar_kinect);
            // printPose("jaco",ar_jaco);
 
             //ar_kinect *= ar_jaco;
 
-            tf::Vector3 translation = ar_kinect.getOrigin() + ar_jaco.getOrigin();
+            tf::Vector3 translation = ar_kinect.getOrigin() + ar_jaco2.getOrigin();
             add = tf::Transform(ar_kinect.getRotation()*ar_jaco.getRotation(), translation);
             br.sendTransform(tf::StampedTransform(add,ros::Time::now(),"arm_base","camera_link_calculated"));
 
@@ -113,24 +117,31 @@ void printJacoKinectTF(){
 }
 
 void printPose(string str, tf::Transform &in_pose){
+    double x,y,z;
+    x = in_pose.getOrigin().getX();
+    y = in_pose.getOrigin().getY();
+    z = in_pose.getOrigin().getZ();
+
     cout << str << " : " << endl;
-    cout << "x: " << in_pose.getOrigin().getX() << endl;
-    cout << "y: " << in_pose.getOrigin().getY() << endl;
-    cout << "z: " << in_pose.getOrigin().getZ() << endl;
-    cout << "rotx: " << in_pose.getRotation().getX() << endl;
-    cout << "roty: " << in_pose.getRotation().getY() << endl;
-    cout << "rotz: " << in_pose.getRotation().getZ() << endl;
-    cout << "rotw: " << in_pose.getRotation().getW() << endl;
+    cout << "x: " << x << endl;
+    cout << "y: " << y << endl;
+    cout << "z: " << z << endl;
+//    cout << "rotx: " << in_pose.getRotation().getX() << endl;
+//    cout << "roty: " << in_pose.getRotation().getY() << endl;
+//    cout << "rotz: " << in_pose.getRotation().getZ() << endl;
+//    cout << "rotw: " << in_pose.getRotation().getW() << endl;
 
     double roll,pitch,yaw;
     in_pose.getBasis().getRPY(roll,pitch,yaw);
 
-    cout << "Yaw: "   << angles::to_degrees(yaw)   << " (" << yaw   << ")"   << endl;
-    cout << "Pitch: " << angles::to_degrees(pitch) << " (" << pitch << ")"   << endl;
-    cout << "Roll: "  << angles::to_degrees(roll)  << " (" << roll  << ")"   << endl;
+    cout << "Yaw: "   << yaw   << " (" << angles::to_degrees(yaw)   << ")"   << endl;
+    cout << "Pitch: " << pitch << " (" << angles::to_degrees(pitch) << ")"   << endl;
+    cout << "Roll: "  << roll  << " (" << angles::to_degrees(roll)  << ")"   << endl;
 
     cout << endl;
-
+    cout << "To copy/replace in vision.launch :" << endl;
+    printf("<node pkg= \"tf\" type=\"static_transform_publisher\" name=\"jaco_kinect\" args=\" %.2f %.2f %.2f %.2f %.2f %.2f arm_base camera_link 100\" /> \n",x,y,z,yaw,pitch,roll);
+    cout << endl;
 }
 
 
