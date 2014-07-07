@@ -140,7 +140,7 @@ void printPose(string str, tf::Transform &in_pose){
 
     cout << endl;
     cout << "To copy/replace in vision.launch :" << endl;
-    printf("<node pkg= \"tf\" type=\"static_transform_publisher\" name=\"jaco_kinect\" args=\" %.2f %.2f %.2f %.2f %.2f %.2f arm_base camera_link 100\" /> \n",x,y,z,yaw,pitch,roll);
+    printf("<node pkg= \"tf\" type=\"static_transform_publisher\" name=\"jaco_kinect\" args=\" %.4f %.4f %.4f %.4f %.4f %.4f arm_base camera_link 100\" /> \n",x,y,z,yaw,pitch,roll);
     cout << endl;
 }
 
