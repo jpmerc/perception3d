@@ -25,8 +25,8 @@ catkin_package(
 )
 
 
-add_executable(segmentation src/segmentation.cpp)
-target_link_libraries(segmentation ${catkin_LIBRARIES} ${PCL_LIBRARIES})
+#add_executable(segmentation src/segmentation.cpp)
+#target_link_libraries(segmentation ${catkin_LIBRARIES} ${PCL_LIBRARIES})
 
 #add_executable(snapshot src/snapshot.cpp)
 #target_link_libraries(snapshot ${catkin_LIBRARIES} ${PCL_LIBRARIES})
@@ -63,4 +63,12 @@ add_executable(perception
 )
 target_link_libraries(perception ${catkin_LIBRARIES} ${PCL_LIBRARIES})
 add_dependencies(perception perception3d_gencpp)
+
+add_executable(segmentation
+  src/segmentation/mainProgram.cpp
+  src/segmentation/planSegmentor.cpp
+)
+target_link_libraries(segmentation ${catkin_LIBRARIES} ${PCL_LIBRARIES})
+add_dependencies(segmentation perception3d_gencpp)
+
 

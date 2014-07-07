@@ -2,5 +2,7 @@
     <node pkg="perception3d" type="segmentation" name="segmentation" respawn="false" output="screen">
       <param name="pcl_visualizer"  value="true" />
       <param name="topic_in" value="/camera/depth_registered/points" />
+      <param name="test" value="true" />
+      <param name="file_path" value="/home/robot/rgbd-scenes-v2/pc/01.ply"/>
     </node>
 </launch>
