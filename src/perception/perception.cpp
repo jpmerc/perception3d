@@ -43,11 +43,7 @@ int main (int argc, char** argv){
     JACO_PTR = new JacoCustom(n);
     OBJ_EXTRACTOR_PTR = new ObjectExtractor(show_objects_in_viewer, n);
     API_PTR = new FileAPI(directory_url);
-<<<<<<< HEAD
     //API_PTR = new FileAPI();
-=======
-   // API_PTR = new FileAPI();
->>>>>>> 16b3b8e014bb70d8fa93a2d0e776351da282e0ac
     Communication* communication_ptr = new Communication(OBJ_EXTRACTOR_PTR, API_PTR, JACO_PTR);
 
     // Ros Subscribers (global callbacks)
