@@ -9,34 +9,41 @@ FileAPI::FileAPI(const string & directory):
     boost::filesystem3::path directory_path(directory);
     boost::filesystem3::directory_iterator it(directory_path);
     boost::filesystem3::path path;
-
-    std::string objectName;
-    pcl::PointCloud<pcl::VFHSignature308>::Ptr  signature(new pcl::PointCloud<pcl::VFHSignature308>);
-    while(it != boost::filesystem3::directory_iterator())
+    if (boost::filesystem3::exists(directory_path))
     {
-        std::cout << *it << std::endl;
-        path = *it;
-
-        pcl::io::loadPCDFile(path.c_str(), *signature);
-        objectName = path.filename().c_str();
-        pcl::PointCloud<pcl::PointXYZRGB>::Ptr pcObject_ptr(new pcl::PointCloud<pcl::PointXYZRGB>);
-        geometry_msgs::PoseStampedConstPtr temp_ptr1(new geometry_msgs::PoseStamped);
-        geometry_msgs::PoseStampedConstPtr temp_ptr2(new geometry_msgs::PoseStamped);
-        m_bdObjectVector.push_back(createObject(objectName,
-                                                signature,
-                                                pcObject_ptr,
-                                                temp_ptr1,
-                                                temp_ptr2));
-        for(int i = 0; i < signature->size(); i++)
+        std::string objectName;
+        pcl::PointCloud<pcl::VFHSignature308>::Ptr  signature(new pcl::PointCloud<pcl::VFHSignature308>);
+        while(it != boost::filesystem3::directory_iterator())
         {
-            m_pcvfh->push_back(signature->at(i));
-        }
-        it++;
-    }
+            std::cout << *it << std::endl;
+            path = *it;
 
-    std::cout << "Point Cloud CBFH size : " << m_pcvfh->size() << std::endl;
-    std::cout << "Object number loaded : " << m_bdObjectVector.size() << std::endl;
-    std::cout << "Data base load finis" << std::endl;
+            pcl::io::loadPCDFile(path.c_str(), *signature);
+            objectName = path.filename().c_str();
+            pcl::PointCloud<pcl::PointXYZRGB>::Ptr pcObject_ptr(new pcl::PointCloud<pcl::PointXYZRGB>);
+            geometry_msgs::PoseStampedConstPtr temp_ptr1(new geometry_msgs::PoseStamped);
+            geometry_msgs::PoseStampedConstPtr temp_ptr2(new geometry_msgs::PoseStamped);
+            m_bdObjectVector.push_back(createObject(objectName,
+                                                    signature,
+                                                    pcObject_ptr,
+                                                    temp_ptr1,
+                                                    temp_ptr2));
+            for(int i = 0; i < signature->size(); i++)
+            {
+                m_pcvfh->push_back(signature->at(i));
+            }
+            it++;
+        }
+
+        std::cout << "Point Cloud CBFH size : " << m_pcvfh->size() << std::endl;
+        std::cout << "Object number loaded : " << m_bdObjectVector.size() << std::endl;
+        std::cout << "Data base load finis" << std::endl;
+    }
+    else
+    {
+        std::cerr << "The path to the librairie doesn't exist" << std::endl;
+        throw(runtime_error("load fail"));
+    }
 
 }
 
@@ -63,8 +70,12 @@ string FileAPI::findDefaultName(){
 
 void FileAPI::saveObject(Object obj)
 {
+    parseDirectory();
+
     boost::filesystem3::path path(m_pathToBd);
-    path/= obj.name;
+    stringstream ss;
+    ss << m_highest_index;
+    path/= ss.str();
     path.replace_extension(".pcd");
     pcl::io::savePCDFileASCII(path.c_str(), *(obj.object_signature));
 }
@@ -135,7 +146,5 @@ void FileAPI::parseDirectory()
         {
             m_highest_index = currentfile;
         }
-
-
     }
 }
