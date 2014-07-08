@@ -10,6 +10,8 @@
 #include <pcl/point_types.h>
 #include <pcl/features/cvfh.h>
 
+#include <boost/filesystem/fstream.hpp>
+
 
 struct Object{
     std::string name;
@@ -36,6 +38,11 @@ public:
               pcl::PointCloud<pcl::PointXYZRGB>::Ptr object_pointCloud,
               geometry_msgs::PoseStampedConstPtr relative_arm_pose,
               geometry_msgs::PoseStampedConstPtr object_pose);
+    void saveCvgh(Object p_obj, std::string p_fileName);
+    void savePointCloud(Object p_obj, std::string p_fileName);
+    void savePoseArm(Object p_obj, std::string p_fileName);
+    void savePoseObject(Object p_obj, std::string p_fileName);
+
     std::vector<Object> getAllObjects();
     Object getObjectByIndex(int index);
     pcl::PointCloud<pcl::VFHSignature308>::Ptr getAllHistograme();

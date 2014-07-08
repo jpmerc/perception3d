@@ -5,7 +5,7 @@ using namespace std;
 FileAPI::FileAPI(const string & directory):
     m_pathToBd(directory)
 {
-    m_pathcvfh = m_pathToBd + "/signature";
+    m_pathcvfh = m_pathToBd + "/cvfh";
     m_pathPointCloud = m_pathToBd + "/pointCloud";
     m_pathPoseObject = m_pathToBd +"/poseObject";
     m_pathPoseArm = m_pathToBd +"/poseArm";
@@ -80,11 +80,11 @@ string FileAPI::findDefaultName()
 
 void FileAPI::saveObject(Object obj)
 {
-    boost::filesystem3::path path(m_pathToBd);
     std::string fileName = findDefaultName();
-    path/= fileName;
-    path.replace_extension(".pcd");
-    pcl::io::savePCDFileASCII(path.c_str(), *(obj.object_signature));
+    saveCvgh(obj, fileName);
+    savePointCloud(obj, fileName);
+    savePoseArm(obj, fileName);
+    savePoseObject(obj, fileName);
 }
 
 void FileAPI::save(string name,
@@ -102,6 +102,43 @@ void FileAPI::save(string name,
     obj.object_pose = object_pose;
     saveObject(obj);
 }
+
+void FileAPI::saveCvgh(Object p_obj, std::string p_fileName)
+{
+    boost::filesystem3::path path(m_pathcvfh);
+    path /= p_fileName;
+    path.replace_extension(".pcd");
+    pcl::io::savePCDFile(path.c_str(), *(p_obj.object_signature));
+}
+
+void FileAPI::savePointCloud(Object p_obj, std::string p_fileName)
+{
+    boost::filesystem3::path path(m_pathPointCloud);
+    path /= p_fileName;
+    path.replace_extension(".pcd");
+    pcl::io::savePCDFile(path.c_str(), *(p_obj.object_signature));
+}
+
+void FileAPI::savePoseArm(Object p_obj, std::string p_fileName)
+{
+    boost::filesystem3::path path(m_pathPoseArm);
+    path /= p_fileName;
+    path.replace_extension(".txt");
+    boost::filesystem3::ofstream ofs(path);
+    //put the line in the file
+    ofs.close();
+}
+
+void FileAPI::savePoseObject(Object p_obj, std::string p_fileName)
+{
+    boost::filesystem3::path path(m_pathPoseObject);
+    path /= p_fileName;
+    path.replace_extension(".txt");
+    boost::filesystem3::ofstream ofs(path);
+    //put the line in the file
+    ofs.close();
+}
+
 
 Object FileAPI::retrieveObjectFromHistogramme(int p_positionHisto)
 {
