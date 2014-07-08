@@ -177,29 +177,6 @@ PCPointT::Ptr PlanSegmentor::plane_segmentation(PCPointT::Ptr p_cloud,
         iterationNumber++;
     }
 
-    //extraction with polygon extractor
-    pcl::PointCloud<pcl::PointXYZRGB>::Ptr table_hull_ptr(new pcl::PointCloud<pcl::PointXYZRGB>);
-    pcl::ConvexHull<pcl::PointXYZRGB> hull;
-
-    hull.setInputCloud(segmented_planes);
-    hull.reconstruct(*table_hull_ptr);
-
-    pcl::ExtractPolygonalPrismData<pcl::PointXYZRGB> prism;
-    pcl::PointIndices::Ptr indices_ptr(new pcl::PointIndices);
-
-    prism.setInputCloud(segmented_planes);
-    prism.setInputPlanarHull(table_hull_ptr);
-    prism.setHeightLimits(0.1, 0.5);
-    prism.segment(*indices_ptr);
-
-    pcl::PointCloud<pcl::PointXYZRGB>::Ptr object_point_cloud_ptr(new pcl::PointCloud<pcl::PointXYZRGB>);
-    pcl::ExtractIndices<pcl::PointXYZRGB> extract2;
-    extract2.setInputCloud(segmented_planes);
-    extract2.setIndices(indices_ptr);
-    extract2.filter(*object_point_cloud_ptr);
-    return object_point_cloud_ptr;
-
-    ////////////////
     return segmented_planes;
 }
 

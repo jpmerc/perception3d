@@ -13,7 +13,8 @@
 
 struct Object{
     std::string name;
-    pcl::PointCloud<pcl::PointXYZRGB>::Ptr object_pointcloud;
+    int pcSize;
+    pcl::PointCloud<pcl::VFHSignature308>::Ptr object_signature;
     geometry_msgs::PoseStampedConstPtr relative_arm_pose;
     geometry_msgs::PoseStampedConstPtr object_pose;
 };
@@ -21,20 +22,30 @@ struct Object{
 
 class FileAPI{
 public:
-    FileAPI(const std::string& directory);
-    Object createObject(std::string name,pcl::PointCloud<pcl::PointXYZRGB>::Ptr object_pointcloud,geometry_msgs::PoseStampedConstPtr relative_arm_pose,geometry_msgs::PoseStampedConstPtr object_pose);
+    FileAPI(const std::string& directory = "/home/robot/histoGrammeBD/BD");
+    Object createObject(std::string name,
+                        int size,
+                        pcl::PointCloud<pcl::VFHSignature308>::Ptr object_pointcloud,
+                        geometry_msgs::PoseStampedConstPtr relative_arm_pose,
+                        geometry_msgs::PoseStampedConstPtr object_pose);
     std::string findDefaultName(); //Parse the directory and find a new name for the object
     void saveObject(Object obj);
-    void save(std::string name,pcl::PointCloud<pcl::PointXYZRGB>::Ptr object_pointcloud,geometry_msgs::PoseStampedConstPtr relative_arm_pose,geometry_msgs::PoseStampedConstPtr object_pose);
+    void save(std::string name,pcl::PointCloud<pcl::VFHSignature308>::Ptr object_pointcloud,geometry_msgs::PoseStampedConstPtr relative_arm_pose,geometry_msgs::PoseStampedConstPtr object_pose);
     std::vector<Object> getAllObjects();
     Object getObjectByIndex(int index);
+    pcl::PointCloud<pcl::VFHSignature308>::Ptr getAllHistograme();
+    pcl::VFHSignature308 getHistogrameByIndex (int p_index);
+
+    Object retrieveObjectFromHistogramme(int p_positionHisto);
 
 private:
     void parseDirectory(); //Set the index number (all files will be of the form index.txt -> check the highest index and assign to index variable)
 
     int highest_index;
 
-    std::vector<pcl::VFHSignature308> m_bd_vector;
+    std::string m_pathToBd;
+    std::vector<Object> m_bdObjectVector;
+    pcl::PointCloud<pcl::VFHSignature308>::Ptr m_pcvfh;
 
 };
 

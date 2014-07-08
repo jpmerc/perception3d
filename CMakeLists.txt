@@ -49,9 +49,9 @@ catkin_package(
 #target_link_libraries(tracking ${catkin_LIBRARIES} ${PCL_LIBRARIES})
 #add_dependencies(tracking perception3d_gencpp)
 
-#add_executable(image_transport_node src/image_transport_node.cpp)
-#target_link_libraries(image_transport_node ${catkin_LIBRARIES} ${PCL_LIBRARIES})
-#add_dependencies(image_transport_node perception3d_gencpp)
+add_executable(image_transport_node src/image_transport_node.cpp)
+target_link_libraries(image_transport_node ${catkin_LIBRARIES} ${PCL_LIBRARIES})
+add_dependencies(image_transport_node perception3d_gencpp)
 
 add_executable(perception
   src/perception/perception.cpp
@@ -60,6 +60,7 @@ add_executable(perception
   src/perception/communication.cpp
   src/perception/fileAPI.cpp
   src/perception/object_recognition.cpp
+  src/perception/testApi.cpp
 )
 target_link_libraries(perception ${catkin_LIBRARIES} ${PCL_LIBRARIES})
 add_dependencies(perception perception3d_gencpp)

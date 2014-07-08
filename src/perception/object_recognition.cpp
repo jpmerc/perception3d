@@ -379,7 +379,8 @@ pcl::PointCloud<pcl::VFHSignature308>::Ptr Object_recognition::calculateCVFHUS(p
 }
 
 
-bool Object_recognition::object_recon(pcl::PointCloud<PointT>::Ptr p_ptr_cloud)
+bool Object_recognition::object_recon(pcl::PointCloud<PointT>::Ptr p_ptr_cloud,
+                                      pcl::PointCloud<pcl::VFHSignature308>::Ptr p_bd)
 {
 
     std::vector<pcl::PointCloud<pcl::VFHSignature308>::Ptr> bd_vector;
@@ -398,10 +399,7 @@ bool Object_recognition::object_recon(pcl::PointCloud<PointT>::Ptr p_ptr_cloud)
     pcl::PointCloud<pcl::VFHSignature308>::Ptr cloud_object_ptr (new pcl::PointCloud<pcl::VFHSignature308>);
     cloud_object_ptr->push_back(object_cvfh);
 
-    for(int i = 0; i < bd_vector.size(); i ++)
-    {
-        histogramComparaison(cloud_object_ptr, bd_vector.at(i));
-    }
+        histogramComparaison(cloud_object_ptr, p_bd);
 
     if(m_icp_fitness_score > 1)
     {
