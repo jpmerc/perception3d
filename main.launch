@@ -1,0 +1,4 @@
+<launch>  
+	<include file="$(find perception3d)/launch/vision.launch"></include> 
+	<include file="$(find perception3d)/launch/jaco.launch"></include> 	
+</launch>
