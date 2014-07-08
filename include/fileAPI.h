@@ -49,6 +49,10 @@ private:
     int m_highest_index;
 
     std::string m_pathToBd;
+    std::string m_pathcvfh;
+    std::string m_pathPointCloud;
+    std::string m_pathPoseObject;
+    std::string m_pathPoseArm;
     std::vector<Object> m_bdObjectVector;
     pcl::PointCloud<pcl::VFHSignature308>::Ptr m_pcvfh;
 

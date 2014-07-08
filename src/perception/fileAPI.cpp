@@ -5,8 +5,12 @@ using namespace std;
 FileAPI::FileAPI(const string & directory):
     m_pathToBd(directory)
 {
+    m_pathcvfh = m_pathToBd + "/signature";
+    m_pathPointCloud = m_pathToBd + "/pointCloud";
+    m_pathPoseObject = m_pathToBd +"/poseObject";
+    m_pathPoseArm = m_pathToBd +"/poseArm";
     m_pcvfh.reset(new pcl::PointCloud<pcl::VFHSignature308>);
-    boost::filesystem3::path directory_path(directory);
+    boost::filesystem3::path directory_path(m_pathcvfh);
     boost::filesystem3::directory_iterator it(directory_path);
     boost::filesystem3::path path;
     if (boost::filesystem3::exists(directory_path))
@@ -64,18 +68,21 @@ Object FileAPI::createObject(string name,
     return createdObject;
 }
 
-string FileAPI::findDefaultName(){
+string FileAPI::findDefaultName()
+{
+    parseDirectory();
+    stringstream ss;
+    ss << m_highest_index;
+
+    return ss.str();
 
 }
 
 void FileAPI::saveObject(Object obj)
 {
-    parseDirectory();
-
     boost::filesystem3::path path(m_pathToBd);
-    stringstream ss;
-    ss << m_highest_index;
-    path/= ss.str();
+    std::string fileName = findDefaultName();
+    path/= fileName;
     path.replace_extension(".pcd");
     pcl::io::savePCDFileASCII(path.c_str(), *(obj.object_signature));
 }
