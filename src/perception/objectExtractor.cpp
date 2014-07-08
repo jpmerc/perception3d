@@ -211,6 +211,16 @@ pcl::PointCloud<PointT>::Ptr ObjectExtractor::getObjectToGrasp(){
     return object_to_grasp;
 }
 
+// -------------------------------------------------------------------------------------------------------- //
+tf::StampedTransform ObjectExtractor::getCentroidPositionRGBFrame(){
+    Eigen::Vector4f object_pose = getGraspCentroid();
+    //cout << "object pose : [" <<  object_pose[2] << ", " << -object_pose[0] << ", " << -object_pose[1] << "]" << endl;
+    tf::Pose tf_pose;
+    tf_pose.setIdentity();
+    tf_pose.setOrigin(tf::Vector3(object_pose[2],-object_pose[0],-object_pose[1]));
+    return tf::StampedTransform(tf_pose, ros::Time::now(), "camera_rgb_frame", "detected_object_centroids");
+}
+
 //---------------------------------------------------------------------------------------------------------//
 void ObjectExtractor::callback_rgb_camera(const sensor_msgs::Image& p_input)
 {
@@ -498,4 +508,5 @@ void ObjectExtractor::refreshObjectCentroid(){
     tracked_object_centroid->clear();
     tracked_object_centroid->push_back(pt);
 }
+
 

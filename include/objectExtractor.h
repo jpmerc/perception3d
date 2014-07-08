@@ -34,6 +34,11 @@
 #include <stdio.h>
 #include <stdlib.h>
 
+#include <tf/transform_datatypes.h>
+#include <tf/tf.h>
+#include <tf/transform_listener.h>
+#include <tf/transform_broadcaster.h>
+
 #include<object_recognition.h>
 
 
@@ -49,6 +54,7 @@ public:
     void toggle_showUI();
     Eigen::Vector4f getGraspCentroid();
     pcl::PointCloud<PointT>::Ptr getObjectToGrasp();
+    tf::StampedTransform getCentroidPositionRGBFrame();
 
     void callback_rgb_camera(const sensor_msgs::Image& p_input);
     Eigen::Matrix<float,4,1> compute_centroid_point(const pcl::PointCloud<PointT>& p_point_cloud);

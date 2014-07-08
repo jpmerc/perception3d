@@ -113,28 +113,35 @@ void Communication::train(){
     //obj.name = m_api_ptr->findDefaultName();
     //obj.object_pointcloud = m_object_ex_ptr->getObjectToGrasp();
 
+    // OBJECT POSE
     //obj.object_pose = ; // find object pose
+    tf::StampedTransform object_tf = m_object_ex_ptr->getCentroidPositionRGBFrame();
 
-    tf::StampedTransform arm_pose_before_grasp = m_jaco_ptr->getGraspArmPosition();
-
+    // JACO POSE
+    // tf::StampedTransform arm_pose_before_grasp = m_jaco_ptr->getGraspArmPosition();
     // For testing purposes only, comment the following line and uncomment previous one
-   // tf::StampedTransform arm_pose_before_grasp = m_jaco_ptr->getArmPositionFromCamera();
+    tf::StampedTransform arm_pose_before_grasp = m_jaco_ptr->getArmPositionFromCamera();
+
+    // RELATIVE POSE
+    tf::Transform diff;
+    tf::Vector3 translation = arm_pose_before_grasp.getOrigin() - object_tf.getOrigin();
+    diff = tf::Transform(object_tf.getBasis().transposeTimes(arm_pose_before_grasp.getBasis()), translation);
+
+    // TO VIEW FRAMES
+    //static tf::TransformBroadcaster br;
+    //br.sendTransform(object_tf);
+    //br.sendTransform(tf::StampedTransform(diff,ros::Time::now(),"detected_object_centroids","jaco_relative_pose"));
+
+    // PRINT POSE
+    //    cout << "arm pose : [" <<   arm_pose_before_grasp.getOrigin().getX() << ", " <<
+    //            arm_pose_before_grasp.getOrigin().getY() << ", " <<
+    //            arm_pose_before_grasp.getOrigin().getZ() << "]" << endl;
 
 
-    cout << "arm pose : [" <<   arm_pose_before_grasp.getOrigin().getX() << ", " <<
-            arm_pose_before_grasp.getOrigin().getY() << ", " <<
-            arm_pose_before_grasp.getOrigin().getZ() << "]" << endl;
 
 
-    // find the arm pose in the camera frame and then compute the difference between the 2 poses
-    Eigen::Vector4f object_pose = m_object_ex_ptr->getGraspCentroid();
-    cout << "object pose : [" <<  object_pose[2] << ", " << -object_pose[0] << ", " << -object_pose[1] << "]" << endl;
 
-    tf::Pose tf_pose;
-    tf_pose.setIdentity();
-    tf_pose.setOrigin(tf::Vector3(object_pose[2],-object_pose[0],-object_pose[1]));
-    static tf::TransformBroadcaster br;
-    br.sendTransform(tf::StampedTransform(tf_pose, ros::Time::now(), "camera_rgb_frame", "detected_object_centroids"));
+
 
 }
 
