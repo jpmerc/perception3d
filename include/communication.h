@@ -24,6 +24,7 @@ public:
     bool get_train_received() const;
 
     void train();
+    void repeat();
 
 
 private:
