@@ -86,12 +86,10 @@ void Communication::spin_once()
 {
     if(m_coordinate_received)
     {
-<<<<<<< HEAD
         m_position_vector_cvfh = m_object_ex_ptr->coordinate_processing(m_coordinate_user_sended,
                                                                         m_api_ptr->getAllHistograme());
-=======
+
         m_object_ex_ptr->coordinate_processing(m_coordinate_user_sended,m_api_ptr->getAllHistograme());
->>>>>>> 16b3b8e014bb70d8fa93a2d0e776351da282e0ac
         m_object_ex_ptr->spin_once();
 
         //pour retrouver l'object qui est reconnue par le cvfh
