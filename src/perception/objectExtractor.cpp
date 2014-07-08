@@ -462,8 +462,6 @@ int ObjectExtractor::position_finder_vector(const float p_coordinate[], const pc
 
 int ObjectExtractor::coordinate_processing(const float p_coordinate[],
                                             pcl::PointCloud<pcl::VFHSignature308>::Ptr p_bd)
-
-void ObjectExtractor::coordinate_processing(const float p_coordinate[], pcl::PointCloud<pcl::VFHSignature308>::Ptr p_bd)
 {
     int position_in_vector = position_finder_vector(p_coordinate,*m_memory_point_cloud_corner_ptr,m_memory_distance_vector);
     if(position_in_vector != -1)
@@ -478,8 +476,6 @@ void ObjectExtractor::coordinate_processing(const float p_coordinate[], pcl::Poi
         send_string.data = "object_recon";
         m_pub_android.publish(send_string);
         return positionVectorObject;
-    //fait la reconnaisance d'object avec le point cloud qui se trouve a la position
-    int positionVectorObject = m_object_recognition.object_recon(object_vector.at(position_in_vector), p_bd);
     }
     //debug response to android
     std_msgs::String send_string;
