@@ -86,8 +86,7 @@ void Communication::spin_once()
 {
     if(m_coordinate_received)
     {
-        m_object_ex_ptr->coordinate_processing(m_coordinate_user_sended,
-                                               m_api_ptr->getAllHistograme());
+        m_object_ex_ptr->coordinate_processing(m_coordinate_user_sended,m_api_ptr->getAllHistograme());
         m_object_ex_ptr->spin_once();
     }
     else if(m_train_received)
@@ -146,7 +145,10 @@ void Communication::train(){
 
 }
 
+void Communication::repeat(){
 
+
+}
 
 
 
