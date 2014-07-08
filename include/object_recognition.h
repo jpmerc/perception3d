@@ -79,7 +79,7 @@ public:
 
     void compute_normal(pcl::PointCloud<PointT>::Ptr p_cloud, pcl::PointCloud<pcl::Normal>::Ptr p_normal);
 
-    bool object_recon(pcl::PointCloud<PointT>::Ptr p_cloud,
+    int object_recon(pcl::PointCloud<PointT>::Ptr p_cloud,
                       pcl::PointCloud<pcl::VFHSignature308>::Ptr p_bd);
 
     void showPointCloud(pcl::PointCloud<PointT>::Ptr p_cloud);

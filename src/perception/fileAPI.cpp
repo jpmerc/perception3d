@@ -11,7 +11,6 @@ FileAPI::FileAPI(const string & directory):
     boost::filesystem3::path path;
 
     std::string objectName;
-    int objectSize;
     pcl::PointCloud<pcl::VFHSignature308>::Ptr  signature(new pcl::PointCloud<pcl::VFHSignature308>);
     while(it != boost::filesystem3::directory_iterator())
     {
@@ -20,12 +19,12 @@ FileAPI::FileAPI(const string & directory):
 
         pcl::io::loadPCDFile(path.c_str(), *signature);
         objectName = path.filename().c_str();
-        objectSize = signature->size();
+        pcl::PointCloud<pcl::PointXYZRGB>::Ptr pcObject_ptr(new pcl::PointCloud<pcl::PointXYZRGB>);
         geometry_msgs::PoseStampedConstPtr temp_ptr1(new geometry_msgs::PoseStamped);
         geometry_msgs::PoseStampedConstPtr temp_ptr2(new geometry_msgs::PoseStamped);
         m_bdObjectVector.push_back(createObject(objectName,
-                                                objectSize,
                                                 signature,
+                                                pcObject_ptr,
                                                 temp_ptr1,
                                                 temp_ptr2));
         for(int i = 0; i < signature->size(); i++)
@@ -42,15 +41,16 @@ FileAPI::FileAPI(const string & directory):
 }
 
 Object FileAPI::createObject(string name,
-                             int size,
-                             pcl::PointCloud<pcl::VFHSignature308>::Ptr object_pointcloud,
+                             pcl::PointCloud<pcl::VFHSignature308>::Ptr object_signature,
+                             pcl::PointCloud<pcl::PointXYZRGB>::Ptr object_pointcloud,
                              geometry_msgs::PoseStampedConstPtr relative_arm_pose,
                              geometry_msgs::PoseStampedConstPtr object_pose)
 {
     Object createdObject;
     createdObject.name = name;
-    createdObject.pcSize = size;
-    createdObject.object_signature = object_pointcloud;
+    createdObject.pcSize = object_signature->size();
+    createdObject.object_signature = object_signature;
+    createdObject.object_point_cloud = object_pointcloud;
     createdObject.object_pose = object_pose;
     createdObject.relative_arm_pose = relative_arm_pose;
 
@@ -61,25 +61,53 @@ string FileAPI::findDefaultName(){
 
 }
 
-void FileAPI::saveObject(Object obj){
-
+void FileAPI::saveObject(Object obj)
+{
+    boost::filesystem3::path path(m_pathToBd);
+    path/= obj.name;
+    path.replace_extension(".pcd");
+    pcl::io::savePCDFileASCII(path.c_str(), *(obj.object_signature));
 }
 
-void FileAPI::save(string name,pcl::PointCloud<pcl::VFHSignature308>::Ptr object_signature,geometry_msgs::PoseStampedConstPtr relative_arm_pose,geometry_msgs::PoseStampedConstPtr object_pose){
+void FileAPI::save(string name,
+                   pcl::PointCloud<pcl::VFHSignature308>::Ptr object_signature,
+                   pcl::PointCloud<pcl::PointXYZRGB>::Ptr object_pointCloud,
+                   geometry_msgs::PoseStampedConstPtr relative_arm_pose,
+                   geometry_msgs::PoseStampedConstPtr object_pose)
+{
     Object obj;
     obj.name = name;
-    *(obj.object_signature) = *object_signature;
+    obj.pcSize = object_signature->size();
+    obj.object_signature = object_signature;
+    obj.object_point_cloud = object_pointCloud;
     obj.relative_arm_pose = relative_arm_pose;
     obj.object_pose = object_pose;
     saveObject(obj);
 }
 
-vector<Object> FileAPI::getAllObjects(){
+Object FileAPI::retrieveObjectFromHistogramme(int p_positionHisto)
+{
+    int sommeCVFH = 0;
 
+    for(int i = 0; i < m_bdObjectVector.size(); i++)
+    {
+        sommeCVFH += m_bdObjectVector.at(i).pcSize;
+
+        if(sommeCVFH >= p_positionHisto)
+        {
+            return m_bdObjectVector.at(i);
+        }
+    }
 }
 
-Object FileAPI::getObjectByIndex(int index){
+vector<Object> FileAPI::getAllObjects()
+{
+    return m_bdObjectVector;
+}
 
+Object FileAPI::getObjectByIndex(int index)
+{
+    return m_bdObjectVector.at(index);
 }
 
 pcl::PointCloud<pcl::VFHSignature308>::Ptr FileAPI::getAllHistograme()
@@ -92,6 +120,22 @@ pcl::VFHSignature308 FileAPI::getHistogrameByIndex(int p_index)
     return m_pcvfh->at(p_index);
 }
 
-void FileAPI::parseDirectory(){
+void FileAPI::parseDirectory()
+{
+    boost::filesystem3::path path(m_pathToBd);
+    boost::filesystem3::directory_iterator dirIt(path);
+    boost::filesystem3::path pathTemp;
 
+    while(dirIt != boost::filesystem3::directory_iterator())
+    {
+        pathTemp = *dirIt;
+
+        int currentfile = atoi(pathTemp.stem().c_str());
+        if(currentfile > m_highest_index)
+        {
+            m_highest_index = currentfile;
+        }
+
+
+    }
 }

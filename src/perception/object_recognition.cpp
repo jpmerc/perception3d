@@ -379,7 +379,7 @@ pcl::PointCloud<pcl::VFHSignature308>::Ptr Object_recognition::calculateCVFHUS(p
 }
 
 
-bool Object_recognition::object_recon(pcl::PointCloud<PointT>::Ptr p_ptr_cloud,
+int Object_recognition::object_recon(pcl::PointCloud<PointT>::Ptr p_ptr_cloud,
                                       pcl::PointCloud<pcl::VFHSignature308>::Ptr p_bd)
 {
 
@@ -399,18 +399,10 @@ bool Object_recognition::object_recon(pcl::PointCloud<PointT>::Ptr p_ptr_cloud,
     pcl::PointCloud<pcl::VFHSignature308>::Ptr cloud_object_ptr (new pcl::PointCloud<pcl::VFHSignature308>);
     cloud_object_ptr->push_back(object_cvfh);
 
-        histogramComparaison(cloud_object_ptr, p_bd);
+        int positionObject = histogramComparaison(cloud_object_ptr, p_bd);
 
-    if(m_icp_fitness_score > 1)
-    {
-        //the object is recon
-        //update an attribut with the grasp dans make it accessible to oder part of
-        //the program
-    }
-    else
-    {
-        //the object is not recon
-    }
+        return positionObject;
+
 }
 
 void Object_recognition::fpfhProcessing(pcl::PointCloud<PointT>::Ptr p_ptr_cloud,
