@@ -68,7 +68,7 @@ public:
     void image_processing(pcl::PointCloud<PointT>::Ptr p_point_cloud_corner, sensor_msgs::Image p_image_input);
     int position_finder_vector(const float p_coordinate[], const pcl::PointCloud<PointT>& p_point_cloud_corner, const std::vector<float> p_distance_vector);
 
-    void coordinate_processing(const float p_coordinate[],
+    int coordinate_processing(const float p_coordinate[],
                                pcl::PointCloud<pcl::VFHSignature308>::Ptr p_bd);
     void point_cloud_processing();
 

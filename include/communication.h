@@ -34,6 +34,7 @@ private:
     JacoCustom* m_jaco_ptr;
 
     float m_coordinate_user_sended[2];
+    int m_position_vector_cvfh;
 
     bool m_coordinate_received;
     bool m_grasp_received;
