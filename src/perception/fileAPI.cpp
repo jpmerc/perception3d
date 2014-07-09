@@ -7,10 +7,10 @@ FileAPI::FileAPI(const string & directory):
 {
     m_pcvfh.reset(new pcl::PointCloud<pcl::VFHSignature308>);
     boost::filesystem3::path directory_path(directory);
-    boost::filesystem3::directory_iterator it(directory_path);
-    boost::filesystem3::path path;
     if (boost::filesystem3::exists(directory_path))
     {
+        boost::filesystem3::directory_iterator it(directory_path);
+        boost::filesystem3::path path;
         std::string objectName;
         pcl::PointCloud<pcl::VFHSignature308>::Ptr  signature(new pcl::PointCloud<pcl::VFHSignature308>);
         while(it != boost::filesystem3::directory_iterator())
@@ -42,7 +42,7 @@ FileAPI::FileAPI(const string & directory):
     else
     {
         std::cerr << "The path to the librairie doesn't exist" << std::endl;
-        throw(runtime_error("load fail"));
+       // throw(runtime_error("load fail"));
     }
 
 }
