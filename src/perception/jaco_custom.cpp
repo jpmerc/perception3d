@@ -35,7 +35,7 @@ void JacoCustom::arm_position_callback (const geometry_msgs::PoseStampedConstPtr
     // Publish the topic data received to a TF
     tool_position_tf.setOrigin(tf::Vector3(input_pose->pose.position.x,input_pose->pose.position.y,input_pose->pose.position.z));
     tool_position_tf.setRotation(tf::Quaternion(input_pose->pose.orientation.x,input_pose->pose.orientation.y,input_pose->pose.orientation.z,input_pose->pose.orientation.w));
-    position_broadcaster.sendTransform(tf::StampedTransform(tf_,ros::Time::now(),"jaco_api_origin","jaco_tool_position"));
+    position_broadcaster.sendTransform(tf::StampedTransform(tool_position_tf,ros::Time::now(),"jaco_api_origin","jaco_tool_position"));
 
 }
 
