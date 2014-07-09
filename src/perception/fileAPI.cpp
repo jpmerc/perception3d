@@ -3,7 +3,8 @@
 using namespace std;
 
 FileAPI::FileAPI(const string & directory):
-    m_pathToBd(directory)
+    m_pathToBd(directory),
+    m_highest_index(1)
 {
     m_pathcvfh = m_pathToBd + "/cvfh";
     m_pathPointCloud = m_pathToBd + "/pointCloud";
@@ -65,6 +66,7 @@ string FileAPI::findDefaultName()
     parseDirectory();
     stringstream ss;
     ss << m_highest_index;
+    std::cout << ss.str() << std::endl;
 
     return ss.str();
 
@@ -137,8 +139,9 @@ void FileAPI::savePoseArm(ObjectBd p_obj, std::string p_fileName)
     boost::filesystem3::path path(m_pathPoseArm);
     path /= p_fileName;
     path.replace_extension(".txt");
-    boost::filesystem3::ofstream ofs(path);
-    ofs.open(path, std::ios_base::app);
+    //boost::filesystem3::ofstream ofs(path);
+    //ofs.open(path, std::ios_base::app);
+    std::ofstream ofs(path.c_str(), std::ios_base::app);
     if(ofs.is_open())
     {
         for(int i = 0; i < p_obj.getArmPose().size(); i++)
@@ -165,7 +168,10 @@ void FileAPI::savePoseObject(ObjectBd p_obj, std::string p_fileName)
     boost::filesystem3::path path(m_pathPoseObject);
     path /= p_fileName;
     path.replace_extension(".txt");
-    boost::filesystem3::ofstream ofs(path);
+    //boost::filesystem3::ofstream ofs(path);
+    //ofs.open(path, std::ios_base::app);
+
+    std::ofstream ofs(path.c_str());
     if(ofs.is_open())
     {
         for(int i = 0; i < p_obj.getObjectPose().size(); i++)
@@ -244,7 +250,7 @@ pcl::VFHSignature308 FileAPI::getHistogrameByIndex(int p_index) const
 
 void FileAPI::parseDirectory()
 {
-    boost::filesystem3::path path(m_pathToBd);
+    boost::filesystem3::path path(m_pathcvfh);
     boost::filesystem3::directory_iterator dirIt(path);
     boost::filesystem3::path pathTemp;
 
@@ -257,7 +263,9 @@ void FileAPI::parseDirectory()
         {
             m_highest_index = currentfile;
         }
+        dirIt++;
     }
+    m_highest_index++;
 }
 
 bool FileAPI::fileExist(string p_fileName)
