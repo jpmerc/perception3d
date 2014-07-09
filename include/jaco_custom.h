@@ -55,6 +55,9 @@ private:
     bool check_fingers_status;
     int fingers_are_stopped_counter;
 
+    tf::Transform tool_position_tf;
+    static tf::TransformBroadcaster position_broadcaster;
+
 
 };
 

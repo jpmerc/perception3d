@@ -39,6 +39,8 @@ private:
     bool m_grasp_received;
     bool m_train_received;
 
+    tf::Transform m_relative_pose;
+
 };
 
 #endif

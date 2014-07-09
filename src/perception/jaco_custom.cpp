@@ -32,6 +32,11 @@ void JacoCustom::arm_position_callback (const geometry_msgs::PoseStampedConstPtr
     arm_pose = *input_pose;
     arm_mutex.unlock();
 
+    // Publish the topic data received to a TF
+    tool_position_tf.setOrigin(tf::Vector3(input_pose->pose.position.x,input_pose->pose.position.y,input_pose->pose.position.z));
+    tool_position_tf.setRotation(tf::Quaternion(input_pose->pose.orientation.x,input_pose->pose.orientation.y,input_pose->pose.orientation.z,input_pose->pose.orientation.w));
+    position_broadcaster.sendTransform(tf::StampedTransform(tf_,ros::Time::now(),"jaco_api_origin","jaco_tool_position"));
+
 }
 
 
@@ -123,8 +128,8 @@ geometry_msgs::PoseStamped JacoCustom::getArmPosition(){
 tf::StampedTransform JacoCustom::getArmPositionFromCamera(){
     tf::TransformListener listener;
     tf::StampedTransform transform;
-    listener.waitForTransform("camera_rgb_frame","jaco_end_effector",ros::Time(0),ros::Duration(1.0));
-    listener.lookupTransform("camera_rgb_frame","jaco_end_effector",ros::Time(0),transform);
+    listener.waitForTransform("camera_rgb_frame","jaco_tool_position",ros::Time(0),ros::Duration(1.0));
+    listener.lookupTransform("camera_rgb_frame","jaco_tool_position",ros::Time(0),transform);
     return transform;
 }
 
