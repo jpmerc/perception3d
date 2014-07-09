@@ -60,6 +60,7 @@ add_executable(perception
   src/perception/communication.cpp
   src/perception/fileAPI.cpp
   src/perception/object_recognition.cpp
+  src/perception/objectBd.cpp
   src/perception/testApi.cpp
 )
 target_link_libraries(perception ${catkin_LIBRARIES} ${PCL_LIBRARIES})

@@ -1,5 +1,5 @@
 <launch>
     <node pkg="perception3d" type="perception" name="perception" respawn="false" output="screen">
-      <param name="directory_url"  value="$(find perception3d)/dataSet_bd/" />
+      <param name="directory_url"  value="$(find perception3d)/dataSet_bd" />
     </node>
 </launch>

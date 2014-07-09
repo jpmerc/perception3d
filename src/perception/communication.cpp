@@ -115,7 +115,7 @@ void Communication::spin_once()
 //-----------------------------------------------------------------------------------------------//
 void Communication::train(){
     //
-    Object obj;
+    //Object obj;
     //obj.name = m_api_ptr->findDefaultName();
     //obj.object_pointcloud = m_object_ex_ptr->getObjectToGrasp();
 
