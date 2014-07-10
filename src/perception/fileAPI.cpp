@@ -51,14 +51,33 @@ ObjectBd FileAPI::createObject(pcl::PointCloud<pcl::VFHSignature308>::Ptr object
                                std::vector<tf::Transform> relative_arm_pose,
                                std::vector<tf::Transform> object_pose)
 {
-    std::string objectName = findDefaultName();
-    ObjectBd createdObject(objectName,
-                           object_signature,
-                           object_pointcloud,
-                           relative_arm_pose,
-                           object_pose);
+    if(object_signature->size() <= 0)
+    {
+        throw (std::runtime_error("The object don't have a signature"));
+    }
+    else if(object_pointcloud->size() <= 0)
+    {
+        throw (std::runtime_error("The point cloud is empty"));
+    }
+    else if(relative_arm_pose.size() <= 0)
+    {
+        throw(std::runtime_error("The object have no arm pose"));
+    }
+    else if(object_pose.size() <= 0)
+    {
+        throw(std::runtime_error("The object have no pose"));
+    }
+    else
+    {
+        std::string objectName = findDefaultName();
+        ObjectBd createdObject(objectName,
+                               object_signature,
+                               object_pointcloud,
+                               relative_arm_pose,
+                               object_pose);
 
-    return createdObject;
+        return createdObject;
+    }
 }
 
 string FileAPI::findDefaultName()
@@ -85,6 +104,7 @@ void FileAPI::saveObject(ObjectBd obj)
     }
     else
     {
+        std::cout << "the object is incomplete" << std::endl;
         ObjectBd loadedObj = loadFile(obj.getName());
         saveObject(loadedObj);
     }
@@ -171,7 +191,7 @@ void FileAPI::savePoseObject(ObjectBd p_obj, std::string p_fileName)
     //boost::filesystem3::ofstream ofs(path);
     //ofs.open(path, std::ios_base::app);
 
-    std::ofstream ofs(path.c_str());
+    std::ofstream ofs(path.c_str(), std::ios::app);
     if(ofs.is_open())
     {
         for(int i = 0; i < p_obj.getObjectPose().size(); i++)
@@ -235,7 +255,10 @@ vector<ObjectBd> FileAPI::getAllObjects() const
 
 ObjectBd FileAPI::getObjectByIndex(int index) const
 {
-    return m_bdObjectVector.at(index);
+    if(index < m_bdObjectVector.size() and index >= 0)
+        return m_bdObjectVector.at(index);
+    else
+        throw(std::out_of_range("The index is out of range"));
 }
 
 pcl::PointCloud<pcl::VFHSignature308>::Ptr FileAPI::getAllHistograme() const
@@ -245,7 +268,12 @@ pcl::PointCloud<pcl::VFHSignature308>::Ptr FileAPI::getAllHistograme() const
 
 pcl::VFHSignature308 FileAPI::getHistogrameByIndex(int p_index) const
 {
-    return m_pcvfh->at(p_index);
+    if(p_index < m_pcvfh->size() and p_index >= 0)
+        return m_pcvfh->at(p_index);
+    else
+    {
+        throw(std::out_of_range("The index is out of range"));
+    }
 }
 
 void FileAPI::parseDirectory()
@@ -308,20 +336,31 @@ ObjectBd FileAPI::loadFile(string p_fileName)
     if(fileExist(p_fileName))
     {
 
-        pcl::PointCloud<pcl::VFHSignature308>::Ptr signature_ptr =loadSignature(p_fileName);
-        pcl::PointCloud<pcl::PointXYZRGB>::Ptr cloud_ptr = loadPointCloud(p_fileName);
-        std::vector<tf::Transform> arm = loadPoseArm(p_fileName);
-        std::vector<tf::Transform> object = loadPoseObject(p_fileName);
-        ObjectBd returnedObject(p_fileName,
-                                signature_ptr,
-                                cloud_ptr,
-                                arm,
-                                object);
-        return returnedObject;
-    }
+            pcl::PointCloud<pcl::VFHSignature308>::Ptr signature_ptr =loadSignature(p_fileName);
+            pcl::PointCloud<pcl::PointXYZRGB>::Ptr cloud_ptr = loadPointCloud(p_fileName);
+            std::vector<tf::Transform> arm = loadPoseArm(p_fileName);
+            std::vector<tf::Transform> object = loadPoseObject(p_fileName);
+            ObjectBd returnedObject(p_fileName,
+                                    signature_ptr,
+                                    cloud_ptr,
+                                    arm,
+                                    object);
+
+            int fileLoaded = fileAlreadyLoad(p_fileName);
+            if(fileLoaded == -1)
+            {
+                for(int i = 0; i < signature_ptr->size(); i++)
+                {
+                    m_pcvfh->push_back(signature_ptr->at(i));
+                }
+                m_bdObjectVector.push_back(returnedObject);
+            }
+
+            return returnedObject;
+        }
     else
     {
-        //gestion exception....
+        throw(std::runtime_error("The file don't exist"));
     }
 }
 
@@ -350,8 +389,10 @@ std::vector<tf::Transform> FileAPI::loadPoseArm(string p_filename)
     boost::filesystem3::path path(m_pathPoseArm);
     path /= p_filename;
     path.replace_extension(".txt");
-    boost::filesystem3::ifstream ifs(path);
-    ifs.open(path, std::ios_base::in);
+    //boost::filesystem3::ifstream ifs(path);
+    //ifs.open(path, std::ios_base::in);
+
+    std::ifstream ifs(path.c_str());
     if(ifs.is_open())
     {
         std::vector<tf::Transform> returnVector;
@@ -363,7 +404,7 @@ std::vector<tf::Transform> FileAPI::loadPoseArm(string p_filename)
             std::vector<double> doubleVetor;
             for(int i = 0; i < splitterVector.size(); i++)
             {
-                doubleVetor[i] = atof(splitterVector[i].c_str());
+                doubleVetor.push_back(atof(splitterVector[i].c_str()));
             }
             tf::Transform tf;
             tf::Vector3 vec(doubleVetor[0], doubleVetor[1], doubleVetor[2]);
@@ -373,6 +414,7 @@ std::vector<tf::Transform> FileAPI::loadPoseArm(string p_filename)
             tf.setRotation(quat);
             returnVector.push_back(tf);
         }
+        ifs.close();
         return returnVector;
     }
 }
@@ -382,8 +424,9 @@ std::vector<tf::Transform> FileAPI::loadPoseObject(string p_filename)
     boost::filesystem3::path path(m_pathPoseObject);
     path /= p_filename;
     path.replace_extension(".txt");
-    boost::filesystem3::ifstream ifs(path);
-    ifs.open(path, std::ios_base::in);
+    //boost::filesystem3::ifstream ifs(path);
+    //ifs.open(path, std::ios_base::in);
+    std::ifstream ifs(path.c_str());
     if(ifs.is_open())
     {
         std::vector<tf::Transform> returnVector;
@@ -395,7 +438,7 @@ std::vector<tf::Transform> FileAPI::loadPoseObject(string p_filename)
             std::vector<double> doubleVetor;
             for(int i = 0; i < splitterVector.size(); i++)
             {
-                doubleVetor[i] = atof(splitterVector[i].c_str());
+                doubleVetor.push_back(atof(splitterVector[i].c_str()));
             }
             tf::Transform tf;
             tf::Vector3 vec(doubleVetor[0], doubleVetor[1], doubleVetor[2]);
@@ -405,6 +448,18 @@ std::vector<tf::Transform> FileAPI::loadPoseObject(string p_filename)
             tf.setRotation(quat);
             returnVector.push_back(tf);
         }
+        ifs.close();
         return returnVector;
     }
+}
+
+int FileAPI::fileAlreadyLoad(const string &p_filename)
+{
+    int position = -1;
+    for(int i = 0; i < m_bdObjectVector.size(); i++)
+    {
+        if(m_bdObjectVector[i].getName() == p_filename)
+            position = i;
+    }
+    return position;
 }

@@ -34,6 +34,7 @@ public:
                         std::vector<tf::Transform> p_objectPose);
 
     ObjectBd& operator = (const ObjectBd& p_object);
+    bool operator == (const ObjectBd& p_object);
 
 
 

@@ -45,6 +45,8 @@ public:
 
     ObjectBd retrieveObjectFromHistogramme(int p_positionHisto);
 
+    int fileAlreadyLoad(const std::string& p_filename);
+
 private:
 
     std::string findDefaultName(); //Parse the directory and find a new name for the object

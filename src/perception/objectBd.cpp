@@ -107,3 +107,27 @@ ObjectBd& ObjectBd::operator =(const ObjectBd& p_object)
 
     return *this;
 }
+
+bool ObjectBd::operator ==(const ObjectBd& p_object)
+{
+    bool validation = true;
+
+    validation = m_name == p_object.getName();
+    if(validation)
+        validation = m_pcSize == p_object.getSize();
+    if(validation)
+    {
+        for(int i = 0; i < m_object_signature->size(); i++)
+        {
+            for(int j = 0; j < 308; j++)
+            {
+                if(m_object_signature->at(i).histogram[j] != p_object.getSignature()->at(i).histogram[j])
+                {
+                    validation = false;
+                }
+            }
+        }
+    }
+    return validation;
+
+}

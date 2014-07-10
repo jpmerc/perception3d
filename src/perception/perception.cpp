@@ -4,7 +4,7 @@
 #include <jaco_custom.h>
 #include <fileAPI.h>
 
-/*
+
 ObjectExtractor *OBJ_EXTRACTOR_PTR;
 JacoCustom *JACO_PTR;
 FileAPI *API_PTR;
@@ -74,6 +74,6 @@ int main (int argc, char** argv){
 
     return 0;
 }
-*/
+
 
 
