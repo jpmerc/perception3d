@@ -11,13 +11,13 @@ FileAPI::FileAPI(const string & directory):
     m_pathPoseObject = m_pathToBd +"/poseObject";
     m_pathPoseArm = m_pathToBd +"/poseArm";
     m_pcvfh.reset(new pcl::PointCloud<pcl::VFHSignature308>);
-<<<<<<< HEAD
+
     boost::filesystem3::path directory_path(m_pathcvfh);
     boost::filesystem3::directory_iterator it(directory_path);
     boost::filesystem3::path path;
-=======
+
     boost::filesystem3::path directory_path(directory);
->>>>>>> 511207ee5b5f81668dd56fb1f5317ea39f25a3c5
+
     if (boost::filesystem3::exists(directory_path))
     {
         boost::filesystem3::directory_iterator it(directory_path);
