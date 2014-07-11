@@ -180,18 +180,6 @@ void Communication::publishRelativePoseTF(tf::Transform relative_pose){
 
 }
 
-void Communication::publishRelativePoseTF(tf::Transform relative_pose){
-    static tf::TransformBroadcaster br;
-    ros::Rate r(10);
-    while(m_publish_relative_pose){
-        tf::StampedTransform arm_relative = tf::StampedTransform(relative_pose,ros::Time::now(),"camera_rgb_frame","jaco_tool_relative_pose");
-        br.sendTransform(arm_relative);
-        r.sleep();
-    }
-
-}
-
-
 
 
 
