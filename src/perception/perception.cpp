@@ -28,13 +28,15 @@ void trainFunctionTestThread(Communication *communication_ptr){
 //    }
     sleep(8);
     communication_ptr->train();
-    int count = 0;
-    while(true){
-        sleep(1);
-        cout << count++ << endl;
-        if(count >=60) break;
-    }
+//    int count = 0;
+//    int timeToWait = 20;
+//    while(true){
+//        sleep(1);
+//        cout << count++ << endl;
+//        if(count >= timeToWait) break;
+//    }
 
+    sleep(15);
     communication_ptr->repeat();
 }
 
