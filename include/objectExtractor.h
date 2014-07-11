@@ -77,6 +77,7 @@ public:
 
     // Variables
     boost::shared_ptr<pcl::visualization::PCLVisualizer> pclViewer;
+    Object_recognition m_object_recognition;
 
 private:
     // Methods
@@ -116,7 +117,7 @@ private:
     sensor_msgs::Image m_image_received_input;
     sensor_msgs::Image m_image_memory;
 
-    Object_recognition m_object_recognition;
+
 
     int NumberOfSnapshots;
     std::string directory;

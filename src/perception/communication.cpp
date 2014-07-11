@@ -117,7 +117,8 @@ void Communication::train(){
     //
     //Object obj;
     //obj.name = m_api_ptr->findDefaultName();
-    //obj.object_pointcloud = m_object_ex_ptr->getObjectToGrasp();
+    pcl::PointCloud<pcl::PointXYZRGB>::Ptr object_pointcloud = m_object_ex_ptr->getObjectToGrasp();
+    pcl::PointCloud<pcl::VFHSignature308>::Ptr object_signature = m_object_ex_ptr->m_object_recognition.makeCVFH(object_pointcloud);
 
     // OBJECT POSE
     //obj.object_pose = ; // find object pose
@@ -129,9 +130,9 @@ void Communication::train(){
     tf::StampedTransform arm_pose_before_grasp = m_jaco_ptr->getArmPositionFromCamera();
 
     // RELATIVE POSE
-    tf::Transform diff;
+    tf::Transform arm_rel_pose;
     tf::Vector3 translation = arm_pose_before_grasp.getOrigin() - object_tf.getOrigin();
-    diff = tf::Transform(object_tf.getBasis().transposeTimes(arm_pose_before_grasp.getBasis()), translation);
+    arm_rel_pose = tf::Transform(object_tf.getBasis().transposeTimes(arm_pose_before_grasp.getBasis()), translation);
 
     // TO VIEW FRAMES
     //static tf::TransformBroadcaster br;
@@ -144,7 +145,8 @@ void Communication::train(){
     //            arm_pose_before_grasp.getOrigin().getZ() << "]" << endl;
 
 
-    m_relative_pose = diff;
+    m_api_ptr->save(object_signature,object_pointcloud,arm_rel_pose,object_tf);
+    m_relative_pose = arm_rel_pose;
 
 }
 
