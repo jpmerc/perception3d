@@ -113,7 +113,7 @@ void Communication::spin_once()
 }
 
 //-----------------------------------------------------------------------------------------------//
-void Communication::train(){
+void Communication::train(){/*
     //
     //Object obj;
     //obj.name = m_api_ptr->findDefaultName();
@@ -145,12 +145,12 @@ void Communication::train(){
     //            arm_pose_before_grasp.getOrigin().getZ() << "]" << endl;
 
 
-    m_api_ptr->save(object_signature,object_pointcloud,arm_rel_pose,object_tf);
-    m_relative_pose = arm_rel_pose;
+    //m_api_ptr->save(object_signature,object_pointcloud,arm_rel_pose,object_tf);
+    m_relative_pose = arm_rel_pose;*/
 
 }
 
-void Communication::repeat(){
+void Communication::repeat(){/*
     tf::StampedTransform object_tf = m_object_ex_ptr->getCentroidPositionRGBFrame();
     tf::Vector3 translation2 = object_tf.getOrigin() + m_relative_pose.getOrigin();
     tf::Transform tf_ = tf::Transform(object_tf.getRotation()*m_relative_pose.getRotation(), translation2);
@@ -164,7 +164,7 @@ void Communication::repeat(){
     m_publish_relative_pose = false;
     thread.join();
 
-    m_jaco_ptr->moveToPoint(goal_pose);
+    m_jaco_ptr->moveToPoint(goal_pose);*/
 
 
 }

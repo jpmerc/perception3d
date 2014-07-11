@@ -609,7 +609,7 @@ int Object_recognition::histogramComparaison(pcl::PointCloud<pcl::VFHSignature30
     }
 
     int smallestDistance = sqrDistance[0];
-    int smallestDistanceIndex;
+    int smallestDistanceIndex = memoryIndex[0];
     for(int i = 0; i < sqrDistance.size(); i++)
     {
         if (smallestDistance > sqrDistance[i])
@@ -619,8 +619,8 @@ int Object_recognition::histogramComparaison(pcl::PointCloud<pcl::VFHSignature30
         }
     }
 
-    std::cout << "The best match is = " << index[0] << std::endl;
-    std::cout << "The sqrt distance is = " << sqrDistance[0] << std::endl;
+    std::cout << "The best match is = " << smallestDistanceIndex << std::endl;
+    std::cout << "The sqrt distance is = " << smallestDistance << std::endl;
 
     return smallestDistanceIndex;
 }
