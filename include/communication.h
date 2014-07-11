@@ -1,5 +1,5 @@
-#ifndef communication_H
-#define communication_H
+#ifndef COMMUNICATION_H
+#define COMMUNICATION_H
 
 #include <ros/ros.h>
 #include <std_msgs/String.h>

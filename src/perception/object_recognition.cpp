@@ -395,11 +395,9 @@ int Object_recognition::object_recon(pcl::PointCloud<PointT>::Ptr p_ptr_cloud,
 
     //usProcessingCVFH(p_ptr_cloud, p_bd_cloud_ptr);
 
-    pcl::VFHSignature308 object_cvfh = makeCVFH(p_ptr_cloud);
-    pcl::PointCloud<pcl::VFHSignature308>::Ptr cloud_object_ptr (new pcl::PointCloud<pcl::VFHSignature308>);
-    cloud_object_ptr->push_back(object_cvfh);
+    pcl::PointCloud<pcl::VFHSignature308>::Ptr object_cvfh = makeCVFH(p_ptr_cloud);
 
-        int positionObject = histogramComparaison(cloud_object_ptr, p_bd);
+        int positionObject = histogramComparaison(object_cvfh, p_bd);
 
         return positionObject;
 
@@ -599,15 +597,35 @@ int Object_recognition::histogramComparaison(pcl::PointCloud<pcl::VFHSignature30
 
     std::vector<int> index(1);
     std::vector<float> sqrDistance(1);
-    kdtree->nearestKSearch(p_cloud->at(0), 1, index, sqrDistance);
+
+    std::vector<int> memoryIndex;
+    std::vector<float> memoryDistance;
+
+    for(int i = 0; i < p_cloud->size(); i++)
+    {
+        kdtree->nearestKSearch(p_cloud->at(i), 1, index, sqrDistance);
+        memoryIndex.push_back(index[0]);
+        memoryDistance.push_back(sqrDistance[0]);
+    }
+
+    int smallestDistance = sqrDistance[0];
+    int smallestDistanceIndex;
+    for(int i = 0; i < sqrDistance.size(); i++)
+    {
+        if (smallestDistance > sqrDistance[i])
+        {
+            smallestDistance = sqrDistance[i];
+            smallestDistanceIndex = memoryIndex[i];
+        }
+    }
 
     std::cout << "The best match is = " << index[0] << std::endl;
     std::cout << "The sqrt distance is = " << sqrDistance[0] << std::endl;
 
-    return index.at(0);
+    return smallestDistanceIndex;
 }
 
-pcl::VFHSignature308 Object_recognition::makeCVFH(pcl::PointCloud<PointT>::Ptr p_ptr_cloud)
+pcl::PointCloud<pcl::VFHSignature308>::Ptr Object_recognition::makeCVFH(pcl::PointCloud<PointT>::Ptr p_ptr_cloud)
 {
     pcl::PointCloud<PointT>::Ptr cloud_us_ptr(new pcl::PointCloud<PointT>);
     computeUniformSampling(p_ptr_cloud, cloud_us_ptr);
@@ -617,7 +635,7 @@ pcl::VFHSignature308 Object_recognition::makeCVFH(pcl::PointCloud<PointT>::Ptr p
     pcl::PointCloud<pcl::VFHSignature308>::Ptr cloud_vfh_ptr (new pcl::PointCloud<pcl::VFHSignature308>);
     *cloud_vfh_ptr = *(calculateCVFHUS(cloud_us_ptr, cloud_us_normal_ptr));
 
-    return cloud_vfh_ptr->at(0);
+    return cloud_vfh_ptr;
 
 }
 

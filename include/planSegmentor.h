@@ -1,5 +1,5 @@
-#ifndef planSegmentor_H
-#define planSegmentor_H
+#ifndef PLANSEGMENTOR_H
+#define PLANSEGMENTOR_H
 
 #include <pcl/PCLPointCloud2.h>
 #include <pcl/filters/voxel_grid.h>

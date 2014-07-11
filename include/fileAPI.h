@@ -1,5 +1,5 @@
-#ifndef fileAPI_H
-#define fileAPI_H
+#ifndef FILEAPI_H
+#define FILEAPI_H
 
 #include <ros/ros.h>
 #include <geometry_msgs/PoseStamped.h>

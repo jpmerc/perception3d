@@ -1,5 +1,5 @@
-#ifndef object_recognition_H
-#define object_recognition_H
+#ifndef OBJECT_RECOGNITION_H
+#define OBJECT_RECOGNITION_H
 
 
 #define RESET   "\033[0m"
@@ -105,7 +105,7 @@ public:
     int histogramComparaison(pcl::PointCloud<pcl::VFHSignature308>::Ptr p_cloud,
                               pcl::PointCloud<pcl::VFHSignature308>::Ptr p_bd_cloud);
 
-    pcl::VFHSignature308 makeCVFH(pcl::PointCloud<PointT>::Ptr p_cloud);
+    pcl::PointCloud<pcl::VFHSignature308>::Ptr makeCVFH(pcl::PointCloud<PointT>::Ptr p_cloud);
 
 
 

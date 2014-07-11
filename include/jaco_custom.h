@@ -1,5 +1,5 @@
-#ifndef jaco_custom_H
-#define jaco_custom_H
+#ifndef JACO_CUSTOM_H
+#define JACO_CUSTOM_H
 
 #include <ros/ros.h>
 

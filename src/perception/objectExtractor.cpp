@@ -22,7 +22,7 @@ ObjectExtractor::ObjectExtractor(bool showViewer, ros::NodeHandle p_nh){
     m_pub_android = p_nh.advertise<std_msgs::String>("/android_listener",1);
 
     NumberOfSnapshots = 0;
-    directory = "";
+    directory = "/home/robot/rosWorkspace/src/perception3d/";
 
     setPCLViewer();
 }
@@ -124,18 +124,22 @@ void ObjectExtractor::keyboard_callback(const pcl::visualization::KeyboardEvent 
 
         }
 
-        else if(event.getKeySym () == "q"){
+        else if(event.getKeySym () == "m"){
 
             std::string base_filename = "snapshot";
             char new_filename[250];
             if(NumberOfSnapshots > 0){
                 sprintf(new_filename,"%s%d.pcd",base_filename.c_str(),NumberOfSnapshots+1);
+                NumberOfSnapshots++;
             }
             else{
                 sprintf(new_filename,"%s.pcd",base_filename.c_str());
+                NumberOfSnapshots++;
             }
             std::string filename = std::string(new_filename);
             std::string path = directory + filename;
+
+            std::cout << filename << std::endl;
 
             pcl::io::savePCDFileASCII(path,*object_to_grasp);
 
@@ -166,6 +170,8 @@ std::vector<pcl::PointCloud<PointT>::Ptr> ObjectExtractor::segment_objects(pcl::
         pcl::PointIndices cloud_indices = cluster_indices.at(i);
         pcl::PointCloud<PointT>::Ptr cloud_cluster(new pcl::PointCloud<PointT>);
         cloud_cluster = extract_object_from_indices(cloud_input,cloud_indices);
+        cloud_cluster->height = 1;
+        cloud_cluster->width = cloud_cluster->size();
         object_vector_temp.push_back(cloud_cluster);
     }
 

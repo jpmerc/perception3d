@@ -1,5 +1,5 @@
-#ifndef objectExtractor_H
-#define objectExtractor_H
+#ifndef OBJECTEXTRACTOR_H
+#define OBJECTEXTRACTOR_H
 
 #include <ros/ros.h>
 
@@ -42,8 +42,10 @@
 #include<object_recognition.h>
 
 
+
 class ObjectExtractor{
 public:
+
     typedef pcl::PointXYZRGB PointT;
 
     //Methods
