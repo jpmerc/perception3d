@@ -101,7 +101,7 @@ void Communication::spin_once()
     }
     else if(m_grasp_received)
     {
-
+        repeat();
     }
     else
     {
@@ -144,14 +144,17 @@ void Communication::train(){
     //            arm_pose_before_grasp.getOrigin().getZ() << "]" << endl;
 
 
-
-
+    m_relative_pose = diff;
 
 
 
 }
 
 void Communication::repeat(){
+        tf::StampedTransform object_tf = m_object_ex_ptr->getCentroidPositionRGBFrame();
+        tf::StampedTransform arm_relative = tf::StampedTransform(m_relative_pose,ros::Time::now(),"detected_object_centroids","jaco_relative_pose");
+
+
 
 
 }
