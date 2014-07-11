@@ -154,6 +154,8 @@ void Communication::repeat(){
     tf::StampedTransform object_tf = m_object_ex_ptr->getCentroidPositionRGBFrame();
     tf::Vector3 translation2 = object_tf.getOrigin() + m_relative_pose.getOrigin();
     tf::Transform tf_ = tf::Transform(object_tf.getRotation()*m_relative_pose.getRotation(), translation2);
+<<<<<<< HEAD
+=======
 
     m_publish_relative_pose = true;
     boost::thread thread(&Communication::publishRelativePoseTF,this,tf_);
@@ -165,7 +167,31 @@ void Communication::repeat(){
     thread.join();
 
     m_jaco_ptr->moveToPoint(goal_pose);
+>>>>>>> f19369e2f55fe711cc39594442a044fe017e9c5b
 
+    m_publish_relative_pose = true;
+    boost::thread thread(&Communication::publishRelativePoseTF,this,tf_);
+    tf::StampedTransform goal_pose;
+    tf::TransformListener listener;
+    listener.waitForTransform("jaco_api_origin","jaco_tool_relative_pose",ros::Time(0),ros::Duration(3.0));
+    listener.lookupTransform("jaco_api_origin","jaco_tool_relative_pose",ros::Time(0),goal_pose);
+    m_publish_relative_pose = false;
+    thread.join();
+
+<<<<<<< HEAD
+    m_jaco_ptr->moveToPoint(goal_pose);
+=======
+}
+>>>>>>> f19369e2f55fe711cc39594442a044fe017e9c5b
+
+void Communication::publishRelativePoseTF(tf::Transform relative_pose){
+    static tf::TransformBroadcaster br;
+    ros::Rate r(10);
+    while(m_publish_relative_pose){
+        tf::StampedTransform arm_relative = tf::StampedTransform(relative_pose,ros::Time::now(),"camera_rgb_frame","jaco_tool_relative_pose");
+        br.sendTransform(arm_relative);
+        r.sleep();
+    }
 
 }
 
