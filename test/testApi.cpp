@@ -5,7 +5,7 @@
 class FileApiTest : public testing::Test
 {
 public:
-    FileApiTest():m_bd((boost::filesystem3::current_path() /= "../../../src/perception3d/dataSet_bd").c_str())
+    FileApiTest():m_bd((boost::filesystem3::current_path() /= "../../../src/perception3d/test/dataSet_bd").c_str())
     {
         m_signatureLoaded.reset(new pcl::PointCloud<pcl::VFHSignature308>);
         m_pointCloudLoadrd.reset(new pcl::PointCloud<pcl::PointXYZRGB>);
@@ -13,7 +13,7 @@ public:
 
     void loadCloud(const std::string& p_filename)
     {
-        boost::filesystem3::path path((boost::filesystem3::current_path() /= "../../../src/perception3d/dataSet_bd").c_str());
+        boost::filesystem3::path path((boost::filesystem3::current_path() /= "../../../src/perception3d/test/dataSet_bd").c_str());
         boost::filesystem3::path pathTemp;
         pathTemp = path;
         pathTemp /= "cvfh/" + p_filename;
@@ -35,7 +35,7 @@ class BdCleaner : public testing::Test
 public:
     BdCleaner()
     {
-        boost::filesystem3::path path((boost::filesystem3::current_path() /= "../../../src/perception3d/dataSet_bd").c_str());
+        boost::filesystem3::path path((boost::filesystem3::current_path() /= "../../../src/perception3d/test/dataSet_bd").c_str());
         boost::filesystem3::recursive_directory_iterator dirIt(path);
         boost::filesystem3::path tempPath;
         while(dirIt != boost::filesystem3::recursive_directory_iterator())
@@ -53,7 +53,7 @@ public:
 
     TEST(FileAPI, Default)
     {
-        boost::filesystem3::path path((boost::filesystem3::current_path() /= "../../../src/perception3d/dataSet_bd").c_str());
+        boost::filesystem3::path path((boost::filesystem3::current_path() /= "../../../src/perception3d/test/dataSet_bd").c_str());
         FileAPI fileBd(path.c_str());
         ASSERT_EQ(fileBd.getAllHistograme()->size(), 4);
         ASSERT_EQ(fileBd.getAllObjects().size(), 4);
@@ -82,9 +82,9 @@ public:
     TEST_F(FileApiTest, CreateObject)
     {
         pcl::PointCloud<pcl::VFHSignature308>::Ptr signature(new pcl::PointCloud<pcl::VFHSignature308>);
-        pcl::io::loadPCDFile((boost::filesystem3::current_path() /= "../../../src/perception3d/dataSet_bd/cvfh/1.pcd").c_str(), *signature);
+        pcl::io::loadPCDFile((boost::filesystem3::current_path() /= "../../../src/perception3d/test/dataSet_bd/cvfh/1.pcd").c_str(), *signature);
         pcl::PointCloud<pcl::PointXYZRGB>::Ptr cloud(new pcl::PointCloud<pcl::PointXYZRGB>);
-        pcl::io::loadPCDFile((boost::filesystem3::current_path() /= "../../../src/perception3d/dataSet_bd/pointCloud/1.pcd").c_str(), *cloud);
+        pcl::io::loadPCDFile((boost::filesystem3::current_path() /= "../../../src/perception3d/test/dataSet_bd/pointCloud/1.pcd").c_str(), *cloud);
 
         tf::Vector3 vec(0,0,0);
 
@@ -127,9 +127,9 @@ public:
     TEST_F(FileApiTest, SaveFile)
     {
         pcl::PointCloud<pcl::VFHSignature308>::Ptr signature(new pcl::PointCloud<pcl::VFHSignature308>);
-        pcl::io::loadPCDFile((boost::filesystem3::current_path() /= "../../../src/perception3d/dataSet_bd/cvfh/1.pcd").c_str(), *signature);
+        pcl::io::loadPCDFile((boost::filesystem3::current_path() /= "../../../src/perception3d/test/dataSet_bd/cvfh/1.pcd").c_str(), *signature);
         pcl::PointCloud<pcl::PointXYZRGB>::Ptr cloud(new pcl::PointCloud<pcl::PointXYZRGB>);
-        pcl::io::loadPCDFile((boost::filesystem3::current_path() /= "../../../src/perception3d/dataSet_bd/pointCloud/1.pcd").c_str(), *cloud);
+        pcl::io::loadPCDFile((boost::filesystem3::current_path() /= "../../../src/perception3d/test/dataSet_bd/pointCloud/1.pcd").c_str(), *cloud);
 
         tf::Vector3 vec(0,0,0);
         tf::Quaternion quat;
@@ -153,7 +153,7 @@ public:
                   armVec,
                   objectVec);
 
-        boost::filesystem3::path path((boost::filesystem3::current_path() /= "../../../src/perception3d/dataSet_bd").c_str());
+        boost::filesystem3::path path((boost::filesystem3::current_path() /= "../../../src/perception3d/test/dataSet_bd").c_str());
         boost::filesystem3::recursive_directory_iterator dirIt(path);
         boost::filesystem3::path pathTemp;
 
@@ -204,7 +204,7 @@ public:
 
         m_bd.saveObject(test);
 
-        std::ifstream ifs((boost::filesystem3::current_path() /= "../../../src/perception3d/dataSet_bd/poseObject/5.txt").c_str());
+        std::ifstream ifs((boost::filesystem3::current_path() /= "../../../src/perception3d/test/dataSet_bd/poseObject/5.txt").c_str());
         std::string line;
         int compteurLine = 0;
         while(std::getline(ifs, line))
