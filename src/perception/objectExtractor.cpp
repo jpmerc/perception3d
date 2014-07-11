@@ -129,12 +129,12 @@ void ObjectExtractor::keyboard_callback(const pcl::visualization::KeyboardEvent 
             std::string base_filename = "snapshot";
             char new_filename[250];
             if(NumberOfSnapshots > 0){
-                sprintf(new_filename,"%s%d.pcd",base_filename.c_str(),number+1);
+                sprintf(new_filename,"%s%d.pcd",base_filename.c_str(),NumberOfSnapshots+1);
             }
             else{
                 sprintf(new_filename,"%s.pcd",base_filename.c_str());
             }
-            filename = std::string(new_filename);
+            std::string filename = std::string(new_filename);
             std::string path = directory + filename;
 
             pcl::io::savePCDFileASCII(path,*object_to_grasp);

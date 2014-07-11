@@ -16,7 +16,6 @@ FileAPI::FileAPI(const string & directory):
     boost::filesystem3::directory_iterator it(directory_path);
     boost::filesystem3::path path;
 
-    boost::filesystem3::path directory_path(directory);
 
     if (boost::filesystem3::exists(directory_path))
     {
