@@ -117,6 +117,24 @@ void JacoCustom::moveToPoint(double x, double y, double z, double rotx, double r
     wait_for_arm_stopped();
 }
 
+void JacoCustom::moveToPoint(tf::Transform tf_){
+    actionlib::SimpleActionClient<jaco_msgs::ArmPoseAction> action_client("/jaco/arm_pose",true);
+    action_client.waitForServer();
+    jaco_msgs::ArmPoseGoal pose_goal = jaco_msgs::ArmPoseGoal();
+
+    pose_goal.pose.header.frame_id = "/jaco_api_origin";
+    pose_goal.pose.pose.position.x = tf_.getOrigin().getX();
+    pose_goal.pose.pose.position.y = tf_.getOrigin().getY();
+    pose_goal.pose.pose.position.z = tf_.getOrigin().getZ();
+    pose_goal.pose.pose.orientation.x = tf_.getRotation().getX();
+    pose_goal.pose.pose.orientation.y = tf_.getRotation().getY();
+    pose_goal.pose.pose.orientation.z = tf_.getRotation().getZ();
+    pose_goal.pose.pose.orientation.w = tf_.getRotation().getW();
+    action_client.sendGoal(pose_goal);
+
+    wait_for_arm_stopped();
+}
+
 
 geometry_msgs::PoseStamped JacoCustom::getArmPosition(){
     arm_mutex.lock();

@@ -21,7 +21,8 @@ ObjectExtractor::ObjectExtractor(bool showViewer, ros::NodeHandle p_nh){
 
     m_pub_android = p_nh.advertise<std_msgs::String>("/android_listener",1);
 
-
+    NumberOfSnapshots = 0;
+    directory = "";
 
     setPCLViewer();
 }
@@ -120,6 +121,23 @@ void ObjectExtractor::keyboard_callback(const pcl::visualization::KeyboardEvent 
             }
             // object_to_track = addNormalsToPointCloud(object_vector[index_to_track]);
             refreshObjectCentroid();
+
+        }
+
+        else if(event.getKeySym () == "q"){
+
+            std::string base_filename = "snapshot";
+            char new_filename[250];
+            if(NumberOfSnapshots > 0){
+                sprintf(new_filename,"%s%d.pcd",base_filename.c_str(),number+1);
+            }
+            else{
+                sprintf(new_filename,"%s.pcd",base_filename.c_str());
+            }
+            filename = std::string(new_filename);
+            std::string path = directory + filename;
+
+            pcl::io::savePCDFileASCII(path,*object_to_grasp);
 
         }
     }
@@ -461,7 +479,7 @@ int ObjectExtractor::position_finder_vector(const float p_coordinate[], const pc
 //----------------------------------------------------------------------------------------------------------------------//
 
 int ObjectExtractor::coordinate_processing(const float p_coordinate[],
-                                            pcl::PointCloud<pcl::VFHSignature308>::Ptr p_bd)
+                                           pcl::PointCloud<pcl::VFHSignature308>::Ptr p_bd)
 {
     int position_in_vector = position_finder_vector(p_coordinate,*m_memory_point_cloud_corner_ptr,m_memory_distance_vector);
     if(position_in_vector != -1)

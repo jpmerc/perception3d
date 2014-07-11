@@ -118,7 +118,8 @@ private:
 
     Object_recognition m_object_recognition;
 
-
+    int NumberOfSnapshots;
+    std::string directory;
 
 };
 

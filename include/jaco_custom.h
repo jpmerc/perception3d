@@ -27,6 +27,7 @@ public:
     void close_fingers();
     void move_up(double distance);
     void moveToPoint(double x, double y, double z, double rotx, double roty, double rotz, double rotw);
+    void moveToPoint(tf::Transform tf_);
     geometry_msgs::PoseStamped getArmPosition();
     jaco_msgs::FingerPosition getFingersPosition();
     tf::StampedTransform getArmPositionFromCamera();

@@ -21,11 +21,21 @@ void callbackThread(){
 }
 
 void trainFunctionTestThread(Communication *communication_ptr){
-    ros::NodeHandle n;ros::Rate r(1);
-    while(n.ok()){
-        communication_ptr->train();
-        r.sleep();
+//    ros::NodeHandle n;ros::Rate r(1);
+//    while(n.ok()){
+//        communication_ptr->train();
+//        r.sleep();
+//    }
+    sleep(8);
+    communication_ptr->train();
+    int count = 0;
+    while(true){
+        sleep(1);
+        cout << count++ << endl;
+        if(count >=60) break;
     }
+
+    communication_ptr->repeat();
 }
 
 int main (int argc, char** argv){

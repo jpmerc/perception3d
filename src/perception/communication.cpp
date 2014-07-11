@@ -124,9 +124,9 @@ void Communication::train(){
     tf::StampedTransform object_tf = m_object_ex_ptr->getCentroidPositionRGBFrame();
 
     // JACO POSE
-    // tf::StampedTransform arm_pose_before_grasp = m_jaco_ptr->getGraspArmPosition();
+     tf::StampedTransform arm_pose_before_grasp = m_jaco_ptr->getGraspArmPosition();
     // For testing purposes only, comment the following line and uncomment previous one
-    tf::StampedTransform arm_pose_before_grasp = m_jaco_ptr->getArmPositionFromCamera();
+    //tf::StampedTransform arm_pose_before_grasp = m_jaco_ptr->getArmPositionFromCamera();
 
     // RELATIVE POSE
     tf::Transform diff;
@@ -146,15 +146,23 @@ void Communication::train(){
 
     m_relative_pose = diff;
 
-
-
 }
 
 void Communication::repeat(){
         tf::StampedTransform object_tf = m_object_ex_ptr->getCentroidPositionRGBFrame();
-        tf::StampedTransform arm_relative = tf::StampedTransform(m_relative_pose,ros::Time::now(),"detected_object_centroids","jaco_relative_pose");
+        static tf::TransformBroadcaster br;
+        tf::Vector3 translation2 = object_tf.getOrigin() + m_relative_pose.getOrigin();
+        tf::Transform tf_ = tf::Transform(object_tf.getRotation()*m_relative_pose.getRotation(), translation2);
+        tf::StampedTransform arm_relative = tf::StampedTransform(tf_,ros::Time::now(),"camera_rgb_frame","jaco_tool_relative_pose");
+        br.sendTransform(arm_relative);
+
+        tf::StampedTransform goal_pose;
+        tf::TransformListener listener;
+        listener.waitForTransform("jaco_api_origin","jaco_tool_relative_pose",ros::Time(0),ros::Duration(3.0));
+        listener.lookupTransform("jaco_api_origin","jaco_tool_relative_pose",ros::Time(0),goal_pose);
 
 
+        m_jaco_ptr->moveToPoint(goal_pose);
 
 
 }
