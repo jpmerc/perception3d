@@ -31,14 +31,11 @@ CMAKE_COMMAND = /usr/bin/cmake
 # The command to remove a file.
 RM = /usr/bin/cmake -E remove -f
 
-# The program to use to edit the cache.
-CMAKE_EDIT_COMMAND = /usr/bin/ccmake
-
 # The top-level source directory on which CMake was run.
-CMAKE_SOURCE_DIR = /home/robot/gtest-1.7.0
+CMAKE_SOURCE_DIR = /home/jp/devel/src/perception3d/gtest-1.7.0
 
 # The top-level build directory on which CMake was run.
-CMAKE_BINARY_DIR = /home/robot/gtest-1.7.0
+CMAKE_BINARY_DIR = /home/jp/devel/src/perception3d/gtest-1.7.0
 
 # Include any dependencies generated for this target.
 include CMakeFiles/gtest.dir/depend.make
@@ -51,17 +48,17 @@ include CMakeFiles/gtest.dir/flags.make
 
 CMakeFiles/gtest.dir/src/gtest-all.cc.o: CMakeFiles/gtest.dir/flags.make
 CMakeFiles/gtest.dir/src/gtest-all.cc.o: src/gtest-all.cc
-	$(CMAKE_COMMAND) -E cmake_progress_report /home/robot/gtest-1.7.0/CMakeFiles $(CMAKE_PROGRESS_1)
+	$(CMAKE_COMMAND) -E cmake_progress_report /home/jp/devel/src/perception3d/gtest-1.7.0/CMakeFiles $(CMAKE_PROGRESS_1)
 	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green "Building CXX object CMakeFiles/gtest.dir/src/gtest-all.cc.o"
-	/usr/bin/c++   $(CXX_DEFINES) $(CXX_FLAGS)  -Wall -Wshadow -DGTEST_HAS_PTHREAD=1 -fexceptions -Wextra -Wno-unused-parameter -Wno-missing-field-initializers -o CMakeFiles/gtest.dir/src/gtest-all.cc.o -c /home/robot/gtest-1.7.0/src/gtest-all.cc
+	/usr/bin/c++   $(CXX_DEFINES) $(CXX_FLAGS)  -Wall -Wshadow -DGTEST_HAS_PTHREAD=1 -fexceptions -Wextra -Wno-unused-parameter -Wno-missing-field-initializers -o CMakeFiles/gtest.dir/src/gtest-all.cc.o -c /home/jp/devel/src/perception3d/gtest-1.7.0/src/gtest-all.cc
 
 CMakeFiles/gtest.dir/src/gtest-all.cc.i: cmake_force
 	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green "Preprocessing CXX source to CMakeFiles/gtest.dir/src/gtest-all.cc.i"
-	/usr/bin/c++  $(CXX_DEFINES) $(CXX_FLAGS)  -Wall -Wshadow -DGTEST_HAS_PTHREAD=1 -fexceptions -Wextra -Wno-unused-parameter -Wno-missing-field-initializers -E /home/robot/gtest-1.7.0/src/gtest-all.cc > CMakeFiles/gtest.dir/src/gtest-all.cc.i
+	/usr/bin/c++  $(CXX_DEFINES) $(CXX_FLAGS)  -Wall -Wshadow -DGTEST_HAS_PTHREAD=1 -fexceptions -Wextra -Wno-unused-parameter -Wno-missing-field-initializers -E /home/jp/devel/src/perception3d/gtest-1.7.0/src/gtest-all.cc > CMakeFiles/gtest.dir/src/gtest-all.cc.i
 
 CMakeFiles/gtest.dir/src/gtest-all.cc.s: cmake_force
 	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green "Compiling CXX source to assembly CMakeFiles/gtest.dir/src/gtest-all.cc.s"
-	/usr/bin/c++  $(CXX_DEFINES) $(CXX_FLAGS)  -Wall -Wshadow -DGTEST_HAS_PTHREAD=1 -fexceptions -Wextra -Wno-unused-parameter -Wno-missing-field-initializers -S /home/robot/gtest-1.7.0/src/gtest-all.cc -o CMakeFiles/gtest.dir/src/gtest-all.cc.s
+	/usr/bin/c++  $(CXX_DEFINES) $(CXX_FLAGS)  -Wall -Wshadow -DGTEST_HAS_PTHREAD=1 -fexceptions -Wextra -Wno-unused-parameter -Wno-missing-field-initializers -S /home/jp/devel/src/perception3d/gtest-1.7.0/src/gtest-all.cc -o CMakeFiles/gtest.dir/src/gtest-all.cc.s
 
 CMakeFiles/gtest.dir/src/gtest-all.cc.o.requires:
 .PHONY : CMakeFiles/gtest.dir/src/gtest-all.cc.o.requires
@@ -98,6 +95,6 @@ CMakeFiles/gtest.dir/clean:
 .PHONY : CMakeFiles/gtest.dir/clean
 
 CMakeFiles/gtest.dir/depend:
-	cd /home/robot/gtest-1.7.0 && $(CMAKE_COMMAND) -E cmake_depends "Unix Makefiles" /home/robot/gtest-1.7.0 /home/robot/gtest-1.7.0 /home/robot/gtest-1.7.0 /home/robot/gtest-1.7.0 /home/robot/gtest-1.7.0/CMakeFiles/gtest.dir/DependInfo.cmake --color=$(COLOR)
+	cd /home/jp/devel/src/perception3d/gtest-1.7.0 && $(CMAKE_COMMAND) -E cmake_depends "Unix Makefiles" /home/jp/devel/src/perception3d/gtest-1.7.0 /home/jp/devel/src/perception3d/gtest-1.7.0 /home/jp/devel/src/perception3d/gtest-1.7.0 /home/jp/devel/src/perception3d/gtest-1.7.0 /home/jp/devel/src/perception3d/gtest-1.7.0/CMakeFiles/gtest.dir/DependInfo.cmake --color=$(COLOR)
 .PHONY : CMakeFiles/gtest.dir/depend
 

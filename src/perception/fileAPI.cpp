@@ -13,8 +13,8 @@ FileAPI::FileAPI(const string & directory):
     m_pcvfh.reset(new pcl::PointCloud<pcl::VFHSignature308>);
 
     boost::filesystem3::path directory_path(m_pathcvfh);
-    boost::filesystem3::directory_iterator it(directory_path);
-    boost::filesystem3::path path;
+   // boost::filesystem3::directory_iterator it(directory_path);
+    //boost::filesystem3::path path;
 
 
     if (boost::filesystem3::exists(directory_path))
