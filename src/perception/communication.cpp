@@ -87,9 +87,9 @@ void Communication::spin_once()
     if(m_coordinate_received)
     {
         m_position_vector_cvfh = m_object_ex_ptr->coordinate_processing(m_coordinate_user_sended,
-                                                                        m_api_ptr->getAllHistograme());
+                                                                        m_api_ptr->getAllHistograms());
 
-        m_object_ex_ptr->coordinate_processing(m_coordinate_user_sended,m_api_ptr->getAllHistograme());
+        m_object_ex_ptr->coordinate_processing(m_coordinate_user_sended,m_api_ptr->getAllHistograms());
         m_object_ex_ptr->spin_once();
 
         //pour retrouver l'object qui est reconnue par le cvfh
@@ -114,40 +114,89 @@ void Communication::spin_once()
 
 //-----------------------------------------------------------------------------------------------//
 void Communication::train(){
-    //
-    //Object obj;
-    //obj.name = m_api_ptr->findDefaultName();
+
     pcl::PointCloud<pcl::PointXYZRGB>::Ptr object_pointcloud = m_object_ex_ptr->getObjectToGrasp();
-    pcl::PointCloud<pcl::VFHSignature308>::Ptr object_signature = m_object_ex_ptr->m_object_recognition.makeCVFH(object_pointcloud);
+    int positionVectorObject = m_object_ex_ptr->m_object_recognition.object_recon(object_pointcloud, m_api_ptr->getAllHistograms());
 
-    // OBJECT POSE
-    //obj.object_pose = ; // find object pose
-    tf::StampedTransform object_tf = m_object_ex_ptr->getCentroidPositionRGBFrame();
+    bool known_object = true;
+    if(positionVectorObject <= -1){
+        known_object = false;
+    }
 
-    // JACO POSE
-    //tf::StampedTransform arm_pose_before_grasp = m_jaco_ptr->getGraspArmPosition();
-    // For testing purposes only, comment the following line and uncomment previous one
-    tf::StampedTransform arm_pose_before_grasp = m_jaco_ptr->getArmPositionFromCamera();
+    if(known_object){
+        //Load object from Histogram position
+        ObjectBd obj = m_api_ptr->retrieveObjectFromHistogram(positionVectorObject);
 
-    // RELATIVE POSE
-    tf::Transform arm_rel_pose;
-    tf::Vector3 translation = arm_pose_before_grasp.getOrigin() - object_tf.getOrigin();
-    arm_rel_pose = tf::Transform(object_tf.getBasis().transposeTimes(arm_pose_before_grasp.getBasis()), translation);
+        // Find transformation between scans (new one on old one, so that relative arm position is kept) and merge them
+        //Eigen::Matrix4f mf = mergeScans(obj.getPointCloud(),object_pointcloud);
+        //Eigen::Matrix4d md(object_orientation.cast());
+        //Eigen::Affine3d affine(md);
+       // tf::Transform object_transform;
+       // tf::TransformEigenToTF(affine, object_transform);
+        // obj.pointcloud = new_pc;
 
-    // TO VIEW FRAMES
-    //static tf::TransformBroadcaster br;
-    //br.sendTransform(object_tf);
-    //br.sendTransform(tf::StampedTransform(diff,ros::Time::now(),"detected_object_centroids","jaco_relative_pose"));
+        // Calculate CVFH signature on new pointcloud
+        //obj.updateSignature();
 
-    // PRINT POSE
-    //    cout << "arm pose : [" <<   arm_pose_before_grasp.getOrigin().getX() << ", " <<
-    //            arm_pose_before_grasp.getOrigin().getY() << ", " <<
-    //            arm_pose_before_grasp.getOrigin().getZ() << "]" << endl;
+        //Push new pose in pose vector (bug to correct : overwrite file instead of appending in fileAPI)
+
+        // JACO POSE
+        //tf::StampedTransform arm_pose_before_grasp = m_jaco_ptr->getGraspArmPosition();
+        // For testing purposes only, comment the following line and uncomment previous one
+        tf::StampedTransform arm_pose_before_grasp = m_jaco_ptr->getArmPositionFromCamera();
+
+        // Pose relative to pointcloud model orientation
+        //tf::Vector3 translation = arm_pose_before_grasp.getOrigin() + object_transform.getOrigin();
+        //tf::Transform new_relative_pose = tf::Transform(arm_pose_before_grasp.getRotation()*object_transform.getRotation(), translation);
+        //obj.getArmPose().push_back(new_relative_pose);
 
 
-    m_api_ptr->save(object_signature,object_pointcloud,arm_rel_pose,object_tf);
-    m_relative_pose = arm_rel_pose;
+        // Object Pose in the map
+        //Position new_object_position = findObjectPositionInMap();
+        //obj.getObjectPose().push_back(new_object_position);
 
+        //save object
+        m_api_ptr->saveObject(obj);
+
+    }
+
+    else{
+        //
+        //Object obj;
+        //obj.name = m_api_ptr->findDefaultName();
+
+        pcl::PointCloud<pcl::VFHSignature308>::Ptr object_signature = m_object_ex_ptr->m_object_recognition.makeCVFH(object_pointcloud);
+
+        // OBJECT POSE
+        //obj.object_pose = ; // find object pose
+        tf::StampedTransform object_tf = m_object_ex_ptr->getCentroidPositionRGBFrame();
+
+        // JACO POSE
+        //tf::StampedTransform arm_pose_before_grasp = m_jaco_ptr->getGraspArmPosition();
+        // For testing purposes only, comment the following line and uncomment previous one
+        tf::StampedTransform arm_pose_before_grasp = m_jaco_ptr->getArmPositionFromCamera();
+
+        // RELATIVE POSE
+        tf::Transform arm_rel_pose;
+        tf::Vector3 translation = arm_pose_before_grasp.getOrigin() - object_tf.getOrigin();
+        arm_rel_pose = tf::Transform(object_tf.getBasis().transposeTimes(arm_pose_before_grasp.getBasis()), translation);
+
+        // TO VIEW FRAMES
+        //static tf::TransformBroadcaster br;
+        //br.sendTransform(object_tf);
+        //br.sendTransform(tf::StampedTransform(diff,ros::Time::now(),"detected_object_centroids","jaco_relative_pose"));
+
+        // PRINT POSE
+        //    cout << "arm pose : [" <<   arm_pose_before_grasp.getOrigin().getX() << ", " <<
+        //            arm_pose_before_grasp.getOrigin().getY() << ", " <<
+        //            arm_pose_before_grasp.getOrigin().getZ() << "]" << endl;
+
+
+        // SAVE
+        //m_api_ptr->save(object_signature,object_pointcloud,arm_rel_pose,object_tf);
+        m_relative_pose = arm_rel_pose;
+
+    }
 }
 
 void Communication::repeat(){

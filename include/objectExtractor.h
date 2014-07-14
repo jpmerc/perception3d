@@ -80,6 +80,7 @@ public:
     // Variables
     boost::shared_ptr<pcl::visualization::PCLVisualizer> pclViewer;
     Object_recognition m_object_recognition;
+    std::vector<pcl::PointCloud<PointT>::Ptr> object_vector;
 
 private:
     // Methods
@@ -94,7 +95,7 @@ private:
 
     // Variables
     pcl::PointCloud<PointT>::Ptr cloud;
-    std::vector<pcl::PointCloud<PointT>::Ptr> object_vector;
+
     pcl::PointCloud<PointT>::Ptr object_to_grasp;
     pcl::PointCloud<PointT>::Ptr tracked_object_centroid;
     int index_to_grasp;

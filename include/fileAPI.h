@@ -40,10 +40,10 @@ public:
 
     std::vector<ObjectBd> getAllObjects() const;
     ObjectBd getObjectByIndex(int index) const;
-    pcl::PointCloud<pcl::VFHSignature308>::Ptr getAllHistograme() const;
-    pcl::VFHSignature308 getHistogrameByIndex (int p_index) const;
+    pcl::PointCloud<pcl::VFHSignature308>::Ptr getAllHistograms() const;
+    pcl::VFHSignature308 getHistogramByIndex (int p_index) const;
 
-    ObjectBd retrieveObjectFromHistogramme(int p_positionHisto);
+    ObjectBd retrieveObjectFromHistogram(int p_positionHisto);
 
     int fileAlreadyLoad(const std::string& p_filename);
 

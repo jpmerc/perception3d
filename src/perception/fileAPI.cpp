@@ -238,7 +238,7 @@ void FileAPI::failSaveUndo(string p_fileName)
 }
 
 
-ObjectBd FileAPI::retrieveObjectFromHistogramme(int p_positionHisto)
+ObjectBd FileAPI::retrieveObjectFromHistogram(int p_positionHisto)
 {
     int sommeCVFH = 0;
 
@@ -266,12 +266,12 @@ ObjectBd FileAPI::getObjectByIndex(int index) const
         throw(std::out_of_range("The index is out of range"));
 }
 
-pcl::PointCloud<pcl::VFHSignature308>::Ptr FileAPI::getAllHistograme() const
+pcl::PointCloud<pcl::VFHSignature308>::Ptr FileAPI::getAllHistograms() const
 {
     return m_pcvfh;
 }
 
-pcl::VFHSignature308 FileAPI::getHistogrameByIndex(int p_index) const
+pcl::VFHSignature308 FileAPI::getHistogramByIndex(int p_index) const
 {
     if(p_index < m_pcvfh->size() and p_index >= 0)
         return m_pcvfh->at(p_index);
