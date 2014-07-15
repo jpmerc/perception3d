@@ -133,9 +133,13 @@ void Communication::train(){
         m_object_ex_ptr->m_object_recognition.computeUniformSampling(obj.getPointCloud(),sampled_model_pc);
         m_object_ex_ptr->m_object_recognition.computeUniformSampling(object_pointcloud,sampled_object_pc);
 
+       // Eigen::Matrix4f model_tf;
+       // Eigen::Matrix4f object_tf;
+        //pcl::PointCloud<pcl::VFHSignature308>::Ptr model_signature = m_object_ex_ptr->m_object_recognition.makeCVFH(obj.getPointCloud(),model_tf);
+       // pcl::PointCloud<pcl::VFHSignature308>::Ptr object_signature = m_object_ex_ptr->m_object_recognition.makeCVFH(object_pointcloud,object_tf);
 
-        pcl::PointCloud<pcl::VFHSignature308>::Ptr object_signature = m_object_ex_ptr->m_object_recognition.makeCVFH(object_pointcloud);
-    //    m_object_ex_ptr->m_object_recognition.mergePointCVFH();
+
+        //m_object_ex_ptr->m_object_recognition.mergePointCVFH();
 
         //Eigen::Matrix4f mf = mergeScans(obj.getPointCloud(),object_pointcloud);
         //Eigen::Matrix4d md(object_orientation.cast());

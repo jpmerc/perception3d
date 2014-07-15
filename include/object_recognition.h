@@ -38,6 +38,7 @@
 #include <pcl/features/impl/multiscale_feature_persistence.hpp>
 #include <pcl/visualization/cloud_viewer.h>
 #include <pcl/keypoints/uniform_sampling.h>
+#include <Eigen/Eigen>
 
 
 typedef pcl::PointXYZRGB PointT;
@@ -46,37 +47,39 @@ class Object_recognition
 {
 public:
     Object_recognition();
-    Eigen::Matrix4f mergePointClouds(pcl::PointCloud<pcl::FPFHSignature33>::Ptr f_src,
-                                     pcl::PointCloud<pcl::FPFHSignature33>::Ptr f_target,
-                                     pcl::PointCloud<PointT>::Ptr p_cloud_src_feature,
-                                     pcl::PointCloud<PointT>::Ptr p_cloud_target_feature);
+//    Eigen::Matrix4f mergePointClouds(pcl::PointCloud<pcl::FPFHSignature33>::Ptr f_src,
+//                                     pcl::PointCloud<pcl::FPFHSignature33>::Ptr f_target,
+//                                     pcl::PointCloud<PointT>::Ptr p_cloud_src_feature,
+//                                     pcl::PointCloud<PointT>::Ptr p_cloud_target_feature);
 
-    Eigen::Matrix4f mergePointCloudsShot(pcl::PointCloud<pcl::SHOT1344>::Ptr f_src,
-                                         pcl::PointCloud<pcl::SHOT1344>::Ptr f_target,
-                                        pcl::PointCloud<PointT>::Ptr p_cloud_src_feature,
-                                        pcl::PointCloud<PointT>::Ptr p_cloud_target_feature);
+//    Eigen::Matrix4f mergePointCloudsShot(pcl::PointCloud<pcl::SHOT1344>::Ptr f_src,
+//                                         pcl::PointCloud<pcl::SHOT1344>::Ptr f_target,
+//                                        pcl::PointCloud<PointT>::Ptr p_cloud_src_feature,
+//                                        pcl::PointCloud<PointT>::Ptr p_cloud_target_feature);
 
     Eigen::Matrix4f mergePointCVFH(pcl::PointCloud<pcl::VFHSignature308>::Ptr f_src,
                                    pcl::PointCloud<pcl::VFHSignature308>::Ptr f_target,
                                    pcl::PointCloud<PointT>::Ptr p_cloud_src_feature,
                                    pcl::PointCloud<PointT>::Ptr p_cloud_target_feature);
 
-    pcl::PointCloud<pcl::FPFHSignature33>::Ptr calculateFPFH(pcl::PointCloud<PointT>::Ptr p_cloud,
-                                                             pcl::PointCloud<PointT>::Ptr p_feature,
-                                                             pcl::PointCloud<pcl::Normal>::Ptr p_normal);
+//    pcl::PointCloud<pcl::FPFHSignature33>::Ptr calculateFPFH(pcl::PointCloud<PointT>::Ptr p_cloud,
+//                                                             pcl::PointCloud<PointT>::Ptr p_feature,
+//                                                             pcl::PointCloud<pcl::Normal>::Ptr p_normal);
 
-    pcl::PointCloud<pcl::FPFHSignature33>::Ptr calculateFPFHUS(pcl::PointCloud<PointT>::Ptr p_cloud,
-                                                             pcl::PointCloud<pcl::Normal>::Ptr p_normal);
+//    pcl::PointCloud<pcl::FPFHSignature33>::Ptr calculateFPFHUS(pcl::PointCloud<PointT>::Ptr p_cloud,
+//                                                             pcl::PointCloud<pcl::Normal>::Ptr p_normal);
 
-    pcl::PointCloud<pcl::SHOT1344>::Ptr calculateShotColor(pcl::PointCloud<PointT>::Ptr p_cloud,
-                                                           pcl::PointCloud<PointT>::Ptr p_feature,
-                                                           pcl::PointCloud<pcl::Normal>::Ptr p_normal);
+//    pcl::PointCloud<pcl::SHOT1344>::Ptr calculateShotColor(pcl::PointCloud<PointT>::Ptr p_cloud,
+//                                                           pcl::PointCloud<PointT>::Ptr p_feature,
+//                                                           pcl::PointCloud<pcl::Normal>::Ptr p_normal);
 
-    pcl::PointCloud<pcl::SHOT1344>::Ptr calculateShotColorUS(pcl::PointCloud<PointT>::Ptr p_cloud,
-                                                             pcl::PointCloud<pcl::Normal>::Ptr p_normal);
+//    pcl::PointCloud<pcl::SHOT1344>::Ptr calculateShotColorUS(pcl::PointCloud<PointT>::Ptr p_cloud,
+//                                                             pcl::PointCloud<pcl::Normal>::Ptr p_normal);
 
     pcl::PointCloud<pcl::VFHSignature308>::Ptr calculateCVFHUS(pcl::PointCloud<PointT>::Ptr p_cloud,
-                                                               pcl::PointCloud<pcl::Normal>::Ptr p_normal);
+                                                               pcl::PointCloud<pcl::Normal>::Ptr p_normal,
+                                                               std::vector<Eigen::Matrix4f,Eigen::aligned_allocator<Eigen::Matrix4f> > &tf
+                                                               );
 
     void compute_normal(pcl::PointCloud<PointT>::Ptr p_cloud, pcl::PointCloud<pcl::Normal>::Ptr p_normal);
 
@@ -88,22 +91,22 @@ public:
     void computeUniformSampling(pcl::PointCloud<PointT>::Ptr p_cloudIn,
                                 pcl::PointCloud<PointT>::Ptr p_cloudOuput);
 
-    void fpfhProcessing(pcl::PointCloud<PointT>::Ptr p_ptr_cloud,
-                        pcl::PointCloud<PointT>::Ptr p_bd_cloud_ptr);
+//    void fpfhProcessing(pcl::PointCloud<PointT>::Ptr p_ptr_cloud,
+//                        pcl::PointCloud<PointT>::Ptr p_bd_cloud_ptr);
 
-    void shotColorProcessing(pcl::PointCloud<PointT>::Ptr p_ptr_cloud,
-                             pcl::PointCloud<PointT>::Ptr p_bd_cloud_ptr);
+//    void shotColorProcessing(pcl::PointCloud<PointT>::Ptr p_ptr_cloud,
+//                             pcl::PointCloud<PointT>::Ptr p_bd_cloud_ptr);
 
-    void usProcessingFpfh(pcl::PointCloud<PointT>::Ptr p_ptr_cloud,
-                          pcl::PointCloud<PointT>::Ptr p_bd_cloud_ptr);
+//    void usProcessingFpfh(pcl::PointCloud<PointT>::Ptr p_ptr_cloud,
+//                          pcl::PointCloud<PointT>::Ptr p_bd_cloud_ptr);
 
-    void usProcessingShot(pcl::PointCloud<PointT>::Ptr p_ptr_cloud,
-                          pcl::PointCloud<PointT>::Ptr p_bd_cloud_ptr);
+//    void usProcessingShot(pcl::PointCloud<PointT>::Ptr p_ptr_cloud,
+//                          pcl::PointCloud<PointT>::Ptr p_bd_cloud_ptr);
 
     void usProcessingCVFH(pcl::PointCloud<PointT>::Ptr p_ptr_cloud,
                           pcl::PointCloud<PointT>::Ptr p_bd_cloud_ptr);
 
-    int histogramComparaison(pcl::PointCloud<pcl::VFHSignature308>::Ptr p_cloud,
+    int histogramComparison(pcl::PointCloud<pcl::VFHSignature308>::Ptr p_cloud,
                               pcl::PointCloud<pcl::VFHSignature308>::Ptr p_bd_cloud);
 
     pcl::PointCloud<pcl::VFHSignature308>::Ptr makeCVFH(pcl::PointCloud<PointT>::Ptr p_cloud);
