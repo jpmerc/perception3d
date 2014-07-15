@@ -34,6 +34,7 @@
 #include <pcl/features/normal_3d.h>
 #include <pcl/features/shot.h>
 #include <pcl/features/cvfh.h>
+#include <pcl/features/our_cvfh.h>
 #include <pcl/features/impl/multiscale_feature_persistence.hpp>
 #include <pcl/visualization/cloud_viewer.h>
 #include <pcl/keypoints/uniform_sampling.h>

@@ -8,6 +8,10 @@
 #include <fileAPI.h>
 #include <jaco_custom.h>
 
+#include <Eigen/Eigen>
+#include <eigen_conversions/eigen_msg.h>
+#include <tf_conversions/tf_eigen.h>
+
 class Communication
 {
 public:

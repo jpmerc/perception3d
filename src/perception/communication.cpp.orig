@@ -113,12 +113,15 @@ void Communication::spin_once()
 }
 
 //-----------------------------------------------------------------------------------------------//
+<<<<<<< HEAD
 void Communication::train(){/*
     //
     //Object obj;
     //obj.name = m_api_ptr->findDefaultName();
+=======
 void Communication::train(){
 
+>>>>>>> 98018e014b6aa446f2994d1dba8480b0635f8fb9
     pcl::PointCloud<pcl::PointXYZRGB>::Ptr object_pointcloud = m_object_ex_ptr->getObjectToGrasp();
     int positionVectorObject = m_object_ex_ptr->m_object_recognition.object_recon(object_pointcloud, m_api_ptr->getAllHistograms());
 
@@ -158,9 +161,10 @@ void Communication::train(){
         // For testing purposes only, comment the following line and uncomment previous one
         tf::StampedTransform arm_pose_before_grasp = m_jaco_ptr->getArmPositionFromCamera();
 
+<<<<<<< HEAD
     //m_api_ptr->save(object_signature,object_pointcloud,arm_rel_pose,object_tf);
     m_relative_pose = arm_rel_pose;*/
-
+=======
         // Pose relative to pointcloud model orientation
         //tf::Vector3 translation = arm_pose_before_grasp.getOrigin() + object_transform.getOrigin();
         //tf::Transform new_relative_pose = tf::Transform(arm_pose_before_grasp.getRotation()*object_transform.getRotation(), translation);
@@ -175,6 +179,7 @@ void Communication::train(){
         m_api_ptr->saveObject(obj);
 
     }
+>>>>>>> 98018e014b6aa446f2994d1dba8480b0635f8fb9
 
     else{
         //
