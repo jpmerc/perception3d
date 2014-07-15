@@ -248,8 +248,8 @@ pcl::PointCloud<pcl::FPFHSignature33>::Ptr Object_recognition::calculateFPFHUS(p
 }
 
 pcl::PointCloud<pcl::SHOT1344>::Ptr Object_recognition::calculateShotColor(pcl::PointCloud<PointT>::Ptr p_cloud,
-                                                                      pcl::PointCloud<PointT>::Ptr p_feature,
-                                                                      pcl::PointCloud<pcl::Normal>::Ptr p_normal)
+                                                                           pcl::PointCloud<PointT>::Ptr p_feature,
+                                                                           pcl::PointCloud<pcl::Normal>::Ptr p_normal)
 {
     ros::Time shotBegin = ros::Time::now();
 
@@ -361,16 +361,20 @@ void Object_recognition::computeUniformSampling(pcl::PointCloud<PointT>::Ptr p_c
 pcl::PointCloud<pcl::VFHSignature308>::Ptr Object_recognition::calculateCVFHUS(pcl::PointCloud<PointT>::Ptr p_cloud,
                                                                                pcl::PointCloud<pcl::Normal>::Ptr p_normal)
 {
-    pcl::CVFHEstimation<PointT, pcl::Normal, pcl::VFHSignature308> cvfh;
+    pcl::OURCVFHEstimation<PointT, pcl::Normal, pcl::VFHSignature308> ourCVFH;
     pcl::search::KdTree<PointT>::Ptr ktree (new pcl::search::KdTree<PointT>);
-    cvfh.setInputCloud(p_cloud);
-    cvfh.setInputNormals(p_normal);
-    cvfh.setSearchMethod(ktree);
-    cvfh.setKSearch(0);
-    cvfh.setRadiusSearch(0.05);
+    ourCVFH.setInputCloud(p_cloud);
+    ourCVFH.setInputNormals(p_normal);
+    ourCVFH.setSearchMethod(ktree);
+    ourCVFH.setKSearch(0);
+    ourCVFH.setRadiusSearch(0.05);
+    //ourCVFH.setEPSAngleThreshold(5.0 / 180.0 * M_PI); // 5 degrees.
+    //ourCVFH.setCurvatureThreshold(1.0);
+    ourCVFH.setNormalizeBins(false);
+    ourCVFH.setAxisRatio(0.8);
 
     pcl::PointCloud<pcl::VFHSignature308>::Ptr returnCloud(new pcl::PointCloud<pcl::VFHSignature308>);
-    cvfh.compute(*returnCloud);
+    ourCVFH.compute(*returnCloud);
 
 
     std::cout << "CVFH size = " << returnCloud->size() << std::endl;
@@ -380,7 +384,7 @@ pcl::PointCloud<pcl::VFHSignature308>::Ptr Object_recognition::calculateCVFHUS(p
 
 
 int Object_recognition::object_recon(pcl::PointCloud<PointT>::Ptr p_ptr_cloud,
-                                      pcl::PointCloud<pcl::VFHSignature308>::Ptr p_bd)
+                                     pcl::PointCloud<pcl::VFHSignature308>::Ptr p_bd)
 {
 
     std::vector<pcl::PointCloud<pcl::VFHSignature308>::Ptr> bd_vector;
@@ -397,9 +401,9 @@ int Object_recognition::object_recon(pcl::PointCloud<PointT>::Ptr p_ptr_cloud,
 
     pcl::PointCloud<pcl::VFHSignature308>::Ptr object_cvfh = makeCVFH(p_ptr_cloud);
 
-        int positionObject = histogramComparaison(object_cvfh, p_bd);
+    int positionObject = histogramComparaison(object_cvfh, p_bd);
 
-        return positionObject;
+    return positionObject;
 
 }
 
@@ -445,7 +449,7 @@ void Object_recognition::shotColorProcessing(pcl::PointCloud<PointT>::Ptr p_ptr_
     Eigen::Matrix4f transformationMatrix;
     pcl::PointCloud<PointT>::Ptr transformedPC_ptr(new pcl::PointCloud<PointT>);
 
-        //shot color computation
+    //shot color computation
     ros::Time begin = ros::Time::now();
 
     pcl::PointCloud<pcl::Normal>::Ptr ptr_point_cloud_normal(new pcl::PointCloud<pcl::Normal>);
@@ -543,7 +547,7 @@ void Object_recognition::usProcessingShot(pcl::PointCloud<PointT>::Ptr p_ptr_clo
     ros::Time end = ros::Time::now();
 
     std::cout << GREEN << "US Total time SHOT = " << end -begin << RESET
-                 << std::endl << std::endl;
+              << std::endl << std::endl;
 
     pcl::transformPointCloud(*p_ptr_cloud, *transformedPC_ptr, transformationMatrix);
     showPointCloud(transformedPC_ptr);
@@ -585,11 +589,11 @@ void Object_recognition::usProcessingCVFH(pcl::PointCloud<PointT>::Ptr p_ptr_clo
     showPointCloud(transformedPC_ptr);
 
     std::cout << GREEN << "US Total time CVFH = " << end - begin << RESET
-                 << std::endl << std::endl;
+              << std::endl << std::endl;
 }
 
 int Object_recognition::histogramComparaison(pcl::PointCloud<pcl::VFHSignature308>::Ptr p_cloud,
-                                              pcl::PointCloud<pcl::VFHSignature308>::Ptr p_bd_cloud)
+                                             pcl::PointCloud<pcl::VFHSignature308>::Ptr p_bd_cloud)
 {
     pcl::KdTreeFLANN<pcl::VFHSignature308>::Ptr kdtree (new pcl::KdTreeFLANN<pcl::VFHSignature308>);
 

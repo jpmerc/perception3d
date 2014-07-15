@@ -128,11 +128,20 @@ void Communication::train(){
         ObjectBd obj = m_api_ptr->retrieveObjectFromHistogram(positionVectorObject);
 
         // Find transformation between scans (new one on old one, so that relative arm position is kept) and merge them
+        pcl::PointCloud<PointT>::Ptr sampled_model_pc;
+        pcl::PointCloud<PointT>::Ptr sampled_object_pc;
+        m_object_ex_ptr->m_object_recognition.computeUniformSampling(obj.getPointCloud(),sampled_model_pc);
+        m_object_ex_ptr->m_object_recognition.computeUniformSampling(object_pointcloud,sampled_object_pc);
+
+
+        pcl::PointCloud<pcl::VFHSignature308>::Ptr object_signature = m_object_ex_ptr->m_object_recognition.makeCVFH(object_pointcloud);
+    //    m_object_ex_ptr->m_object_recognition.mergePointCVFH();
+
         //Eigen::Matrix4f mf = mergeScans(obj.getPointCloud(),object_pointcloud);
         //Eigen::Matrix4d md(object_orientation.cast());
         //Eigen::Affine3d affine(md);
-       // tf::Transform object_transform;
-       // tf::TransformEigenToTF(affine, object_transform);
+        // tf::Transform object_transform;
+        // tf::TransformEigenToTF(affine, object_transform);
         // obj.pointcloud = new_pc;
 
         // Calculate CVFH signature on new pointcloud
