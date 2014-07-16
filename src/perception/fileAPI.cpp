@@ -253,6 +253,16 @@ ObjectBd FileAPI::retrieveObjectFromHistogram(int p_positionHisto)
     }
 }
 
+vector<ObjectBd> FileAPI::retrieveObjectFromHistogram(vector<int> indices){
+    vector<ObjectBd> object_vector;
+    for(int i=0; i<indices.size(); i++){
+        ObjectBd obj = retrieveObjectFromHistogram(indices.at(i));
+        object_vector.push_back(obj);
+    }
+    return object_vector;
+}
+
+
 vector<ObjectBd> FileAPI::getAllObjects() const
 {
     return m_bdObjectVector;

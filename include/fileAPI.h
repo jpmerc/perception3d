@@ -44,6 +44,7 @@ public:
     pcl::VFHSignature308 getHistogramByIndex (int p_index) const;
 
     ObjectBd retrieveObjectFromHistogram(int p_positionHisto);
+    std::vector<ObjectBd> retrieveObjectFromHistogram(std::vector<int> indices);
 
     int fileAlreadyLoad(const std::string& p_filename);
 

@@ -95,6 +95,8 @@ void Object_recognition::computeUniformSampling(pcl::PointCloud<PointT>::Ptr p_c
     //showPointCloud(p_cloudOuput);
 }
 
+
+// Returns the OUR-CVFH Histograms (1 per surface) and also outputs the transform of each of these surfaces in argument tf
 pcl::PointCloud<pcl::VFHSignature308>::Ptr Object_recognition::calculateCVFHUS(pcl::PointCloud<PointT>::Ptr p_cloud,
                                                                                pcl::PointCloud<pcl::Normal>::Ptr p_normal,
                                                                                std::vector<Eigen::Matrix4f,Eigen::aligned_allocator<Eigen::Matrix4f> > &tf
@@ -109,7 +111,7 @@ pcl::PointCloud<pcl::VFHSignature308>::Ptr Object_recognition::calculateCVFHUS(p
     ourCVFH.setRadiusSearch(0.05);
     //ourCVFH.setEPSAngleThreshold(5.0 / 180.0 * M_PI); // 5 degrees.
     //ourCVFH.setCurvatureThreshold(1.0);
-   // ourcvfh.setClusterTolerance (0.015f); //1.5cm, three times the leaf size
+    // ourcvfh.setClusterTolerance (0.015f); //1.5cm, three times the leaf size
     ourCVFH.setNormalizeBins(false);
     //ourCVFH.setAxisRatio(0.8);
 
@@ -151,7 +153,7 @@ int Object_recognition::object_recon(pcl::PointCloud<PointT>::Ptr p_ptr_cloud,
 }
 
 
-
+// Merge 2 pointclouds based on OUR-CVFH Features
 void Object_recognition::usProcessingCVFH(pcl::PointCloud<PointT>::Ptr p_ptr_cloud, pcl::PointCloud<PointT>::Ptr p_bd_cloud_ptr)
 {
 
@@ -185,7 +187,7 @@ void Object_recognition::usProcessingCVFH(pcl::PointCloud<PointT>::Ptr p_ptr_clo
     transformationMatrix = mergePointCVFH(cloud_vfh_ptr, cloud_bd_vfh_ptr, cloud_us_ptr, cloud_us_bd_ptr);
 
 
-    histogramComparison(cloud_vfh_ptr, cloud_bd_vfh_ptr);
+    //histogramComparison(cloud_vfh_ptr, cloud_bd_vfh_ptr);
 
     ros::Time end = ros::Time::now();
 
@@ -195,6 +197,87 @@ void Object_recognition::usProcessingCVFH(pcl::PointCloud<PointT>::Ptr p_ptr_clo
     std::cout << GREEN << "US Total time CVFH = " << end - begin << RESET
               << std::endl << std::endl;
 }
+
+
+ObjectBd Object_recognition::OURCVFHRecognition(pcl::PointCloud<PointT>::Ptr in_pc, FileAPI *fileAPI){
+
+    std::vector<Eigen::Matrix4f,Eigen::aligned_allocator<Eigen::Matrix4f> > surface_transforms;
+    pcl::PointCloud<pcl::VFHSignature308>::Ptr surface_histograms = makeCVFH(in_pc,surface_transforms);
+
+    // Get a certain number of the NN surface hypotheses from the object database
+    pcl::PointCloud<pcl::VFHSignature308>::Ptr signature_database = fileAPI->getAllHistograms();
+    std::vector<std::vector<int> > NN_object_indices = getNNSurfaces(surface_histograms,signature_database,5);
+
+    // Get object hypotheses and initial transforms
+    std::vector<std::vector<ObjectBd> > object_hypotheses;
+    for(int i=0; i<NN_object_indices.size(); i++){
+        std::vector<ObjectBd> obj_vector = fileAPI->retrieveObjectFromHistogram(NN_object_indices.at(i));
+        object_hypotheses.push_back(obj_vector);
+    }
+
+    // Recalculate hypotheses features to get the transform
+    int surfaceNumber = 0;
+    std::vector<std::vector<Eigen::Matrix4f> > transform_matrix;
+    while(surfaceNumber < surface_histograms->size()){
+        for(int i=0; i<object_hypotheses.size(); i++){
+            std::vector<ObjectBd> obj_vector = object_hypotheses.at(i);
+            for(int j=0; j< obj_vector.size(); j++){
+                ObjectBd obj = obj_vector.at(j);
+                pcl::PointCloud<PointT>::Ptr model_pc = obj.getPointCloud();
+                std::vector<Eigen::Matrix4f,Eigen::aligned_allocator<Eigen::Matrix4f> > model_surface_transforms;
+                pcl::PointCloud<pcl::VFHSignature308>::Ptr model_signature = makeCVFH(model_pc,model_surface_transforms);
+
+                // TO CONTINUE :
+                // 1) Take the good histogram and transform (surfaceNumber variable)  -- Make sure that the histogram is the same that we have chosen previously when calculating the distance between histograms
+                // 2) Compute total transform and store it in a vector
+
+            }
+
+        }
+        surfaceNumber++;
+    }
+
+    //Output the object with the best score
+
+
+}
+
+
+
+
+
+
+std::vector<std::vector<int> > Object_recognition::getNNSurfaces(pcl::PointCloud<pcl::VFHSignature308>::Ptr p_cloud, pcl::PointCloud<pcl::VFHSignature308>::Ptr p_bd_cloud, int NNnumber)
+{
+    pcl::KdTreeFLANN<pcl::VFHSignature308>::Ptr kdtree (new pcl::KdTreeFLANN<pcl::VFHSignature308>);
+
+    kdtree->setInputCloud(p_bd_cloud);
+
+    std::vector<int> index;
+    std::vector<float> sqrDistance;
+
+    std::vector<std::vector<int> > memoryIndex;
+    std::vector<std::vector<float> > memoryDistance;
+
+    for(int i = 0; i < p_cloud->size(); i++)
+    {
+        int numberOfReturnedNN = kdtree->nearestKSearch(p_cloud->at(i), NNnumber, index, sqrDistance);
+        if(numberOfReturnedNN > 0){
+            memoryIndex.push_back(index);
+            memoryDistance.push_back(sqrDistance);
+        }
+        else{
+
+        }
+
+    }
+
+    return memoryIndex;
+}
+
+
+
+
 
 int Object_recognition::histogramComparison(pcl::PointCloud<pcl::VFHSignature308>::Ptr p_cloud, pcl::PointCloud<pcl::VFHSignature308>::Ptr p_bd_cloud)
 {
@@ -241,6 +324,20 @@ pcl::PointCloud<pcl::VFHSignature308>::Ptr Object_recognition::makeCVFH(pcl::Poi
 
     pcl::PointCloud<pcl::VFHSignature308>::Ptr cloud_vfh_ptr (new pcl::PointCloud<pcl::VFHSignature308>);
     std::vector<Eigen::Matrix4f,Eigen::aligned_allocator<Eigen::Matrix4f> > tf_;
+    *cloud_vfh_ptr = *(calculateCVFHUS(cloud_us_ptr, cloud_us_normal_ptr,tf_));
+
+    return cloud_vfh_ptr;
+
+}
+
+pcl::PointCloud<pcl::VFHSignature308>::Ptr Object_recognition::makeCVFH(pcl::PointCloud<PointT>::Ptr p_ptr_cloud, std::vector<Eigen::Matrix4f,Eigen::aligned_allocator<Eigen::Matrix4f> > &tf_)
+{
+    pcl::PointCloud<PointT>::Ptr cloud_us_ptr(new pcl::PointCloud<PointT>);
+    computeUniformSampling(p_ptr_cloud, cloud_us_ptr);
+    pcl::PointCloud<pcl::Normal>::Ptr cloud_us_normal_ptr (new pcl::PointCloud<pcl::Normal>);
+    compute_normal(cloud_us_ptr, cloud_us_normal_ptr);
+
+    pcl::PointCloud<pcl::VFHSignature308>::Ptr cloud_vfh_ptr (new pcl::PointCloud<pcl::VFHSignature308>);
     *cloud_vfh_ptr = *(calculateCVFHUS(cloud_us_ptr, cloud_us_normal_ptr,tf_));
 
     return cloud_vfh_ptr;
