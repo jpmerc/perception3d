@@ -8,7 +8,6 @@
 
 class ObjectBd
 {
-
 public:
 
     ObjectBd(std::string p_name,

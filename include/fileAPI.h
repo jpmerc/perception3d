@@ -35,7 +35,7 @@ public:
 
     void saveObject(ObjectBd obj);
 
-    ObjectBd loadFile(std::string p_fileName);
+    ObjectBd loadFile(const std::string& p_fileName);
 
 
     std::vector<ObjectBd> getAllObjects() const;
@@ -52,18 +52,18 @@ private:
 
     std::string findDefaultName(); //Parse the directory and find a new name for the object
 
-    void saveCvgh(ObjectBd p_obj, std::string p_fileName);
-    void savePointCloud(ObjectBd p_obj, std::string p_fileName);
-    void savePoseArm(ObjectBd p_obj, std::string p_fileName);
-    void savePoseObject(ObjectBd p_obj, std::string p_fileName);
-    void failSaveUndo(std::string p_fileName);
+    void saveCvgh(ObjectBd p_obj, const std::string& p_fileName);
+    void savePointCloud(ObjectBd p_obj, const std::string& p_fileName);
+    void savePoseArm(ObjectBd p_obj, const std::string& p_fileName);
+    void savePoseObject(ObjectBd p_obj, const std::string& p_fileName);
+    void failSaveUndo(const std::string& p_fileName);
 
-    pcl::PointCloud<pcl::VFHSignature308>::Ptr loadSignature(std::string p_filename);
-    pcl::PointCloud<pcl::PointXYZRGB>::Ptr loadPointCloud(std::string p_filename);
-    std::vector<tf::Transform> loadPoseArm(std::string p_filename);
-    std::vector<tf::Transform> loadPoseObject(std::string p_filename);
+    pcl::PointCloud<pcl::VFHSignature308>::Ptr loadSignature(const std::string& p_filename);
+    pcl::PointCloud<pcl::PointXYZRGB>::Ptr loadPointCloud(const std::string& p_filename);
+    std::vector<tf::Transform> loadPoseArm(const std::string& p_filename);
+    std::vector<tf::Transform> loadPoseObject(const std::string& p_filename);
 
-    bool fileExist(std::string p_fileName);
+    bool fileExist(const std::string& p_fileName);
     void parseDirectory();
 
 

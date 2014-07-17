@@ -2,6 +2,13 @@
 
 using namespace std;
 
+/*
+  The default constructor.
+  param[in] directory take a string to the root directory of the BD.  The bd must be organise like
+  this root/cvfh, root/pointCloud, root/poseObject, root/poseArm.  Will load all the object and the
+  pose.
+  */
+
 FileAPI::FileAPI(const string & directory):
     m_pathToBd(directory),
     m_highest_index(1)
@@ -13,7 +20,7 @@ FileAPI::FileAPI(const string & directory):
     m_pcvfh.reset(new pcl::PointCloud<pcl::VFHSignature308>);
 
     boost::filesystem3::path directory_path(m_pathcvfh);
-   // boost::filesystem3::directory_iterator it(directory_path);
+    //boost::filesystem3::directory_iterator it(directory_path);
     //boost::filesystem3::path path;
 
 
@@ -21,17 +28,16 @@ FileAPI::FileAPI(const string & directory):
     {
         boost::filesystem3::directory_iterator it(directory_path);
         boost::filesystem3::path path;
-        std::string objectName;
         pcl::PointCloud<pcl::VFHSignature308>::Ptr  signature_ptr(new pcl::PointCloud<pcl::VFHSignature308>);
         while(it != boost::filesystem3::directory_iterator())
         {
             std::cout << *it << std::endl;
             path = *it;
 
+            ObjectBd objTemp = loadFile(path.stem().c_str());
+            m_bdObjectVector.push_back(objTemp);
+
             pcl::io::loadPCDFile(path.c_str(), *signature_ptr);
-            objectName = path.stem().c_str();
-            m_bdObjectVector.push_back(ObjectBd(objectName,
-                                                signature_ptr));
             for(int i = 0; i < signature_ptr->size(); i++)
             {
                 m_pcvfh->push_back(signature_ptr->at(i));
@@ -50,6 +56,16 @@ FileAPI::FileAPI(const string & directory):
     }
 
 }
+
+/*
+  The function to create a new object.  Will make sure that the new name is consitant for the BD.
+  It is the only fonction to create an object and ensure no name clash.
+  param[in] object_signature the OURCVFH signature for the object.
+  param[in] object_pointCloud the original point cloud for the object.
+  param[in] relative_arm_pose the the arm pose for the object
+  param[in] object_pose the pose for the object
+  */
+
 
 ObjectBd FileAPI::createObject(pcl::PointCloud<pcl::VFHSignature308>::Ptr object_signature,
                                pcl::PointCloud<pcl::PointXYZRGB>::Ptr object_pointcloud,
@@ -85,6 +101,10 @@ ObjectBd FileAPI::createObject(pcl::PointCloud<pcl::VFHSignature308>::Ptr object
     }
 }
 
+/*
+  The funtion will find the next name unused
+  */
+
 string FileAPI::findDefaultName()
 {
     parseDirectory();
@@ -95,6 +115,13 @@ string FileAPI::findDefaultName()
     return ss.str();
 
 }
+
+/*
+  The function to save an object.
+  param[in] obj the object to save on BD.
+  If the object is incomplete, the API will try to load it.  If it exist the process will go on.
+  If the object is new an error will rise.
+  */
 
 void FileAPI::saveObject(ObjectBd obj)
 {
@@ -116,6 +143,10 @@ void FileAPI::saveObject(ObjectBd obj)
 
 }
 
+/*
+  The function to save a new object.  Will creat a new object with a good name and will save it.
+  */
+
 void FileAPI::save(pcl::PointCloud<pcl::VFHSignature308>::Ptr object_signature,
                    pcl::PointCloud<pcl::PointXYZRGB>::Ptr object_pointCloud,
                    std::vector<tf::Transform> relative_arm_pose,
@@ -129,7 +160,11 @@ void FileAPI::save(pcl::PointCloud<pcl::VFHSignature308>::Ptr object_signature,
     saveObject(createdObject);
 }
 
-void FileAPI::saveCvgh(ObjectBd p_obj, std::string p_fileName)
+/*
+  A private function that save the signature at the good place in the BD.
+  */
+
+void FileAPI::saveCvgh(ObjectBd p_obj, const std::string& p_fileName)
 {
     boost::filesystem3::path path(m_pathcvfh);
     path /= p_fileName;
@@ -144,7 +179,11 @@ void FileAPI::saveCvgh(ObjectBd p_obj, std::string p_fileName)
     }
 }
 
-void FileAPI::savePointCloud(ObjectBd p_obj, std::string p_fileName)
+/*
+  A private function that save the point cloud in the BD.
+  */
+
+void FileAPI::savePointCloud(ObjectBd p_obj, const std::string& p_fileName)
 {
     boost::filesystem3::path path(m_pathPointCloud);
     path /= p_fileName;
@@ -159,7 +198,11 @@ void FileAPI::savePointCloud(ObjectBd p_obj, std::string p_fileName)
     }
 }
 
-void FileAPI::savePoseArm(ObjectBd p_obj, std::string p_fileName)
+/*
+  The private function to save the pose arm in the BD.
+  */
+
+void FileAPI::savePoseArm(ObjectBd p_obj, const std::string& p_fileName)
 {
     boost::filesystem3::path path(m_pathPoseArm);
     path /= p_fileName;
@@ -188,7 +231,11 @@ void FileAPI::savePoseArm(ObjectBd p_obj, std::string p_fileName)
     }
 }
 
-void FileAPI::savePoseObject(ObjectBd p_obj, std::string p_fileName)
+/*
+  The private function to save the object in the BD.
+  */
+
+void FileAPI::savePoseObject(ObjectBd p_obj, const std::string& p_fileName)
 {
     boost::filesystem3::path path(m_pathPoseObject);
     path /= p_fileName;
@@ -218,7 +265,12 @@ void FileAPI::savePoseObject(ObjectBd p_obj, std::string p_fileName)
     }
 }
 
-void FileAPI::failSaveUndo(string p_fileName)
+/*
+  The function that erase a partial save to keep the BD coherent.  Will parse all the BD and erase
+  the file with the file name.
+  */
+
+void FileAPI::failSaveUndo(const std::string& p_fileName)
 {
     boost::filesystem3::path path(m_pathToBd);
     boost::filesystem3::recursive_directory_iterator dirIt(path);
@@ -237,6 +289,12 @@ void FileAPI::failSaveUndo(string p_fileName)
     }
 }
 
+/*
+  Function to retrieve the object from the histogram vector.
+  param[in] p_positionHisto an index from the signature vector.
+  return the object to which histogram correspond.  An object can have more than one histogram,
+  the function compute the difference.
+  */
 
 ObjectBd FileAPI::retrieveObjectFromHistogram(int p_positionHisto)
 {
@@ -253,6 +311,10 @@ ObjectBd FileAPI::retrieveObjectFromHistogram(int p_positionHisto)
     }
 }
 
+/*
+  return a vector of ObjectBd at the indices pass in parameter.
+  */
+
 vector<ObjectBd> FileAPI::retrieveObjectFromHistogram(vector<int> indices){
     vector<ObjectBd> object_vector;
     for(int i=0; i<indices.size(); i++){
@@ -262,24 +324,42 @@ vector<ObjectBd> FileAPI::retrieveObjectFromHistogram(vector<int> indices){
     return object_vector;
 }
 
+/*
+  return the object vector.  The function is const.
+  */
+
 
 vector<ObjectBd> FileAPI::getAllObjects() const
 {
     return m_bdObjectVector;
 }
 
+/*
+  Return the object at the indice.  The function is const.
+  */
+
 ObjectBd FileAPI::getObjectByIndex(int index) const
 {
     if(index < m_bdObjectVector.size() and index >= 0)
+    {
         return m_bdObjectVector.at(index);
+    }
     else
         throw(std::out_of_range("The index is out of range"));
 }
+
+/*
+  Return the pointcloud containing the signature.  The function is const.
+  */
 
 pcl::PointCloud<pcl::VFHSignature308>::Ptr FileAPI::getAllHistograms() const
 {
     return m_pcvfh;
 }
+
+/*
+  Return the histogram at the indice.  The function is const.
+  */
 
 pcl::VFHSignature308 FileAPI::getHistogramByIndex(int p_index) const
 {
@@ -290,6 +370,10 @@ pcl::VFHSignature308 FileAPI::getHistogramByIndex(int p_index) const
         throw(std::out_of_range("The index is out of range"));
     }
 }
+
+/*
+  A function use in to update the attribut m_highest_index.  Which is the higher name currently use.
+  */
 
 void FileAPI::parseDirectory()
 {
@@ -311,7 +395,12 @@ void FileAPI::parseDirectory()
     m_highest_index++;
 }
 
-bool FileAPI::fileExist(string p_fileName)
+/*
+  Function to look if the object exist in the BD, will look for the 4 files thats is needed.
+  param[in] p_fileName the the filename to seach for.
+  */
+
+bool FileAPI::fileExist(const std::string& p_fileName)
 {
 
     bool fileCvfh = false;
@@ -346,7 +435,13 @@ bool FileAPI::fileExist(string p_fileName)
     return fileCvfh and filePointCloud and filePoseArm and filePoseObject;
 }
 
-ObjectBd FileAPI::loadFile(string p_fileName)
+/*
+  Function to load a file.  Will look if the file exist and if the file is already loaded.
+  param[in] p_filename the file to load.
+  return an ObjectBd
+  */
+
+ObjectBd FileAPI::loadFile(const std::string& p_fileName)
 {
     if(fileExist(p_fileName))
     {
@@ -379,7 +474,13 @@ ObjectBd FileAPI::loadFile(string p_fileName)
     }
 }
 
-pcl::PointCloud<pcl::VFHSignature308>::Ptr FileAPI::loadSignature(string p_filename)
+/*
+  Load a pcd file that contain the OURCVFH signature of an object.
+  param[in] the file name.
+  return a point cloud with the signature in it.
+  */
+
+pcl::PointCloud<pcl::VFHSignature308>::Ptr FileAPI::loadSignature(const std::string& p_filename)
 {
     pcl::PointCloud<pcl::VFHSignature308>::Ptr signature_ptr(new pcl::PointCloud<pcl::VFHSignature308>);
     boost::filesystem3::path path(m_pathcvfh);
@@ -389,7 +490,13 @@ pcl::PointCloud<pcl::VFHSignature308>::Ptr FileAPI::loadSignature(string p_filen
     return signature_ptr;
 }
 
-pcl::PointCloud<pcl::PointXYZRGB>::Ptr FileAPI::loadPointCloud(string p_filename)
+/*
+  Load a pcd file that contain the point cloud of an object.
+  param[in] the file name.
+  return a point cloud.
+  */
+
+pcl::PointCloud<pcl::PointXYZRGB>::Ptr FileAPI::loadPointCloud(const std::string& p_filename)
 {
     pcl::PointCloud<pcl::PointXYZRGB>::Ptr cloud_ptr(new pcl::PointCloud<pcl::PointXYZRGB>);
     boost::filesystem3::path path(m_pathPointCloud);
@@ -399,7 +506,13 @@ pcl::PointCloud<pcl::PointXYZRGB>::Ptr FileAPI::loadPointCloud(string p_filename
     return cloud_ptr;
 }
 
-std::vector<tf::Transform> FileAPI::loadPoseArm(string p_filename)
+/*
+  Load a txt file that contain the the poseArm.
+  param[in] the file name.
+  Return a vector with the transform in it.
+  */
+
+std::vector<tf::Transform> FileAPI::loadPoseArm(const std::string& p_filename)
 {
     boost::filesystem3::path path(m_pathPoseArm);
     path /= p_filename;
@@ -434,7 +547,13 @@ std::vector<tf::Transform> FileAPI::loadPoseArm(string p_filename)
     }
 }
 
-std::vector<tf::Transform> FileAPI::loadPoseObject(string p_filename)
+/*
+  Load a txt file that contain the the poseObject.
+  param[in] the file name.
+  Return a vector with the transform in it.
+  */
+
+std::vector<tf::Transform> FileAPI::loadPoseObject(const std::string& p_filename)
 {
     boost::filesystem3::path path(m_pathPoseObject);
     path /= p_filename;
@@ -467,6 +586,13 @@ std::vector<tf::Transform> FileAPI::loadPoseObject(string p_filename)
         return returnVector;
     }
 }
+
+/*
+  Parse the object vector to find if the object is already load.
+  pram[in] p_filename the name of the object.
+  return the index if the file is already loaded.  -1 if the file is not loaded.
+  */
+
 
 int FileAPI::fileAlreadyLoad(const string &p_filename)
 {
