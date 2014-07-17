@@ -159,7 +159,7 @@ void Communication::train(){
         tf::StampedTransform arm_pose_before_grasp = m_jaco_ptr->getArmPositionFromCamera();
 
     //m_api_ptr->save(object_signature,object_pointcloud,arm_rel_pose,object_tf);
-    m_relative_pose = arm_rel_pose;*/
+    m_relative_pose = arm_rel_pose;
 
         // Pose relative to pointcloud model orientation
         //tf::Vector3 translation = arm_pose_before_grasp.getOrigin() + object_transform.getOrigin();
@@ -172,7 +172,7 @@ void Communication::train(){
         //obj.getObjectPose().push_back(new_object_position);
 
         //save object
-        m_api_ptr->saveObject(obj);
+        //m_api_ptr->saveObject(obj);
 
     }
 
@@ -212,7 +212,7 @@ void Communication::train(){
         //m_api_ptr->save(object_signature,object_pointcloud,arm_rel_pose,object_tf);
         m_relative_pose = arm_rel_pose;
 
-    }
+    }*/
 }
 
 void Communication::repeat(){/*

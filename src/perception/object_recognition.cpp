@@ -371,7 +371,7 @@ pcl::PointCloud<pcl::VFHSignature308>::Ptr Object_recognition::calculateCVFHUS(p
     //ourCVFH.setEPSAngleThreshold(5.0 / 180.0 * M_PI); // 5 degrees.
     //ourCVFH.setCurvatureThreshold(1.0);
     ourCVFH.setNormalizeBins(false);
-    ourCVFH.setAxisRatio(0.8);
+    //ourCVFH.setAxisRatio(0.8);
 
     pcl::PointCloud<pcl::VFHSignature308>::Ptr returnCloud(new pcl::PointCloud<pcl::VFHSignature308>);
     ourCVFH.compute(*returnCloud);
@@ -593,7 +593,8 @@ void Object_recognition::usProcessingCVFH(pcl::PointCloud<PointT>::Ptr p_ptr_clo
 }
 
 int Object_recognition::histogramComparaison(pcl::PointCloud<pcl::VFHSignature308>::Ptr p_cloud,
-                                             pcl::PointCloud<pcl::VFHSignature308>::Ptr p_bd_cloud)
+                                             pcl::PointCloud<pcl::VFHSignature308>::Ptr p_bd_cloud,
+                                             bool p_returnType)
 {
     pcl::KdTreeFLANN<pcl::VFHSignature308>::Ptr kdtree (new pcl::KdTreeFLANN<pcl::VFHSignature308>);
 
@@ -625,8 +626,10 @@ int Object_recognition::histogramComparaison(pcl::PointCloud<pcl::VFHSignature30
 
     std::cout << "The best match is = " << smallestDistanceIndex << std::endl;
     std::cout << "The sqrt distance is = " << smallestDistance << std::endl;
-
-    return smallestDistanceIndex;
+    if(p_returnType)
+        return smallestDistanceIndex;
+    else
+        return smallestDistance;
 }
 
 pcl::PointCloud<pcl::VFHSignature308>::Ptr Object_recognition::makeCVFH(pcl::PointCloud<PointT>::Ptr p_ptr_cloud)

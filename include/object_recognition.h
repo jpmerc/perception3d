@@ -104,7 +104,8 @@ public:
                           pcl::PointCloud<PointT>::Ptr p_bd_cloud_ptr);
 
     int histogramComparaison(pcl::PointCloud<pcl::VFHSignature308>::Ptr p_cloud,
-                              pcl::PointCloud<pcl::VFHSignature308>::Ptr p_bd_cloud);
+                              pcl::PointCloud<pcl::VFHSignature308>::Ptr p_bd_cloud,
+                             bool p_returnType = true);
 
     pcl::PointCloud<pcl::VFHSignature308>::Ptr makeCVFH(pcl::PointCloud<PointT>::Ptr p_cloud);
 
