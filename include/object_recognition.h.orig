@@ -106,11 +106,14 @@ public:
     void usProcessingCVFH(pcl::PointCloud<PointT>::Ptr p_ptr_cloud,
                           pcl::PointCloud<PointT>::Ptr p_bd_cloud_ptr);
 
+<<<<<<< HEAD
     int histogramComparaison(pcl::PointCloud<pcl::VFHSignature308>::Ptr p_cloud,
-                              pcl::PointCloud<pcl::VFHSignature308>::Ptr p_bd_cloud);
-
+                              pcl::PointCloud<pcl::VFHSignature308>::Ptr p_bd_cloud,
+                             bool p_returnType = true);
+=======
     int histogramComparison(pcl::PointCloud<pcl::VFHSignature308>::Ptr p_cloud,
                               pcl::PointCloud<pcl::VFHSignature308>::Ptr p_bd_cloud);
+>>>>>>> 833d67dd55fb61b451d07d44b7990ddc8c071c5e
 
     pcl::PointCloud<pcl::VFHSignature308>::Ptr makeCVFH(pcl::PointCloud<PointT>::Ptr p_cloud);
     pcl::PointCloud<pcl::VFHSignature308>::Ptr makeCVFH(pcl::PointCloud<PointT>::Ptr p_ptr_cloud, std::vector<Eigen::Matrix4f,Eigen::aligned_allocator<Eigen::Matrix4f> > &tf_);

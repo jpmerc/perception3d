@@ -113,36 +113,37 @@ void Communication::spin_once()
 }
 
 //-----------------------------------------------------------------------------------------------//
-<<<<<<< HEAD
 void Communication::train(){/*
     //
     //Object obj;
     //obj.name = m_api_ptr->findDefaultName();
-=======
 void Communication::train(){
 
->>>>>>> 98018e014b6aa446f2994d1dba8480b0635f8fb9
     pcl::PointCloud<pcl::PointXYZRGB>::Ptr object_pointcloud = m_object_ex_ptr->getObjectToGrasp();
-    int positionVectorObject = m_object_ex_ptr->m_object_recognition.object_recon(object_pointcloud, m_api_ptr->getAllHistograms());
+    ObjectBd object = m_object_ex_ptr->m_object_recognition.OURCVFHRecognition(object_pointcloud, m_api_ptr);
 
     bool known_object = true;
-    if(positionVectorObject <= -1){
-        known_object = false;
-    }
+//    if(positionVectorObject <= -1){
+//        known_object = false;
+//    }
 
     if(known_object){
         //Load object from Histogram position
-        ObjectBd obj = m_api_ptr->retrieveObjectFromHistogram(positionVectorObject);
+        //ObjectBd obj = m_api_ptr->retrieveObjectFromHistogram(positionVectorObject);
 
         // Find transformation between scans (new one on old one, so that relative arm position is kept) and merge them
-        pcl::PointCloud<PointT>::Ptr sampled_model_pc;
-        pcl::PointCloud<PointT>::Ptr sampled_object_pc;
-        m_object_ex_ptr->m_object_recognition.computeUniformSampling(obj.getPointCloud(),sampled_model_pc);
-        m_object_ex_ptr->m_object_recognition.computeUniformSampling(object_pointcloud,sampled_object_pc);
+//        pcl::PointCloud<PointT>::Ptr sampled_model_pc;
+//        pcl::PointCloud<PointT>::Ptr sampled_object_pc;
+//        m_object_ex_ptr->m_object_recognition.computeUniformSampling(obj.getPointCloud(),sampled_model_pc);
+//        m_object_ex_ptr->m_object_recognition.computeUniformSampling(object_pointcloud,sampled_object_pc);
+
+       // Eigen::Matrix4f model_tf;
+       // Eigen::Matrix4f object_tf;
+        //pcl::PointCloud<pcl::VFHSignature308>::Ptr model_signature = m_object_ex_ptr->m_object_recognition.makeCVFH(obj.getPointCloud(),model_tf);
+       // pcl::PointCloud<pcl::VFHSignature308>::Ptr object_signature = m_object_ex_ptr->m_object_recognition.makeCVFH(object_pointcloud,object_tf);
 
 
-        pcl::PointCloud<pcl::VFHSignature308>::Ptr object_signature = m_object_ex_ptr->m_object_recognition.makeCVFH(object_pointcloud);
-    //    m_object_ex_ptr->m_object_recognition.mergePointCVFH();
+        //m_object_ex_ptr->m_object_recognition.mergePointCVFH();
 
         //Eigen::Matrix4f mf = mergeScans(obj.getPointCloud(),object_pointcloud);
         //Eigen::Matrix4d md(object_orientation.cast());
@@ -161,10 +162,9 @@ void Communication::train(){
         // For testing purposes only, comment the following line and uncomment previous one
         tf::StampedTransform arm_pose_before_grasp = m_jaco_ptr->getArmPositionFromCamera();
 
-<<<<<<< HEAD
     //m_api_ptr->save(object_signature,object_pointcloud,arm_rel_pose,object_tf);
-    m_relative_pose = arm_rel_pose;*/
-=======
+    m_relative_pose = arm_rel_pose;
+
         // Pose relative to pointcloud model orientation
         //tf::Vector3 translation = arm_pose_before_grasp.getOrigin() + object_transform.getOrigin();
         //tf::Transform new_relative_pose = tf::Transform(arm_pose_before_grasp.getRotation()*object_transform.getRotation(), translation);
@@ -176,10 +176,9 @@ void Communication::train(){
         //obj.getObjectPose().push_back(new_object_position);
 
         //save object
-        m_api_ptr->saveObject(obj);
+        //m_api_ptr->saveObject(obj);
 
     }
->>>>>>> 98018e014b6aa446f2994d1dba8480b0635f8fb9
 
     else{
         //
@@ -217,7 +216,7 @@ void Communication::train(){
         //m_api_ptr->save(object_signature,object_pointcloud,arm_rel_pose,object_tf);
         m_relative_pose = arm_rel_pose;
 
-    }
+    }*/
 }
 
 void Communication::repeat(){/*

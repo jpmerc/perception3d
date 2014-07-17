@@ -120,26 +120,30 @@ void Communication::train(){/*
 void Communication::train(){
 
     pcl::PointCloud<pcl::PointXYZRGB>::Ptr object_pointcloud = m_object_ex_ptr->getObjectToGrasp();
-    int positionVectorObject = m_object_ex_ptr->m_object_recognition.object_recon(object_pointcloud, m_api_ptr->getAllHistograms());
+    ObjectBd object = m_object_ex_ptr->m_object_recognition.OURCVFHRecognition(object_pointcloud, m_api_ptr);
 
     bool known_object = true;
-    if(positionVectorObject <= -1){
-        known_object = false;
-    }
+//    if(positionVectorObject <= -1){
+//        known_object = false;
+//    }
 
     if(known_object){
         //Load object from Histogram position
-        ObjectBd obj = m_api_ptr->retrieveObjectFromHistogram(positionVectorObject);
+        //ObjectBd obj = m_api_ptr->retrieveObjectFromHistogram(positionVectorObject);
 
         // Find transformation between scans (new one on old one, so that relative arm position is kept) and merge them
-        pcl::PointCloud<PointT>::Ptr sampled_model_pc;
-        pcl::PointCloud<PointT>::Ptr sampled_object_pc;
-        m_object_ex_ptr->m_object_recognition.computeUniformSampling(obj.getPointCloud(),sampled_model_pc);
-        m_object_ex_ptr->m_object_recognition.computeUniformSampling(object_pointcloud,sampled_object_pc);
+//        pcl::PointCloud<PointT>::Ptr sampled_model_pc;
+//        pcl::PointCloud<PointT>::Ptr sampled_object_pc;
+//        m_object_ex_ptr->m_object_recognition.computeUniformSampling(obj.getPointCloud(),sampled_model_pc);
+//        m_object_ex_ptr->m_object_recognition.computeUniformSampling(object_pointcloud,sampled_object_pc);
+
+       // Eigen::Matrix4f model_tf;
+       // Eigen::Matrix4f object_tf;
+        //pcl::PointCloud<pcl::VFHSignature308>::Ptr model_signature = m_object_ex_ptr->m_object_recognition.makeCVFH(obj.getPointCloud(),model_tf);
+       // pcl::PointCloud<pcl::VFHSignature308>::Ptr object_signature = m_object_ex_ptr->m_object_recognition.makeCVFH(object_pointcloud,object_tf);
 
 
-        pcl::PointCloud<pcl::VFHSignature308>::Ptr object_signature = m_object_ex_ptr->m_object_recognition.makeCVFH(object_pointcloud);
-    //    m_object_ex_ptr->m_object_recognition.mergePointCVFH();
+        //m_object_ex_ptr->m_object_recognition.mergePointCVFH();
 
         //Eigen::Matrix4f mf = mergeScans(obj.getPointCloud(),object_pointcloud);
         //Eigen::Matrix4d md(object_orientation.cast());
