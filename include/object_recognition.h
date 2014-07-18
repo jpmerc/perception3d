@@ -62,6 +62,10 @@ public:
                                    pcl::PointCloud<PointT>::Ptr p_cloud_src_feature,
                                    pcl::PointCloud<PointT>::Ptr p_cloud_target_feature);
 
+    double mergePointCVFH(pcl::PointCloud<pcl::VFHSignature308>::Ptr p_cloud_src_feature,
+                          pcl::PointCloud<pcl::VFHSignature308>::Ptr p_cloud_target_feature,
+                          Eigen::Matrix4f &transform_guess);
+
 //    pcl::PointCloud<pcl::FPFHSignature33>::Ptr calculateFPFH(pcl::PointCloud<PointT>::Ptr p_cloud,
 //                                                             pcl::PointCloud<PointT>::Ptr p_feature,
 //                                                             pcl::PointCloud<pcl::Normal>::Ptr p_normal);
