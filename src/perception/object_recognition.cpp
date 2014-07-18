@@ -57,11 +57,11 @@ Eigen::Matrix4f Object_recognition::mergePointCVFH(pcl::PointCloud<pcl::VFHSigna
     return icp_transformation;
 }
 
-Eigen::Matrix4f Object_recognition::mergePointCVFH(pcl::PointCloud<pcl::VFHSignature308>::Ptr f_src,
-                                                   pcl::PointCloud<pcl::VFHSignature308>::Ptr f_target,
-                                                   pcl::PointCloud<PointT>::Ptr p_cloud_src_feature,
-                                                   pcl::PointCloud<PointT>::Ptr p_cloud_target_feature,
-                                                   Eigen::Matrix4f &transform_guess)
+// Takes initial guess as input argument. It modifies it to return the final transformation.
+// The function returns the score.
+double Object_recognition::mergePointCVFH(pcl::PointCloud<PointT>::Ptr p_cloud_src_feature,
+                                          pcl::PointCloud<PointT>::Ptr p_cloud_target_feature,
+                                          Eigen::Matrix4f &transform_guess)
 {
     ros::Time begin = ros::Time::now();
 
@@ -81,9 +81,9 @@ Eigen::Matrix4f Object_recognition::mergePointCVFH(pcl::PointCloud<pcl::VFHSigna
     std::cout << "ICP Transformation Score = " << icp.getFitnessScore(maxDistanceICP) << std::endl;
 
 
-    Eigen::Matrix4f icp_transformation = icp.getFinalTransformation();
+    transform_guess = icp.getFinalTransformation();
     //pcl::PointCloud<pcl::PointXYZ>::Ptr tmp_cloud(new pcl::PointCloud<pcl::PointXYZ>(Final));
-    return icp_transformation;
+    return m_icp_fitness_score;
 }
 
 
@@ -241,16 +241,12 @@ ObjectBd Object_recognition::OURCVFHRecognition(pcl::PointCloud<PointT>::Ptr in_
 
     // Get object hypotheses and initial transforms
     std::vector<ObjectBd> object_hypotheses = fileAPI->retrieveObjectFromHistogram( NN_object_indices.at(0) );
+    vector<double> scores;
 
     for(int i=0; i < object_hypotheses.size(); i++){
         ObjectBd obj = object_hypotheses.at(i);
-
-        //Eigen::Matrix4f tf = getTf();
-
-
-        //
-
-
+        // Eigen::Matrix4f guess = getTf();  // TODO replace function name
+        // scores.push_back(mergePointCVFH(in_pc,obj.getPointCloud(),guess));
     }
 
     //Output the object with the best score
