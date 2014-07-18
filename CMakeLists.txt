@@ -16,10 +16,10 @@ find_package( PCL REQUIRED )
 include_directories(  ${catkin_INCLUDE_DIRS}
 		  ${PCL_INCLUDE_DIRS}
  		include
-                gtest-1.7.0/include
+                #gtest-1.7.0/include
 )
 
-add_subdirectory(gtest-1.7.0)
+#add_subdirectory(gtest-1.7.0)
 link_directories(${PCL_LIBRARY_DIRS})
 add_definitions(${PCL_DEFINITIONS})
 #add_library(codeToTest  test/testApi.cpp
@@ -36,7 +36,7 @@ target_link_libraries(lperception ${catkin_LIBRARIES} ${PCL_LIBRARIES})
 
 catkin_package(
   INCLUDE_DIRS include
-  gtest-1.7.0/include
+  #gtest-1.7.0/include
   #${PCL_INCLUDE_DIRS}
  #  LIBRARIES ${PCL_LIBRARY_DIRS}
 #  CATKIN_DEPENDS other_catkin_pkg
@@ -85,9 +85,9 @@ add_executable(perception
 target_link_libraries(perception ${catkin_LIBRARIES} ${PCL_LIBRARIES})
 add_dependencies(perception perception3d_gencpp)
 
-add_executable(unit-test   test/testApi.cpp
-				test/testObjectBd.cpp)
-target_link_libraries(unit-test gtest gtest_main rt pthread boost_system lperception)
+#add_executable(unit-test   test/testApi.cpp
+#				test/testObjectBd.cpp)
+#target_link_libraries(unit-test gtest gtest_main rt pthread boost_system lperception)
 
 add_executable(segmentation
   src/segmentation/mainProgram.cpp
