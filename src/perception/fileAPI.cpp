@@ -17,42 +17,33 @@ FileAPI::FileAPI(const string & directory):
     m_pathPointCloud = m_pathToBd + "/pointCloud";
     m_pathPoseObject = m_pathToBd +"/poseObject";
     m_pathPoseArm = m_pathToBd +"/poseArm";
+    m_pathTransform = m_pathToBd + "/transform";
     m_pcvfh.reset(new pcl::PointCloud<pcl::VFHSignature308>);
 
     boost::filesystem3::path directory_path(m_pathcvfh);
-    //boost::filesystem3::directory_iterator it(directory_path);
-    //boost::filesystem3::path path;
-
 
     if (boost::filesystem3::exists(directory_path))
     {
         boost::filesystem3::directory_iterator it(directory_path);
         boost::filesystem3::path path;
-        pcl::PointCloud<pcl::VFHSignature308>::Ptr  signature_ptr(new pcl::PointCloud<pcl::VFHSignature308>);
         while(it != boost::filesystem3::directory_iterator())
         {
             std::cout << *it << std::endl;
             path = *it;
 
-            ObjectBd objTemp = loadFile(path.stem().c_str());
-            m_bdObjectVector.push_back(objTemp);
+            loadFile(path.stem().c_str());
 
-            pcl::io::loadPCDFile(path.c_str(), *signature_ptr);
-            for(int i = 0; i < signature_ptr->size(); i++)
-            {
-                m_pcvfh->push_back(signature_ptr->at(i));
-            }
             it++;
         }
 
-        std::cout << "Point Cloud CBFH size : " << m_pcvfh->size() << std::endl;
+        std::cout << "Point Cloud CVFH size : " << m_pcvfh->size() << std::endl;
         std::cout << "Object number loaded : " << m_bdObjectVector.size() << std::endl;
         std::cout << "Data base load finish" << std::endl;
     }
     else
     {
         std::cerr << "The path to the librairie doesn't exist" << std::endl;
-       // throw(runtime_error("load fail"));
+        //throw(runtime_error("load fail"));
     }
 
 }
@@ -101,6 +92,43 @@ ObjectBd FileAPI::createObject(pcl::PointCloud<pcl::VFHSignature308>::Ptr object
     }
 }
 
+ObjectBd FileAPI::createObject(pcl::PointCloud<pcl::VFHSignature308>::Ptr object_signature,
+                               pcl::PointCloud<pcl::PointXYZRGB>::Ptr object_pointcloud,
+                               std::vector<tf::Transform> relative_arm_pose,
+                               std::vector<tf::Transform> object_pose,
+                               std::vector<Eigen::Matrix4f,Eigen::aligned_allocator<Eigen::Matrix4f> > p_tf)
+{
+    if(object_signature->size() <= 0)
+    {
+        throw (std::runtime_error("The object don't have a signature"));
+    }
+    else if(object_pointcloud->size() <= 0)
+    {
+        throw (std::runtime_error("The point cloud is empty"));
+    }
+    else if(relative_arm_pose.size() <= 0)
+    {
+        throw(std::runtime_error("The object have no arm pose"));
+    }
+    else if(object_pose.size() <= 0)
+    {
+        throw(std::runtime_error("The object have no pose"));
+    }
+    else
+    {
+        std::string objectName = findDefaultName();
+        ObjectBd createdObject(objectName,
+                               object_signature,
+                               object_pointcloud,
+                               relative_arm_pose,
+                               object_pose,
+                               p_tf);
+
+        return createdObject;
+    }
+}
+
+
 /*
   The funtion will find the next name unused
   */
@@ -123,22 +151,42 @@ string FileAPI::findDefaultName()
   If the object is new an error will rise.
   */
 
-void FileAPI::saveObject(ObjectBd obj)
+void FileAPI::saveObject(ObjectBd p_obj)
 {
-    if(obj.objectIsComplete())
+    std::string fileName = p_obj.getName();
+    saveCvgh(p_obj, fileName);
+    savePointCloud(p_obj, fileName);
+    savePoseArm(p_obj, fileName);
+    savePoseObject(p_obj, fileName);
+    saveTranform(p_obj, fileName);
+
+    int indice = fileAlreadyLoad(fileName);
+    if(indice > -1 and indice < m_bdObjectVector.size())
     {
-        std::string fileName = obj.getName();
-        saveCvgh(obj, fileName);
-        savePointCloud(obj, fileName);
-        savePoseArm(obj, fileName);
-        savePoseObject(obj, fileName);
+        std::vector<int> indices = retrieveHistogramFromObject(indice);
+        m_pcvfh->erase(m_pcvfh->begin() + indices[0], m_pcvfh->begin() + indices[1]+1);
+        m_bdObjectVector.erase(m_bdObjectVector.begin()+indice);
+        m_bdObjectVector.push_back(p_obj);
+        for(int i = 0; i < p_obj.getSignature()->size(); i++)
+        {
+            m_pcvfh->push_back(p_obj.getSignature()->at(i));
+        }
+        std::cout << "The file have been save under the name : " << fileName << std::endl;
+    }
+    else if(indice == -1)
+    {
+        m_bdObjectVector.push_back(p_obj);
+        for(int i = 0; i < p_obj.getSignature()->size(); i++)
+        {
+            m_pcvfh->push_back(p_obj.getSignature()->at(i));
+        }
         std::cout << "The file have been save under the name : " << fileName << std::endl;
     }
     else
     {
-        std::cout << "the object is incomplete" << std::endl;
-        ObjectBd loadedObj = loadFile(obj.getName());
-        saveObject(loadedObj);
+        failSaveUndo(p_obj.getName());
+        std::cerr << "The index must be in range of the ObjectVector" << std::endl;
+        throw(std::out_of_range("Trying to acces out of range on m_bdObjectVector"));
     }
 
 }
@@ -159,6 +207,22 @@ void FileAPI::save(pcl::PointCloud<pcl::VFHSignature308>::Ptr object_signature,
 
     saveObject(createdObject);
 }
+
+void FileAPI::save(pcl::PointCloud<pcl::VFHSignature308>::Ptr object_signature,
+                   pcl::PointCloud<pcl::PointXYZRGB>::Ptr object_pointCloud,
+                   std::vector<tf::Transform> relative_arm_pose,
+                   std::vector<tf::Transform> object_pose,
+                   std::vector<Eigen::Matrix4f,Eigen::aligned_allocator<Eigen::Matrix4f> > p_tf)
+{
+    ObjectBd createdObject = createObject(object_signature,
+                                          object_pointCloud,
+                                          relative_arm_pose,
+                                          object_pose,
+                                          p_tf);
+
+    saveObject(createdObject);
+}
+
 
 /*
   A private function that save the signature at the good place in the BD.
@@ -207,9 +271,7 @@ void FileAPI::savePoseArm(ObjectBd p_obj, const std::string& p_fileName)
     boost::filesystem3::path path(m_pathPoseArm);
     path /= p_fileName;
     path.replace_extension(".txt");
-    //boost::filesystem3::ofstream ofs(path);
-    //ofs.open(path, std::ios_base::app);
-    std::ofstream ofs(path.c_str(), std::ios_base::app);
+    std::ofstream ofs(path.c_str(), std::ios_base::out);
     if(ofs.is_open())
     {
         for(int i = 0; i < p_obj.getArmPose().size(); i++)
@@ -240,10 +302,7 @@ void FileAPI::savePoseObject(ObjectBd p_obj, const std::string& p_fileName)
     boost::filesystem3::path path(m_pathPoseObject);
     path /= p_fileName;
     path.replace_extension(".txt");
-    //boost::filesystem3::ofstream ofs(path);
-    //ofs.open(path, std::ios_base::app);
-
-    std::ofstream ofs(path.c_str(), std::ios::app);
+    std::ofstream ofs(path.c_str(), std::ios::out);
     if(ofs.is_open())
     {
         for(int i = 0; i < p_obj.getObjectPose().size(); i++)
@@ -264,6 +323,35 @@ void FileAPI::savePoseObject(ObjectBd p_obj, const std::string& p_fileName)
         failSaveUndo(p_fileName);
     }
 }
+
+void FileAPI::saveTranform(ObjectBd p_obj, const string &p_fileName)
+{
+    boost::filesystem3::path path(m_pathTransform);
+    path /= p_fileName;
+    path.replace_extension(".txt");
+
+    std::ofstream ofs(path.c_str(), std::ios::app);
+    std::vector<Eigen::Matrix4f,Eigen::aligned_allocator<Eigen::Matrix4f> > tfV = p_obj.getTransform();
+    if(ofs.is_open())
+    {
+        for(int i = 0; i < tfV.size(); i ++)
+        {
+            Eigen::Matrix4f matrix = tfV.at(i);
+            float* array;
+            array = matrix.data();
+            for(int i = 0; i < 16; i++)
+            {
+                if(i == 15)
+                    ofs << *(array + i);
+                else
+                    ofs << *(array + i) << ";";
+            }
+            ofs << std::endl;
+        }
+    }
+    ofs.close();
+}
+
 
 /*
   The function that erase a partial save to keep the BD coherent.  Will parse all the BD and erase
@@ -296,7 +384,7 @@ void FileAPI::failSaveUndo(const std::string& p_fileName)
   the function compute the difference.
   */
 
-ObjectBd FileAPI::retrieveObjectFromHistogram(int p_positionHisto)
+ObjectBd FileAPI::retrieveObjectFromHistogram(int p_positionHisto) const
 {
     int sommeCVFH = 0;
 
@@ -315,13 +403,35 @@ ObjectBd FileAPI::retrieveObjectFromHistogram(int p_positionHisto)
   return a vector of ObjectBd at the indices pass in parameter.
   */
 
-vector<ObjectBd> FileAPI::retrieveObjectFromHistogram(vector<int> indices){
+vector<ObjectBd> FileAPI::retrieveObjectFromHistogram(vector<int> indices) const
+{
     vector<ObjectBd> object_vector;
     for(int i=0; i<indices.size(); i++){
         ObjectBd obj = retrieveObjectFromHistogram(indices.at(i));
         object_vector.push_back(obj);
     }
     return object_vector;
+}
+
+/*
+  Find the indice for an object signature.
+  param[in] p_indice the object indice in his vector the max is size()-1.
+  return a vector.  The 1rst value is the first indice.  The second value is the last indice.
+  The value returned is an indice to be used in the m_pcvfh.  The value is between 0 and
+  m_pcvfh.size().
+  */
+
+std::vector<int> FileAPI::retrieveHistogramFromObject(int p_indice) const
+{
+    int sommeSignature = 0;
+    std::vector<int> indiceCompteur;
+    for(int i = 0; i <= p_indice; i++)
+    {
+        sommeSignature += m_bdObjectVector.at(i).getSize();
+    }
+    indiceCompteur.push_back(sommeSignature - m_bdObjectVector.at(p_indice).getSize());
+    indiceCompteur.push_back(sommeSignature - 1);
+    return indiceCompteur;
 }
 
 /*
@@ -372,7 +482,7 @@ pcl::VFHSignature308 FileAPI::getHistogramByIndex(int p_index) const
 }
 
 /*
-  A function use in to update the attribut m_highest_index.  Which is the higher name currently use.
+  A function use in to update the attribut m_highest_index.  Which is the next name to use.
   */
 
 void FileAPI::parseDirectory()
@@ -407,6 +517,7 @@ bool FileAPI::fileExist(const std::string& p_fileName)
     bool filePointCloud = false;
     bool filePoseArm = false;
     bool filePoseObject = false;
+    bool fileTransform = false;
 
 
 
@@ -431,12 +542,18 @@ bool FileAPI::fileExist(const std::string& p_fileName)
     path.replace_extension(".txt");
     filePoseArm = boost::filesystem3::exists(path);
 
+    path = m_pathTransform;
+    path /= p_fileName;
+    path.replace_extension(".txt");
+    fileTransform = boost::filesystem3::exists(path);
 
-    return fileCvfh and filePointCloud and filePoseArm and filePoseObject;
+
+    return fileCvfh and filePointCloud and filePoseArm and filePoseObject and fileTransform;
 }
 
 /*
   Function to load a file.  Will look if the file exist and if the file is already loaded.
+  Will update the signature cloud and the object vector
   param[in] p_filename the file to load.
   return an ObjectBd
   */
@@ -450,11 +567,13 @@ ObjectBd FileAPI::loadFile(const std::string& p_fileName)
             pcl::PointCloud<pcl::PointXYZRGB>::Ptr cloud_ptr = loadPointCloud(p_fileName);
             std::vector<tf::Transform> arm = loadPoseArm(p_fileName);
             std::vector<tf::Transform> object = loadPoseObject(p_fileName);
+            std::vector<Eigen::Matrix4f,Eigen::aligned_allocator<Eigen::Matrix4f> > tf = loadTransform(p_fileName);
             ObjectBd returnedObject(p_fileName,
                                     signature_ptr,
                                     cloud_ptr,
                                     arm,
-                                    object);
+                                    object,
+                                    tf);
 
             int fileLoaded = fileAlreadyLoad(p_fileName);
             if(fileLoaded == -1)
@@ -509,7 +628,7 @@ pcl::PointCloud<pcl::PointXYZRGB>::Ptr FileAPI::loadPointCloud(const std::string
 /*
   Load a txt file that contain the the poseArm.
   param[in] the file name.
-  Return a vector with the transform in it.
+  Return a vector with the pose in it.
   */
 
 std::vector<tf::Transform> FileAPI::loadPoseArm(const std::string& p_filename)
@@ -550,7 +669,7 @@ std::vector<tf::Transform> FileAPI::loadPoseArm(const std::string& p_filename)
 /*
   Load a txt file that contain the the poseObject.
   param[in] the file name.
-  Return a vector with the transform in it.
+  Return a vector with the pose in it.
   */
 
 std::vector<tf::Transform> FileAPI::loadPoseObject(const std::string& p_filename)
@@ -585,6 +704,47 @@ std::vector<tf::Transform> FileAPI::loadPoseObject(const std::string& p_filename
         ifs.close();
         return returnVector;
     }
+}
+
+/*
+  Load a txt file that contain the the transform.
+  param[in] the file name.
+  Return a vector with the transform in it.
+  */
+
+std::vector<Eigen::Matrix4f,Eigen::aligned_allocator<Eigen::Matrix4f> > FileAPI::loadTransform(const string &p_filename)
+{
+    boost::filesystem3::path path(m_pathTransform);
+    path /= p_filename;
+    path.replace_extension(".txt");
+
+    std::ifstream ifs(path.c_str());
+    std::string line;
+    std::vector<Eigen::Matrix4f,Eigen::aligned_allocator<Eigen::Matrix4f> > returnVector;
+    while(getline(ifs, line))
+    {
+        std::vector<std::string> splitterVector;
+        boost::algorithm::split(splitterVector, line, boost::algorithm::is_any_of(";"));
+        std::vector<float> floatVector;
+        for(int i = 0; i < splitterVector.size(); i++)
+        {
+            floatVector.push_back(atof(splitterVector.at(i).c_str()));
+        }
+        if(floatVector.size() == 16)
+        {
+            Eigen::Matrix4f matrix;
+            matrix << floatVector[0], floatVector[1], floatVector[2], floatVector[3],
+                    floatVector[4], floatVector[5], floatVector[6], floatVector[7],
+                    floatVector[8], floatVector[9], floatVector[10], floatVector[11],
+                    floatVector[12], floatVector[13] ,floatVector[14] ,floatVector[15];
+            returnVector.push_back(matrix);
+        }
+        else
+        {
+            throw(std::out_of_range("Error while loading the file, not enought coordinate"));
+        }
+    }
+    return returnVector;
 }
 
 /*

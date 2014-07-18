@@ -16,14 +16,24 @@ ObjectBd::ObjectBd(std::string p_name,
     m_fullLoaded = true;
 }
 
+
 ObjectBd::ObjectBd(std::string p_name,
-                   pcl::PointCloud<pcl::VFHSignature308>::Ptr p_signature):
-    m_name(p_name)
+         pcl::PointCloud<pcl::VFHSignature308>::Ptr p_signature,
+         pcl::PointCloud<pcl::PointXYZRGB>::Ptr p_pointCloud,
+         std::vector<tf::Transform> p_armPose,
+         std::vector<tf::Transform> p_objectPose,
+         std::vector<Eigen::Matrix4f,Eigen::aligned_allocator<Eigen::Matrix4f> > p_tf):
+  m_name(p_name),
+  m_relative_arm_pose(p_armPose),
+  m_object_pose(p_objectPose)
 {
     m_pcSize = p_signature->size();
     m_object_signature = p_signature;
-    m_fullLoaded = false;
+    m_object_point_cloud = p_pointCloud;
+    m_fullLoaded = true;
+    m_transform = p_tf;
 }
+
 
 bool ObjectBd::setAllAttribut(std::string p_name,
                               pcl::PointCloud<pcl::VFHSignature308>::Ptr p_signature,
@@ -38,6 +48,20 @@ bool ObjectBd::setAllAttribut(std::string p_name,
     m_object_pose = p_objectPose;
     m_relative_arm_pose = p_armPose;
     m_fullLoaded = true;
+}
+
+int ObjectBd::retrieveIndexSignature(pcl::VFHSignature308 p_signature) const
+{
+    pcl::KdTreeFLANN<pcl::VFHSignature308> kdtree;
+
+    kdtree.setInputCloud(m_object_signature);
+
+    std::vector<int> indices;
+    std::vector<float> distance;
+
+    kdtree.nearestKSearch(p_signature, 1, indices, distance);
+
+    return indices[0];
 }
 
 std::vector<tf::Transform> ObjectBd::getArmPose() const
@@ -88,6 +112,12 @@ bool ObjectBd::objectIsComplete() const
 {
     return m_fullLoaded;
 }
+
+std::vector<Eigen::Matrix4f,Eigen::aligned_allocator<Eigen::Matrix4f> > ObjectBd::getTransform() const
+{
+    return m_transform;
+}
+
 
 ObjectBd& ObjectBd::operator =(const ObjectBd& p_object)
 {

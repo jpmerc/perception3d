@@ -110,7 +110,10 @@ public:
                               pcl::PointCloud<pcl::VFHSignature308>::Ptr p_bd_cloud);
 
     int histogramComparison(pcl::PointCloud<pcl::VFHSignature308>::Ptr p_cloud,
-                              pcl::PointCloud<pcl::VFHSignature308>::Ptr p_bd_cloud);
+                            pcl::PointCloud<pcl::VFHSignature308>::Ptr p_bd_cloud);
+
+    std::vector<float> histogramComparisonVector(pcl::PointCloud<pcl::VFHSignature308>::Ptr p_cloud,
+                                                 pcl::PointCloud<pcl::VFHSignature308>::Ptr p_bd_cloud);
 
     pcl::PointCloud<pcl::VFHSignature308>::Ptr makeCVFH(pcl::PointCloud<PointT>::Ptr p_cloud);
     pcl::PointCloud<pcl::VFHSignature308>::Ptr makeCVFH(pcl::PointCloud<PointT>::Ptr p_ptr_cloud, std::vector<Eigen::Matrix4f,Eigen::aligned_allocator<Eigen::Matrix4f> > &tf_);

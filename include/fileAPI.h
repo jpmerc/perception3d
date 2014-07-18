@@ -28,10 +28,22 @@ public:
                           std::vector<tf::Transform> relative_arm_pose,
                           std::vector<tf::Transform> object_pose);
 
+    ObjectBd createObject(pcl::PointCloud<pcl::VFHSignature308>::Ptr object_signature,
+                          pcl::PointCloud<pcl::PointXYZRGB>::Ptr object_pointcloud,
+                          std::vector<tf::Transform> relative_arm_pose,
+                          std::vector<tf::Transform> object_pose,
+                          std::vector<Eigen::Matrix4f,Eigen::aligned_allocator<Eigen::Matrix4f> > p_tf);
+
     void save(pcl::PointCloud<pcl::VFHSignature308>::Ptr object_signature,
               pcl::PointCloud<pcl::PointXYZRGB>::Ptr object_pointCloud,
               std::vector<tf::Transform> relative_arm_pose,
               std::vector<tf::Transform> object_pose);
+
+    void save(pcl::PointCloud<pcl::VFHSignature308>::Ptr object_signature,
+              pcl::PointCloud<pcl::PointXYZRGB>::Ptr object_pointCloud,
+              std::vector<tf::Transform> relative_arm_pose,
+              std::vector<tf::Transform> object_pose,
+              std::vector<Eigen::Matrix4f,Eigen::aligned_allocator<Eigen::Matrix4f> > p_tf);
 
     void saveObject(ObjectBd obj);
 
@@ -43,25 +55,30 @@ public:
     pcl::PointCloud<pcl::VFHSignature308>::Ptr getAllHistograms() const;
     pcl::VFHSignature308 getHistogramByIndex (int p_index) const;
 
-    ObjectBd retrieveObjectFromHistogram(int p_positionHisto);
-    std::vector<ObjectBd> retrieveObjectFromHistogram(std::vector<int> indices);
+    ObjectBd retrieveObjectFromHistogram(int p_positionHisto) const;
+    std::vector<ObjectBd> retrieveObjectFromHistogram(std::vector<int> indices) const;
+    std::vector<int> retrieveHistogramFromObject(int p_indice) const;
 
     int fileAlreadyLoad(const std::string& p_filename);
 
 private:
 
-    std::string findDefaultName(); //Parse the directory and find a new name for the object
+    std::string findDefaultName();
 
     void saveCvgh(ObjectBd p_obj, const std::string& p_fileName);
     void savePointCloud(ObjectBd p_obj, const std::string& p_fileName);
     void savePoseArm(ObjectBd p_obj, const std::string& p_fileName);
     void savePoseObject(ObjectBd p_obj, const std::string& p_fileName);
+    void saveTranform(ObjectBd p_obj, const std::string& p_fileName);
     void failSaveUndo(const std::string& p_fileName);
+
+
 
     pcl::PointCloud<pcl::VFHSignature308>::Ptr loadSignature(const std::string& p_filename);
     pcl::PointCloud<pcl::PointXYZRGB>::Ptr loadPointCloud(const std::string& p_filename);
     std::vector<tf::Transform> loadPoseArm(const std::string& p_filename);
     std::vector<tf::Transform> loadPoseObject(const std::string& p_filename);
+    std::vector<Eigen::Matrix4f,Eigen::aligned_allocator<Eigen::Matrix4f> > loadTransform(const std::string& p_filename);
 
     bool fileExist(const std::string& p_fileName);
     void parseDirectory();
@@ -76,6 +93,7 @@ private:
     std::string m_pathPointCloud;
     std::string m_pathPoseObject;
     std::string m_pathPoseArm;
+    std::string m_pathTransform;
 
     std::vector<ObjectBd> m_bdObjectVector;
     pcl::PointCloud<pcl::VFHSignature308>::Ptr m_pcvfh;
