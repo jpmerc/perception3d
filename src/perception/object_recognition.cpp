@@ -57,6 +57,34 @@ Eigen::Matrix4f Object_recognition::mergePointCVFH(pcl::PointCloud<pcl::VFHSigna
     return icp_transformation;
 }
 
+Eigen::Matrix4f Object_recognition::mergePointCVFH(pcl::PointCloud<pcl::VFHSignature308>::Ptr f_src,
+                                                   pcl::PointCloud<pcl::VFHSignature308>::Ptr f_target,
+                                                   pcl::PointCloud<PointT>::Ptr p_cloud_src_feature,
+                                                   pcl::PointCloud<PointT>::Ptr p_cloud_target_feature,
+                                                   Eigen::Matrix4f &transform_guess)
+{
+    ros::Time begin = ros::Time::now();
+
+    pcl::IterativeClosestPoint<PointT, PointT> icp;
+    float maxDistanceICP = 0.2;
+    icp.setInputSource(p_cloud_src_feature);
+    icp.setInputTarget(p_cloud_target_feature);
+    icp.setMaxCorrespondenceDistance(maxDistanceICP);
+    icp.setMaximumIterations(40);
+    pcl::PointCloud<PointT> Final;
+    icp.align(Final,transform_guess);
+    m_icp_fitness_score = icp.getFitnessScore();
+
+    ros::Time end = ros::Time::now();
+
+    std::cout << GREEN << "ICP Time = " << end - begin << RESET << std::endl;
+    std::cout << "ICP Transformation Score = " << icp.getFitnessScore(maxDistanceICP) << std::endl;
+
+
+    Eigen::Matrix4f icp_transformation = icp.getFinalTransformation();
+    //pcl::PointCloud<pcl::PointXYZ>::Ptr tmp_cloud(new pcl::PointCloud<pcl::PointXYZ>(Final));
+    return icp_transformation;
+}
 
 
 
@@ -212,32 +240,17 @@ ObjectBd Object_recognition::OURCVFHRecognition(pcl::PointCloud<PointT>::Ptr in_
     std::vector<std::vector<int> > NN_object_indices = getNNSurfaces(surface_histograms,signature_database,5);
 
     // Get object hypotheses and initial transforms
-    std::vector<std::vector<ObjectBd> > object_hypotheses;
-    for(int i=0; i<NN_object_indices.size(); i++){
-        std::vector<ObjectBd> obj_vector = fileAPI->retrieveObjectFromHistogram(NN_object_indices.at(i));
-        object_hypotheses.push_back(obj_vector);
-    }
+    std::vector<ObjectBd> object_hypotheses = fileAPI->retrieveObjectFromHistogram( NN_object_indices.at(0) );
 
-    // Recalculate hypotheses features to get the transform
-    int surfaceNumber = 0;
-    std::vector<std::vector<Eigen::Matrix4f> > transform_matrix;
-    while(surfaceNumber < surface_histograms->size()){
-        for(int i=0; i<object_hypotheses.size(); i++){
-            std::vector<ObjectBd> obj_vector = object_hypotheses.at(i);
-            for(int j=0; j< obj_vector.size(); j++){
-                ObjectBd obj = obj_vector.at(j);
-                pcl::PointCloud<PointT>::Ptr model_pc = obj.getPointCloud();
-                std::vector<Eigen::Matrix4f,Eigen::aligned_allocator<Eigen::Matrix4f> > model_surface_transforms;
-                pcl::PointCloud<pcl::VFHSignature308>::Ptr model_signature = makeCVFH(model_pc,model_surface_transforms);
+    for(int i=0; i < object_hypotheses.size(); i++){
+        ObjectBd obj = object_hypotheses.at(i);
 
-                // TO CONTINUE :
-                // 1) Take the good histogram and transform (surfaceNumber variable)  -- Make sure that the histogram is the same that we have chosen previously when calculating the distance between histograms
-                // 2) Compute total transform and store it in a vector
+        //Eigen::Matrix4f tf = getTf();
 
-            }
 
-        }
-        surfaceNumber++;
+        //
+
+
     }
 
     //Output the object with the best score
@@ -248,7 +261,10 @@ ObjectBd Object_recognition::OURCVFHRecognition(pcl::PointCloud<PointT>::Ptr in_
 
 
 
-
+// Returns a matrix of the form :
+// Column 0 : Surface index of the input pointcloud
+// Column 1 : Histogram index in the database
+// Column 2 : Surface index of the object the histogram belongs to
 
 std::vector<std::vector<int> > Object_recognition::getNNSurfaces(pcl::PointCloud<pcl::VFHSignature308>::Ptr p_cloud, pcl::PointCloud<pcl::VFHSignature308>::Ptr p_bd_cloud, int NNnumber)
 {
@@ -259,21 +275,27 @@ std::vector<std::vector<int> > Object_recognition::getNNSurfaces(pcl::PointCloud
     std::vector<int> index;
     std::vector<float> sqrDistance;
 
+    std::vector<int> input_surface_index;
+    std::vector<int> output_histogram_index;
+    std::vector<int> output_surface_index;
+
     std::vector<std::vector<int> > memoryIndex;
-    std::vector<std::vector<float> > memoryDistance;
+    //std::vector<std::vector<float> > memoryDistance;
+
 
     for(int i = 0; i < p_cloud->size(); i++)
     {
-        int numberOfReturnedNN = kdtree->nearestKSearch(p_cloud->at(i), NNnumber, index, sqrDistance);
-        if(numberOfReturnedNN > 0){
-            memoryIndex.push_back(index);
-            memoryDistance.push_back(sqrDistance);
+        kdtree->nearestKSearch(p_cloud->at(i), NNnumber, index, sqrDistance);
+        for(int j=0; j<index.size(); j++){
+            input_surface_index.push_back(i);
+            output_histogram_index.push_back(index.at(j));
+            //output_surface_index = functionToGetSurfaceIndex();
         }
-        else{
-
-        }
-
     }
+
+    memoryIndex.push_back(input_surface_index);
+    memoryIndex.push_back(output_histogram_index);
+    memoryIndex.push_back(output_surface_index);
 
     return memoryIndex;
 }
