@@ -246,6 +246,7 @@ ObjectBd Object_recognition::OURCVFHRecognition(pcl::PointCloud<PointT>::Ptr in_
     for(int i=0; i < object_hypotheses.size(); i++){
         ObjectBd obj = object_hypotheses.at(i);
         // Eigen::Matrix4f guess = getTf();  // TODO replace function name
+        // Here, inverse the guess: OUR-CVFH article page 119
         // scores.push_back(mergePointCVFH(in_pc,obj.getPointCloud(),guess));
     }
 
