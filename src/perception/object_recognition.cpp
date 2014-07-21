@@ -299,7 +299,8 @@ std::vector<std::vector<int> > Object_recognition::getNNSurfaces(pcl::PointCloud
 
 
 
-int Object_recognition::histogramComparison(pcl::PointCloud<pcl::VFHSignature308>::Ptr p_cloud, pcl::PointCloud<pcl::VFHSignature308>::Ptr p_bd_cloud)
+int Object_recognition::histogramComparison(pcl::PointCloud<pcl::VFHSignature308>::Ptr p_cloud,
+                                            pcl::PointCloud<pcl::VFHSignature308>::Ptr p_bd_cloud)
 
 {
     pcl::KdTreeFLANN<pcl::VFHSignature308>::Ptr kdtree (new pcl::KdTreeFLANN<pcl::VFHSignature308>);
@@ -334,6 +335,53 @@ int Object_recognition::histogramComparison(pcl::PointCloud<pcl::VFHSignature308
     std::cout << "The sqrt distance is = " << smallestDistance << std::endl;
     return smallestDistanceIndex;
 }
+
+/*
+  A new comparison just to use in the test, its a copy of histogramComparison but with a different
+  return type.
+  */
+
+std::vector<float> Object_recognition::histogramComparisonVector(pcl::PointCloud<pcl::VFHSignature308>::Ptr p_cloud,
+                                            pcl::PointCloud<pcl::VFHSignature308>::Ptr p_bd_cloud)
+
+{
+    pcl::KdTreeFLANN<pcl::VFHSignature308>::Ptr kdtree (new pcl::KdTreeFLANN<pcl::VFHSignature308>);
+
+    kdtree->setInputCloud(p_bd_cloud);
+
+    std::vector<int> index(1);
+    std::vector<float> sqrDistance(1);
+
+    std::vector<int> memoryIndex;
+    std::vector<float> memoryDistance;
+
+    for(int i = 0; i < p_cloud->size(); i++)
+    {
+        kdtree->nearestKSearch(p_cloud->at(i), 1, index, sqrDistance);
+        memoryIndex.push_back(index[0]);
+        memoryDistance.push_back(sqrDistance[0]);
+    }
+
+    int smallestDistance = sqrDistance[0];
+    int smallestDistanceIndex = memoryIndex[0];
+    for(int i = 0; i < sqrDistance.size(); i++)
+    {
+        if (smallestDistance > sqrDistance[i])
+        {
+            smallestDistance = sqrDistance[i];
+            smallestDistanceIndex = memoryIndex[i];
+        }
+    }
+
+    std::vector<float> returnVector;
+    returnVector.push_back(smallestDistanceIndex);
+    returnVector.push_back(smallestDistance);
+
+    std::cout << "The best match is = " << smallestDistanceIndex << std::endl;
+    std::cout << "The sqrt distance is = " << smallestDistance << std::endl;
+    return returnVector;
+}
+
 
 pcl::PointCloud<pcl::VFHSignature308>::Ptr Object_recognition::makeCVFH(pcl::PointCloud<PointT>::Ptr p_ptr_cloud)
 {

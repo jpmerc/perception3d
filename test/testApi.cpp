@@ -55,7 +55,7 @@ public:
     {
         boost::filesystem3::path path((boost::filesystem3::current_path() /= "../../../src/perception3d/test/dataSet_bd").c_str());
         FileAPI fileBd(path.c_str());
-        ASSERT_EQ(fileBd.getAllHistograme()->size(), 4);
+        ASSERT_EQ(fileBd.getAllHistograms()->size(), 4);
         ASSERT_EQ(fileBd.getAllObjects().size(), 4);
     }
 
@@ -71,11 +71,11 @@ public:
 
     TEST_F(FileApiTest, Getter)
     {
-        ASSERT_EQ(m_bd.getAllHistograme()->size(),4);
+        ASSERT_EQ(m_bd.getAllHistograms()->size(),4);
         ASSERT_EQ(m_bd.getAllObjects().size(),4);
         ASSERT_THROW(m_bd.getObjectByIndex(10), std::out_of_range);
-        ASSERT_THROW(m_bd.getHistogrameByIndex(5), std::out_of_range);
-        ASSERT_NO_THROW(m_bd.getHistogrameByIndex(0));
+        ASSERT_THROW(m_bd.getHistogramByIndex(5), std::out_of_range);
+        ASSERT_NO_THROW(m_bd.getHistogramByIndex(0));
         ASSERT_NO_THROW(m_bd.getObjectByIndex(3));
     }
 
@@ -101,10 +101,20 @@ public:
         armVec.push_back(arm);
         objectVec.push_back(object);
 
+        Eigen::Matrix4f matrix;
+        matrix << 1,2,3,4,
+                  5,6,7,8,
+                  9,10,11,12,
+                  13,14,15,16;
+
+        std::vector<Eigen::Matrix4f, Eigen::aligned_allocator<Eigen::Matrix4f> > vectorTf;
+        vectorTf.push_back(matrix);
+
         ObjectBd testObj = m_bd.createObject(signature,
                                              cloud,
                                              armVec,
-                                             objectVec);
+                                             objectVec,
+                                             vectorTf);
 
         ASSERT_TRUE(testObj.getName() == "5");
         ASSERT_TRUE(testObj.getSize() == signature->size());
@@ -120,7 +130,8 @@ public:
         ASSERT_THROW(m_bd.createObject(signature,
                                        cloud,
                                        armVec,
-                                       objectVec),std::runtime_error);
+                                       objectVec,
+                                       vectorTf),std::runtime_error);
 
     }
 
@@ -148,10 +159,20 @@ public:
         armVec.push_back(arm);
         objectVec.push_back(object);
 
+        Eigen::Matrix4f matrix;
+        matrix << 1,2,3,4,
+                  5,6,7,8,
+                  9,10,11,12,
+                  13,14,15,16;
+
+        std::vector<Eigen::Matrix4f, Eigen::aligned_allocator<Eigen::Matrix4f> > vectorTf;
+        vectorTf.push_back(matrix);
+
         m_bd.save(signature,
                   cloud,
                   armVec,
-                  objectVec);
+                  objectVec,
+                  vectorTf);
 
         boost::filesystem3::path path((boost::filesystem3::current_path() /= "../../../src/perception3d/test/dataSet_bd").c_str());
         boost::filesystem3::recursive_directory_iterator dirIt(path);
@@ -182,7 +203,14 @@ public:
         {
             compteurFichier++;
         }
-        ASSERT_EQ(compteurFichier,4);
+
+        pathTemp = path;
+        pathTemp /= "transform/5.txt";
+        if(boost::filesystem3::exists(pathTemp))
+        {
+            compteurFichier++;
+        }
+        ASSERT_EQ(compteurFichier,5);
 
 
         signature.reset(new pcl::PointCloud<pcl::VFHSignature308>);
@@ -193,14 +221,14 @@ public:
         ASSERT_THROW(m_bd.save(signature,
                                 cloud,
                                 armVec,
-                                objectVec), std::runtime_error);
+                                objectVec,
+                                vectorTf), std::runtime_error);
     }
 
     TEST_F(FileApiTest, SaveAgain)
     {
         //ASSERT_NO_THROW(ObjectBd testObj = m_bd.loadFile("5"));
         ObjectBd test = m_bd.getObjectByIndex(4);
-
 
         m_bd.saveObject(test);
 
@@ -212,7 +240,7 @@ public:
             compteurLine++;
         }
         ifs.close();
-        ASSERT_EQ(compteurLine,2);
+        ASSERT_EQ(compteurLine,1);
     }
 
     TEST_F(FileApiTest, LoadTwice)
@@ -238,7 +266,7 @@ public:
     {
         loadCloud("1");
 
-        ObjectBd objRetrived = m_bd.retrieveObjectFromHistogramme(0);
+        ObjectBd objRetrived = m_bd.retrieveObjectFromHistogram(0);
     }
 
     TEST_F(BdCleaner, BdCleanAfterTest)

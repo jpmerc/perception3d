@@ -16,7 +16,7 @@ find_package( PCL REQUIRED )
 include_directories(  ${catkin_INCLUDE_DIRS}
 		  ${PCL_INCLUDE_DIRS}
  		include
-                # gtest-1.7.0/include
+                #gtest-1.7.0/include
 )
 
 #add_subdirectory(gtest-1.7.0)
@@ -36,7 +36,7 @@ target_link_libraries(lperception ${catkin_LIBRARIES} ${PCL_LIBRARIES})
 
 catkin_package(
   INCLUDE_DIRS include
- # gtest-1.7.0/include
+  #gtest-1.7.0/include
   #${PCL_INCLUDE_DIRS}
  #  LIBRARIES ${PCL_LIBRARY_DIRS}
 #  CATKIN_DEPENDS other_catkin_pkg
