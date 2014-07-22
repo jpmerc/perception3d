@@ -145,6 +145,53 @@ string FileAPI::findDefaultName()
 }
 
 /*
+  Look at all the attributs to see if they are all valid.
+  The point cloud and the signature size must be > 0.
+  The name should not be empty.
+  The poses should not be empty.
+  The transform should not be empty.
+  */
+
+bool FileAPI::validationObj(ObjectBd p_obj)
+{
+    bool validation = true;
+
+    if(p_obj.getSignature()->size() <= 0)
+    {
+        validation = false;
+        std::cout << "The signature must not be empty";
+    }
+    else if(p_obj.getPointCloud()->size() <= 0)
+    {
+        validation = false;
+        std::cerr << "The point cloud must not be empty";
+    }
+    else if(p_obj.getName().empty())
+    {
+        validation = false;
+        std::cerr << "The object must have a name";
+    }
+    else if(p_obj.getObjectPose().empty())
+    {
+        validation = false;
+        std::cerr << "The object must have an object pose";
+    }
+    else if(p_obj.getArmPose().empty())
+    {
+        validation = false;
+        std::cerr << "The object must have an arm pose";
+    }
+    else if(p_obj.getTransform().empty())
+    {
+        validation = false;
+        std::cerr << "The object must have a transform";
+    }
+
+    return validation;
+}
+
+
+/*
   The function to save an object.
   param[in] obj the object to save on BD.
   If the object is incomplete, the API will try to load it.  If it exist the process will go on.
@@ -153,40 +200,43 @@ string FileAPI::findDefaultName()
 
 void FileAPI::saveObject(ObjectBd p_obj)
 {
-    std::string fileName = p_obj.getName();
-    saveCvgh(p_obj, fileName);
-    savePointCloud(p_obj, fileName);
-    savePoseArm(p_obj, fileName);
-    savePoseObject(p_obj, fileName);
-    saveTranform(p_obj, fileName);
+    if(validationObj(p_obj))
+    {
+        std::string fileName = p_obj.getName();
+        saveCvgh(p_obj, fileName);
+        savePointCloud(p_obj, fileName);
+        savePoseArm(p_obj, fileName);
+        savePoseObject(p_obj, fileName);
+        saveTranform(p_obj, fileName);
 
-    int indice = fileAlreadyLoad(fileName);
-    if(indice > -1 and indice < m_bdObjectVector.size())
-    {
-        std::vector<int> indices = retrieveHistogramFromObject(indice);
-        m_pcvfh->erase(m_pcvfh->begin() + indices[0], m_pcvfh->begin() + indices[1]+1);
-        m_bdObjectVector.erase(m_bdObjectVector.begin()+indice);
-        m_bdObjectVector.push_back(p_obj);
-        for(int i = 0; i < p_obj.getSignature()->size(); i++)
+        int indice = fileAlreadyLoad(fileName);
+        if(indice > -1 and indice < m_bdObjectVector.size())
         {
-            m_pcvfh->push_back(p_obj.getSignature()->at(i));
+            std::vector<int> indices = retrieveHistogramFromObject(indice);
+            m_pcvfh->erase(m_pcvfh->begin() + indices[0], m_pcvfh->begin() + indices[1]+1);
+            m_bdObjectVector.erase(m_bdObjectVector.begin()+indice);
+            m_bdObjectVector.push_back(p_obj);
+            for(int i = 0; i < p_obj.getSignature()->size(); i++)
+            {
+                m_pcvfh->push_back(p_obj.getSignature()->at(i));
+            }
+            std::cout << "The file have been save under the name : " << fileName << std::endl;
         }
-        std::cout << "The file have been save under the name : " << fileName << std::endl;
-    }
-    else if(indice == -1)
-    {
-        m_bdObjectVector.push_back(p_obj);
-        for(int i = 0; i < p_obj.getSignature()->size(); i++)
+        else if(indice == -1)
         {
-            m_pcvfh->push_back(p_obj.getSignature()->at(i));
+            m_bdObjectVector.push_back(p_obj);
+            for(int i = 0; i < p_obj.getSignature()->size(); i++)
+            {
+                m_pcvfh->push_back(p_obj.getSignature()->at(i));
+            }
+            std::cout << "The file have been save under the name : " << fileName << std::endl;
         }
-        std::cout << "The file have been save under the name : " << fileName << std::endl;
-    }
-    else
-    {
-        failSaveUndo(p_obj.getName());
-        std::cerr << "The index must be in range of the ObjectVector" << std::endl;
-        throw(std::out_of_range("Trying to acces out of range on m_bdObjectVector"));
+        else
+        {
+            failSaveUndo(p_obj.getName());
+            std::cerr << "The index must be in range of the ObjectVector" << std::endl;
+            throw(std::out_of_range("Trying to acces out of range on m_bdObjectVector"));
+        }
     }
 
 }

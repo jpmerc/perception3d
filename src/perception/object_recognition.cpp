@@ -241,7 +241,7 @@ ObjectBd Object_recognition::OURCVFHRecognition(pcl::PointCloud<PointT>::Ptr in_
 
     // Get object hypotheses and initial transforms
     std::vector<ObjectBd> object_hypotheses = fileAPI->retrieveObjectFromHistogram( NN_object_indices.at(0) );
-    vector<double> scores;
+    std::vector<double> scores;
 
     for(int i=0; i < object_hypotheses.size(); i++){
         ObjectBd obj = object_hypotheses.at(i);

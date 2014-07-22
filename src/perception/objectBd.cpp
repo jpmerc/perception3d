@@ -1,5 +1,13 @@
 #include <objectBd.h>
 
+ObjectBd::ObjectBd()
+{
+    m_name = "";
+    m_pcSize = 0;
+    m_object_point_cloud.reset(new pcl::PointCloud<pcl::PointXYZRGB>);
+    m_object_signature.reset(new pcl::PointCloud<pcl::VFHSignature308>);
+}
+
 
 ObjectBd::ObjectBd(std::string p_name,
                    pcl::PointCloud<pcl::VFHSignature308>::Ptr p_signature,
@@ -39,7 +47,8 @@ bool ObjectBd::setAllAttribut(std::string p_name,
                               pcl::PointCloud<pcl::VFHSignature308>::Ptr p_signature,
                               pcl::PointCloud<pcl::PointXYZRGB>::Ptr p_pointCloud,
                               std::vector<tf::Transform> p_armPose,
-                              std::vector<tf::Transform> p_objectPose)
+                              std::vector<tf::Transform> p_objectPose,
+                              std::vector<Eigen::Matrix4f,Eigen::aligned_allocator<Eigen::Matrix4f> > p_tf)
 {
     m_name = p_name;
     m_pcSize = p_signature->size();
@@ -48,6 +57,7 @@ bool ObjectBd::setAllAttribut(std::string p_name,
     m_object_pose = p_objectPose;
     m_relative_arm_pose = p_armPose;
     m_fullLoaded = true;
+    m_transform = p_tf;
 }
 
 int ObjectBd::retrieveIndexSignature(pcl::VFHSignature308 p_signature) const

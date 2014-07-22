@@ -80,6 +80,8 @@ private:
     std::vector<tf::Transform> loadPoseObject(const std::string& p_filename);
     std::vector<Eigen::Matrix4f,Eigen::aligned_allocator<Eigen::Matrix4f> > loadTransform(const std::string& p_filename);
 
+    bool validationObj(ObjectBd p_obj);
+
     bool fileExist(const std::string& p_fileName);
     void parseDirectory();
 

@@ -10,6 +10,7 @@ find_package(catkin REQUIRED COMPONENTS
   std_msgs
   pcl_msgs
   image_transport
+  jaco_driver
 )
 
 find_package( PCL REQUIRED )
