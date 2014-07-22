@@ -181,7 +181,7 @@ bool FileAPI::validationObj(ObjectBd p_obj)
         validation = false;
         std::cerr << "The object must have an arm pose";
     }
-    else if(p_obj.getTransform().empty())
+    else if(p_obj.getTransforms().empty())
     {
         validation = false;
         std::cerr << "The object must have a transform";

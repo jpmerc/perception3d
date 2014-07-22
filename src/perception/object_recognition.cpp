@@ -244,18 +244,13 @@ int Object_recognition::OURCVFHRecognition(pcl::PointCloud<PointT>::Ptr in_pc, F
     std::vector<std::vector<int> > NN_object_indices = getNNSurfaces(surface_histograms,signature_database,5);
 
     // Get object hypotheses and initial transforms
-<<<<<<< HEAD
-    std::vector<ObjectBd> object_hypotheses = fileAPI->retrieveObjectFromHistogram( NN_object_indices.at(0) );
-    std::vector<double> scores;
-=======
+
     std::vector<ObjectBd> object_hypotheses = fileAPI->retrieveObjectFromHistogram( NN_object_indices.at(1) );
     std::vector<double> scores;
     Eigen::Matrix4f best_hypothesis_transform;
 
     int smallest_distance_index = -1;
     double smallest_distance = 99999.0;
-
->>>>>>> 9939291395984ee5f0c899cc5bd0aca0ca56590a
 
     for(int i=0; i < object_hypotheses.size(); i++){
         // Get the histogram from the surface of the input pointcloud used to get the most similar signatures

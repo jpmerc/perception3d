@@ -132,19 +132,17 @@ void Communication::train(){
     std::vector<Eigen::Matrix4f,Eigen::aligned_allocator<Eigen::Matrix4f> > surface_transforms;
     std::string name;
 
+    ObjectBd obj;
 
     if(known_object){
         //Load object from Histogram position
-        ObjectBd obj = m_api_ptr->retrieveObjectFromHistogram(object_index);
+        obj = m_api_ptr->retrieveObjectFromHistogram(object_index);
         object_pointcloud = m_object_ex_ptr->m_object_recognition.transformAndVoxelizePointCloud(input_pointcloud, obj.getPointCloud(),calculated_object_transform);
         object_pose_vector = obj.getObjectPose();
         relative_arm_pose_vector = obj.getArmPose();
 
         surface_transforms = obj.getTransforms();
         name = obj.getName();
-
-
-        obj.setAllAttribut(name,object_signature,object_pointcloud,relative_arm_pose_vector,object_pose_vector,surface_transforms);
     }
 
     else{
@@ -189,6 +187,7 @@ void Communication::train(){
     }
 
 
+    obj.setAllAttribut(name,object_signature,object_pointcloud,relative_arm_pose_vector,object_pose_vector,surface_transforms);
 
     m_api_ptr->save(object_signature,object_pointcloud,relative_arm_pose_vector,object_pose_vector,surface_transforms);
 

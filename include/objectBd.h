@@ -43,12 +43,6 @@ public:
                         std::vector<tf::Transform> p_objectPose,
                         std::vector<Eigen::Matrix4f,Eigen::aligned_allocator<Eigen::Matrix4f> > p_tf);
 
-    bool setAllAttribut(std::string p_name,
-                        pcl::PointCloud<pcl::VFHSignature308>::Ptr p_signature,
-                        pcl::PointCloud<pcl::PointXYZRGB>::Ptr p_pointCloud,
-                        std::vector<tf::Transform> p_armPose,
-                        std::vector<tf::Transform> p_objectPose,
-                        std::vector<Eigen::Matrix4f,Eigen::aligned_allocator<Eigen::Matrix4f> > p_tf);
 
     ObjectBd& operator = (const ObjectBd& p_object);
     bool operator == (const ObjectBd& p_object);
