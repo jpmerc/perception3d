@@ -39,7 +39,7 @@ ObjectBd::ObjectBd(std::string p_name,
     m_object_signature = p_signature;
     m_object_point_cloud = p_pointCloud;
     m_fullLoaded = true;
-    m_transform = p_tf;
+    m_transforms = p_tf;
 }
 
 
@@ -58,6 +58,23 @@ bool ObjectBd::setAllAttribut(std::string p_name,
     m_relative_arm_pose = p_armPose;
     m_fullLoaded = true;
     m_transform = p_tf;
+}
+
+bool ObjectBd::setAllAttribut(std::string p_name,
+                              pcl::PointCloud<pcl::VFHSignature308>::Ptr p_signature,
+                              pcl::PointCloud<pcl::PointXYZRGB>::Ptr p_pointCloud,
+                              std::vector<tf::Transform> p_armPose,
+                              std::vector<tf::Transform> p_objectPose,
+                              std::vector<Eigen::Matrix4f,Eigen::aligned_allocator<Eigen::Matrix4f> > p_tf)
+{
+    m_name = p_name;
+    m_pcSize = p_signature->size();
+    m_object_signature = p_signature;
+    m_object_point_cloud = p_pointCloud;
+    m_object_pose = p_objectPose;
+    m_relative_arm_pose = p_armPose;
+    m_fullLoaded = true;
+    m_transforms = p_tf;
 }
 
 int ObjectBd::retrieveIndexSignature(pcl::VFHSignature308 p_signature) const
@@ -123,9 +140,9 @@ bool ObjectBd::objectIsComplete() const
     return m_fullLoaded;
 }
 
-std::vector<Eigen::Matrix4f,Eigen::aligned_allocator<Eigen::Matrix4f> > ObjectBd::getTransform() const
+std::vector<Eigen::Matrix4f,Eigen::aligned_allocator<Eigen::Matrix4f> > ObjectBd::getTransforms() const
 {
-    return m_transform;
+    return m_transforms;
 }
 
 

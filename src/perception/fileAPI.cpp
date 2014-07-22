@@ -381,7 +381,7 @@ void FileAPI::saveTranform(ObjectBd p_obj, const string &p_fileName)
     path.replace_extension(".txt");
 
     std::ofstream ofs(path.c_str(), std::ios::app);
-    std::vector<Eigen::Matrix4f,Eigen::aligned_allocator<Eigen::Matrix4f> > tfV = p_obj.getTransform();
+    std::vector<Eigen::Matrix4f,Eigen::aligned_allocator<Eigen::Matrix4f> > tfV = p_obj.getTransforms();
     if(ofs.is_open())
     {
         for(int i = 0; i < tfV.size(); i ++)
