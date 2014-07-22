@@ -39,6 +39,7 @@
 #include <pcl/visualization/cloud_viewer.h>
 #include <pcl/keypoints/uniform_sampling.h>
 #include <Eigen/Eigen>
+#include <pcl/filters/voxel_grid.h>
 
 
 typedef pcl::PointXYZRGB PointT;
@@ -62,8 +63,8 @@ public:
                                    pcl::PointCloud<PointT>::Ptr p_cloud_src_feature,
                                    pcl::PointCloud<PointT>::Ptr p_cloud_target_feature);
 
-    double mergePointCVFH(pcl::PointCloud<pcl::VFHSignature308>::Ptr p_cloud_src_feature,
-                          pcl::PointCloud<pcl::VFHSignature308>::Ptr p_cloud_target_feature,
+    double mergePointCVFH(pcl::PointCloud<PointT>::Ptr p_cloud_src_feature,
+                          pcl::PointCloud<PointT>::Ptr p_cloud_target_feature,
                           Eigen::Matrix4f &transform_guess);
 
 //    pcl::PointCloud<pcl::FPFHSignature33>::Ptr calculateFPFH(pcl::PointCloud<PointT>::Ptr p_cloud,
@@ -122,11 +123,13 @@ public:
     pcl::PointCloud<pcl::VFHSignature308>::Ptr makeCVFH(pcl::PointCloud<PointT>::Ptr p_cloud);
     pcl::PointCloud<pcl::VFHSignature308>::Ptr makeCVFH(pcl::PointCloud<PointT>::Ptr p_ptr_cloud, std::vector<Eigen::Matrix4f,Eigen::aligned_allocator<Eigen::Matrix4f> > &tf_);
 
-    ObjectBd OURCVFHRecognition(pcl::PointCloud<PointT>::Ptr in_pc, FileAPI *fileAPI);
+    int OURCVFHRecognition(pcl::PointCloud<PointT>::Ptr in_pc, FileAPI *fileAPI, Eigen::Matrix4f &trans);
 
     std::vector<std::vector<int> > getNNSurfaces(pcl::PointCloud<pcl::VFHSignature308>::Ptr p_cloud,
                                                                      pcl::PointCloud<pcl::VFHSignature308>::Ptr p_bd_cloud,
                                                                      int NNnumber);
+
+    pcl::PointCloud<PointT>::Ptr transformAndVoxelizePointCloud(pcl::PointCloud<PointT>::Ptr in_source, pcl::PointCloud<PointT>::Ptr in_target, Eigen::Matrix4f in_transform);
 
 
 
@@ -152,6 +155,8 @@ private:
     ros::Time m_us_bd_shot_time;
 
     //FileAPI m_bd;
+    double m_rmse_recognition_threshold;
+
 
 };
 

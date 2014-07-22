@@ -15,6 +15,8 @@ Object_recognition::Object_recognition()
     m_sac_ia_number_of_samples = 15;
     m_sac_ia_correspondance_randomness = 20;
     m_normal_sphere_radius = 0.03;
+
+    m_rmse_recognition_threshold = 0.005;
 }
 
 void Object_recognition::compute_normal(pcl::PointCloud<PointT>::Ptr p_cloud, pcl::PointCloud<pcl::Normal>::Ptr p_normal)
@@ -78,7 +80,7 @@ double Object_recognition::mergePointCVFH(pcl::PointCloud<PointT>::Ptr p_cloud_s
     ros::Time end = ros::Time::now();
 
     std::cout << GREEN << "ICP Time = " << end - begin << RESET << std::endl;
-    std::cout << "ICP Transformation Score = " << icp.getFitnessScore(maxDistanceICP) << std::endl;
+    std::cout << "ICP Transformation Score = " << icp.getFitnessScore() << std::endl;
 
 
     transform_guess = icp.getFinalTransformation();
@@ -230,8 +232,10 @@ void Object_recognition::usProcessingCVFH(pcl::PointCloud<PointT>::Ptr p_ptr_clo
 }
 
 
-ObjectBd Object_recognition::OURCVFHRecognition(pcl::PointCloud<PointT>::Ptr in_pc, FileAPI *fileAPI){
-
+// Returns the index of the histogram corresponding to the recognized object.
+// 'guess' variable is updated with transform between input and recognized object;
+int Object_recognition::OURCVFHRecognition(pcl::PointCloud<PointT>::Ptr in_pc, FileAPI *fileAPI, Eigen::Matrix4f &trans){
+    // Calculate the surface histograms for the input pointcloud
     std::vector<Eigen::Matrix4f,Eigen::aligned_allocator<Eigen::Matrix4f> > surface_transforms;
     pcl::PointCloud<pcl::VFHSignature308>::Ptr surface_histograms = makeCVFH(in_pc,surface_transforms);
 
@@ -240,19 +244,55 @@ ObjectBd Object_recognition::OURCVFHRecognition(pcl::PointCloud<PointT>::Ptr in_
     std::vector<std::vector<int> > NN_object_indices = getNNSurfaces(surface_histograms,signature_database,5);
 
     // Get object hypotheses and initial transforms
-    std::vector<ObjectBd> object_hypotheses = fileAPI->retrieveObjectFromHistogram( NN_object_indices.at(0) );
-    vector<double> scores;
+    std::vector<ObjectBd> object_hypotheses = fileAPI->retrieveObjectFromHistogram( NN_object_indices.at(1) );
+    std::vector<double> scores;
+    Eigen::Matrix4f best_hypothesis_transform;
+
+    int smallest_distance_index = -1;
+    double smallest_distance = 99999.0;
+
 
     for(int i=0; i < object_hypotheses.size(); i++){
+        // Get the histogram from the surface of the input pointcloud used to get the most similar signatures
+        int surface_index = NN_object_indices.at(0).at(i);
+        pcl::VFHSignature308 sig = surface_histograms->at(surface_index);
+        pcl::PointCloud<pcl::VFHSignature308>::Ptr base_signature(new pcl::PointCloud<pcl::VFHSignature308>());
+        base_signature->push_back(sig);
+
+        //Get one object and its histogram signature from the hypotheses
         ObjectBd obj = object_hypotheses.at(i);
-        // Eigen::Matrix4f guess = getTf();  // TODO replace function name
-        // Here, inverse the guess: OUR-CVFH article page 119
-        // scores.push_back(mergePointCVFH(in_pc,obj.getPointCloud(),guess));
+        pcl::PointCloud<pcl::VFHSignature308>::Ptr obj_sig = obj.getSignature();
+
+        //Get the transform associated to the most similar surface
+        int index = histogramComparison(base_signature,obj_sig);
+        Eigen::Matrix4f guess = obj.getTransforms().at(index);
+        Eigen::Matrix4f object_transform = obj.getTransforms().at(surface_index);
+
+        // The guess is the inverse of the original transform times the transform of the input pointcloud(OUR-CVFH article page 119)
+        guess = guess.inverse();
+        guess = guess * object_transform;
+
+        // Try ICP with initial guess and push the score in a vector. 'guess' is now the transformation returned by ICP.
+        double score = mergePointCVFH(in_pc,obj.getPointCloud(),guess);
+        scores.push_back(score);
+        if(score < smallest_distance){
+            smallest_distance_index = i;
+            smallest_distance = score;
+            best_hypothesis_transform = guess;
+        }
     }
 
-    //Output the object with the best score
+    // Retrieve the object with the best score (Object is recognized)
+    if(smallest_distance <= m_rmse_recognition_threshold){
+        int returned_index = NN_object_indices.at(1).at(smallest_distance_index);
+        trans = best_hypothesis_transform;
+        return returned_index;
+    }
 
-
+    // Object not recognized
+    else{
+        return -1;
+    }
 }
 
 
@@ -386,13 +426,13 @@ std::vector<float> Object_recognition::histogramComparisonVector(pcl::PointCloud
 pcl::PointCloud<pcl::VFHSignature308>::Ptr Object_recognition::makeCVFH(pcl::PointCloud<PointT>::Ptr p_ptr_cloud)
 {
     pcl::PointCloud<PointT>::Ptr cloud_us_ptr(new pcl::PointCloud<PointT>);
-    computeUniformSampling(p_ptr_cloud, cloud_us_ptr);
+    //computeUniformSampling(p_ptr_cloud, cloud_us_ptr);
     pcl::PointCloud<pcl::Normal>::Ptr cloud_us_normal_ptr (new pcl::PointCloud<pcl::Normal>);
-    compute_normal(cloud_us_ptr, cloud_us_normal_ptr);
+    compute_normal(p_ptr_cloud, cloud_us_normal_ptr);
 
     pcl::PointCloud<pcl::VFHSignature308>::Ptr cloud_vfh_ptr (new pcl::PointCloud<pcl::VFHSignature308>);
     std::vector<Eigen::Matrix4f,Eigen::aligned_allocator<Eigen::Matrix4f> > tf_;
-    *cloud_vfh_ptr = *(calculateCVFHUS(cloud_us_ptr, cloud_us_normal_ptr,tf_));
+    *cloud_vfh_ptr = *(calculateCVFHUS(p_ptr_cloud, cloud_us_normal_ptr,tf_));
 
     return cloud_vfh_ptr;
 
@@ -401,12 +441,12 @@ pcl::PointCloud<pcl::VFHSignature308>::Ptr Object_recognition::makeCVFH(pcl::Poi
 pcl::PointCloud<pcl::VFHSignature308>::Ptr Object_recognition::makeCVFH(pcl::PointCloud<PointT>::Ptr p_ptr_cloud, std::vector<Eigen::Matrix4f,Eigen::aligned_allocator<Eigen::Matrix4f> > &tf_)
 {
     pcl::PointCloud<PointT>::Ptr cloud_us_ptr(new pcl::PointCloud<PointT>);
-    computeUniformSampling(p_ptr_cloud, cloud_us_ptr);
+    //computeUniformSampling(p_ptr_cloud, cloud_us_ptr);
     pcl::PointCloud<pcl::Normal>::Ptr cloud_us_normal_ptr (new pcl::PointCloud<pcl::Normal>);
-    compute_normal(cloud_us_ptr, cloud_us_normal_ptr);
+    compute_normal(p_ptr_cloud, cloud_us_normal_ptr);
 
     pcl::PointCloud<pcl::VFHSignature308>::Ptr cloud_vfh_ptr (new pcl::PointCloud<pcl::VFHSignature308>);
-    *cloud_vfh_ptr = *(calculateCVFHUS(cloud_us_ptr, cloud_us_normal_ptr,tf_));
+    *cloud_vfh_ptr = *(calculateCVFHUS(p_ptr_cloud, cloud_us_normal_ptr,tf_));
 
     return cloud_vfh_ptr;
 
@@ -422,6 +462,27 @@ void Object_recognition::showPointCloud(pcl::PointCloud<PointT>::Ptr p_cloud)
     {
         viewer->spinOnce();
     }
+}
+
+
+pcl::PointCloud<PointT>::Ptr Object_recognition::transformAndVoxelizePointCloud(pcl::PointCloud<PointT>::Ptr in_source, pcl::PointCloud<PointT>::Ptr in_target, Eigen::Matrix4f in_transform){
+
+    pcl::PointCloud<PointT>::Ptr transformed_pc(new pcl::PointCloud<PointT>());
+    pcl::transformPointCloud(*in_source,*transformed_pc,in_transform);
+
+
+
+    pcl::PointCloud<PointT>::Ptr merged_pc(new pcl::PointCloud<PointT>());
+    *merged_pc  = *transformed_pc + *in_target;
+    //*merged_pc += *in_target;
+
+    pcl::VoxelGrid<PointT> vx_grid;
+    vx_grid.setInputCloud (merged_pc);
+    vx_grid.setLeafSize (0.005f, 0.005f, 0.005f);
+    pcl::PointCloud<PointT>::Ptr cloud_filtered(new pcl::PointCloud<PointT>);
+    vx_grid.filter(*cloud_filtered);
+
+    return cloud_filtered;
 }
 
 //Eigen::Matrix4f Object_recognition::mergePointClouds(   pcl::PointCloud<pcl::FPFHSignature33>::Ptr f_src,

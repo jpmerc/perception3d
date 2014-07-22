@@ -113,110 +113,88 @@ void Communication::spin_once()
 }
 
 //-----------------------------------------------------------------------------------------------//
-void Communication::train(){/*
-    //
-    //Object obj;
-    //obj.name = m_api_ptr->findDefaultName();
 void Communication::train(){
 
-    pcl::PointCloud<pcl::PointXYZRGB>::Ptr object_pointcloud = m_object_ex_ptr->getObjectToGrasp();
-    ObjectBd object = m_object_ex_ptr->m_object_recognition.OURCVFHRecognition(object_pointcloud, m_api_ptr);
+
+    pcl::PointCloud<pcl::PointXYZRGB>::Ptr input_pointcloud = m_object_ex_ptr->getObjectToGrasp();
+    Eigen::Matrix4f calculated_object_transform;
+    int object_index = m_object_ex_ptr->m_object_recognition.OURCVFHRecognition(input_pointcloud, m_api_ptr, calculated_object_transform);
 
     bool known_object = true;
-//    if(positionVectorObject <= -1){
-//        known_object = false;
-//    }
+    if(object_index < 0){
+        known_object = false;
+    }
+
+    pcl::PointCloud<pcl::PointXYZRGB>::Ptr object_pointcloud;
+    pcl::PointCloud<pcl::VFHSignature308>::Ptr object_signature;
+    std::vector<tf::Transform> object_pose_vector;
+    std::vector<tf::Transform> relative_arm_pose_vector;
+    std::vector<Eigen::Matrix4f,Eigen::aligned_allocator<Eigen::Matrix4f> > surface_transforms;
+    std::string name;
+
 
     if(known_object){
         //Load object from Histogram position
-        //ObjectBd obj = m_api_ptr->retrieveObjectFromHistogram(positionVectorObject);
+        ObjectBd obj = m_api_ptr->retrieveObjectFromHistogram(object_index);
+        object_pointcloud = m_object_ex_ptr->m_object_recognition.transformAndVoxelizePointCloud(input_pointcloud, obj.getPointCloud(),calculated_object_transform);
+        object_pose_vector = obj.getObjectPose();
+        relative_arm_pose_vector = obj.getArmPose();
 
-        // Find transformation between scans (new one on old one, so that relative arm position is kept) and merge them
-//        pcl::PointCloud<PointT>::Ptr sampled_model_pc;
-//        pcl::PointCloud<PointT>::Ptr sampled_object_pc;
-//        m_object_ex_ptr->m_object_recognition.computeUniformSampling(obj.getPointCloud(),sampled_model_pc);
-//        m_object_ex_ptr->m_object_recognition.computeUniformSampling(object_pointcloud,sampled_object_pc);
-
-       // Eigen::Matrix4f model_tf;
-       // Eigen::Matrix4f object_tf;
-        //pcl::PointCloud<pcl::VFHSignature308>::Ptr model_signature = m_object_ex_ptr->m_object_recognition.makeCVFH(obj.getPointCloud(),model_tf);
-       // pcl::PointCloud<pcl::VFHSignature308>::Ptr object_signature = m_object_ex_ptr->m_object_recognition.makeCVFH(object_pointcloud,object_tf);
+        surface_transforms = obj.getTransforms();
+        name = obj.getName();
 
 
-        //m_object_ex_ptr->m_object_recognition.mergePointCVFH();
-
-        //Eigen::Matrix4f mf = mergeScans(obj.getPointCloud(),object_pointcloud);
-        //Eigen::Matrix4d md(object_orientation.cast());
-        //Eigen::Affine3d affine(md);
-        // tf::Transform object_transform;
-        // tf::TransformEigenToTF(affine, object_transform);
-        // obj.pointcloud = new_pc;
-
-        // Calculate CVFH signature on new pointcloud
-        //obj.updateSignature();
-
-        //Push new pose in pose vector (bug to correct : overwrite file instead of appending in fileAPI)
-
-        // JACO POSE
-        //tf::StampedTransform arm_pose_before_grasp = m_jaco_ptr->getGraspArmPosition();
-        // For testing purposes only, comment the following line and uncomment previous one
-        tf::StampedTransform arm_pose_before_grasp = m_jaco_ptr->getArmPositionFromCamera();
-
-    //m_api_ptr->save(object_signature,object_pointcloud,arm_rel_pose,object_tf);
-    m_relative_pose = arm_rel_pose;
-
-        // Pose relative to pointcloud model orientation
-        //tf::Vector3 translation = arm_pose_before_grasp.getOrigin() + object_transform.getOrigin();
-        //tf::Transform new_relative_pose = tf::Transform(arm_pose_before_grasp.getRotation()*object_transform.getRotation(), translation);
-        //obj.getArmPose().push_back(new_relative_pose);
-
-
-        // Object Pose in the map
-        //Position new_object_position = findObjectPositionInMap();
-        //obj.getObjectPose().push_back(new_object_position);
-
-        //save object
-        //m_api_ptr->saveObject(obj);
-
+        obj.setAllAttribut(name,object_signature,object_pointcloud,relative_arm_pose_vector,object_pose_vector,surface_transforms);
     }
 
     else{
-        //
-        //Object obj;
-        //obj.name = m_api_ptr->findDefaultName();
-
-        pcl::PointCloud<pcl::VFHSignature308>::Ptr object_signature = m_object_ex_ptr->m_object_recognition.makeCVFH(object_pointcloud);
-
-        // OBJECT POSE
-        //obj.object_pose = ; // find object pose
-        tf::StampedTransform object_tf = m_object_ex_ptr->getCentroidPositionRGBFrame();
-
-        // JACO POSE
-        //tf::StampedTransform arm_pose_before_grasp = m_jaco_ptr->getGraspArmPosition();
-        // For testing purposes only, comment the following line and uncomment previous one
-        tf::StampedTransform arm_pose_before_grasp = m_jaco_ptr->getArmPositionFromCamera();
-
-        // RELATIVE POSE
-        tf::Transform arm_rel_pose;
-        tf::Vector3 translation = arm_pose_before_grasp.getOrigin() - object_tf.getOrigin();
-        arm_rel_pose = tf::Transform(object_tf.getBasis().transposeTimes(arm_pose_before_grasp.getBasis()), translation);
-
-        // TO VIEW FRAMES
-        //static tf::TransformBroadcaster br;
-        //br.sendTransform(object_tf);
-        //br.sendTransform(tf::StampedTransform(diff,ros::Time::now(),"detected_object_centroids","jaco_relative_pose"));
-
-        // PRINT POSE
-        //    cout << "arm pose : [" <<   arm_pose_before_grasp.getOrigin().getX() << ", " <<
-        //            arm_pose_before_grasp.getOrigin().getY() << ", " <<
-        //            arm_pose_before_grasp.getOrigin().getZ() << "]" << endl;
+        object_pointcloud = input_pointcloud;
+    }
 
 
-        // SAVE
-        //m_api_ptr->save(object_signature,object_pointcloud,arm_rel_pose,object_tf);
-        m_relative_pose = arm_rel_pose;
 
-    }*/
+    // Calculate surface signatures and transforms (coordinate systems)
+    object_signature = m_object_ex_ptr->m_object_recognition.makeCVFH(object_pointcloud,surface_transforms);
+
+
+    // **************  OBJECT POSE (Change later for position of the object in the map)**************************************************************************
+    tf::StampedTransform object_tf = m_object_ex_ptr->getCentroidPositionRGBFrame();
+    object_pose_vector.push_back(object_tf);
+
+    // JACO POSE
+    tf::StampedTransform arm_pose_before_grasp = m_jaco_ptr->getGraspArmPosition();
+    // For testing purposes only, comment the following line and uncomment previous one
+    //tf::StampedTransform arm_pose_before_grasp = m_jaco_ptr->getArmPositionFromCamera();
+
+    // RELATIVE POSE
+    tf::Transform arm_rel_pose;
+    tf::Vector3 translation = arm_pose_before_grasp.getOrigin() - object_tf.getOrigin();
+    arm_rel_pose = tf::Transform(object_tf.getBasis().transposeTimes(arm_pose_before_grasp.getBasis()), translation);
+    relative_arm_pose_vector.push_back(arm_rel_pose);
+
+    // TO VIEW FRAMES
+    //static tf::TransformBroadcaster br;
+    //br.sendTransform(object_tf);
+    //br.sendTransform(tf::StampedTransform(diff,ros::Time::now(),"detected_object_centroids","jaco_relative_pose"));
+
+    // PRINT POSE
+    //    cout << "arm pose : [" <<   arm_pose_before_grasp.getOrigin().getX() << ", " <<
+    //            arm_pose_before_grasp.getOrigin().getY() << ", " <<
+    //            arm_pose_before_grasp.getOrigin().getZ() << "]" << endl;
+
+
+    // SAVE
+    if(known_object){
+
+    }
+
+
+
+    m_api_ptr->save(object_signature,object_pointcloud,relative_arm_pose_vector,object_pose_vector,surface_transforms);
+
+    m_relative_pose = arm_rel_pose;
+
+
 }
 
 void Communication::repeat(){/*

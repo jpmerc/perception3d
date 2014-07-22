@@ -29,7 +29,7 @@ public:
     pcl::PointCloud<pcl::PointXYZRGB>::Ptr getPointCloud() const;
     std::vector<tf::Transform> getArmPose() const;
     std::vector<tf::Transform> getObjectPose() const;
-    std::vector<Eigen::Matrix4f,Eigen::aligned_allocator<Eigen::Matrix4f> > getTransform() const;
+    std::vector<Eigen::Matrix4f,Eigen::aligned_allocator<Eigen::Matrix4f> > getTransforms() const;
     bool objectIsComplete() const;
 
     int retrieveIndexSignature(pcl::VFHSignature308 p_signature) const;
@@ -39,6 +39,13 @@ public:
                         pcl::PointCloud<pcl::PointXYZRGB>::Ptr p_pointCloud,
                         std::vector<tf::Transform> p_armPose,
                         std::vector<tf::Transform> p_objectPose);
+
+    bool setAllAttribut(std::string p_name,
+                        pcl::PointCloud<pcl::VFHSignature308>::Ptr p_signature,
+                        pcl::PointCloud<pcl::PointXYZRGB>::Ptr p_pointCloud,
+                        std::vector<tf::Transform> p_armPose,
+                        std::vector<tf::Transform> p_objectPose,
+                        std::vector<Eigen::Matrix4f,Eigen::aligned_allocator<Eigen::Matrix4f> > p_tf);
 
     ObjectBd& operator = (const ObjectBd& p_object);
     bool operator == (const ObjectBd& p_object);
@@ -54,7 +61,7 @@ private:
     pcl::PointCloud<pcl::PointXYZRGB>::Ptr m_object_point_cloud;
     std::vector<tf::Transform> m_relative_arm_pose;
     std::vector<tf::Transform> m_object_pose;
-    std::vector<Eigen::Matrix4f,Eigen::aligned_allocator<Eigen::Matrix4f> > m_transform;
+    std::vector<Eigen::Matrix4f,Eigen::aligned_allocator<Eigen::Matrix4f> > m_transforms;
 
 };
 
