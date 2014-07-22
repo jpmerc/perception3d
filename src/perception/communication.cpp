@@ -97,6 +97,10 @@ void Communication::spin_once()
     }
     else if(m_train_received)
     {
+        // Training and repeating steps should be in 2 steps :
+        // 1) Check if object is recognized and load all appropriate data in Graphical User Interface
+        // 2) Then Call the function train/repeat (depending on which button is clicked) with arguments (recognized or not, which pose is selected to grasp, etc.)
+
         train();
     }
     else if(m_grasp_received)
@@ -149,8 +153,6 @@ void Communication::train(){
         object_pointcloud = input_pointcloud;
     }
 
-
-
     // Calculate surface signatures and transforms (coordinate systems)
     object_signature = m_object_ex_ptr->m_object_recognition.makeCVFH(object_pointcloud,surface_transforms);
 
@@ -183,20 +185,40 @@ void Communication::train(){
 
     // SAVE
     if(known_object){
-
+        obj.setAllAttribut(name,object_signature,object_pointcloud,relative_arm_pose_vector,object_pose_vector,surface_transforms);
     }
 
-
-    obj.setAllAttribut(name,object_signature,object_pointcloud,relative_arm_pose_vector,object_pose_vector,surface_transforms);
-
-    m_api_ptr->save(object_signature,object_pointcloud,relative_arm_pose_vector,object_pose_vector,surface_transforms);
+    else{
+        m_api_ptr->save(object_signature,object_pointcloud,relative_arm_pose_vector,object_pose_vector,surface_transforms);
+    }
 
     m_relative_pose = arm_rel_pose;
 
 
 }
 
-void Communication::repeat(){/*
+void Communication::repeat(){
+    pcl::PointCloud<pcl::PointXYZRGB>::Ptr input_pointcloud = m_object_ex_ptr->getObjectToGrasp();
+    Eigen::Matrix4f calculated_object_transform;
+    int object_index = m_object_ex_ptr->m_object_recognition.OURCVFHRecognition(input_pointcloud, m_api_ptr, calculated_object_transform);
+
+    // Object is recognized
+    if(object_index >= 0){
+       ObjectBd obj = m_api_ptr->retrieveObjectFromHistogram(object_index);
+
+       // Choose good index of object_tf
+
+       // Select good index of arm_relative_pose (grasp position)
+
+       // Publish TF in a thread and listen to it
+
+       // Move the arm (MoveIt instead of direct moveToPoint function)
+
+    }
+
+
+
+    /*
     tf::StampedTransform object_tf = m_object_ex_ptr->getCentroidPositionRGBFrame();
     tf::Vector3 translation2 = object_tf.getOrigin() + m_relative_pose.getOrigin();
     tf::Transform tf_ = tf::Transform(object_tf.getRotation()*m_relative_pose.getRotation(), translation2);
