@@ -2,7 +2,7 @@
 
 
 
-## Calibration Steps of Jaco with ARTags
+## Calibration of tf between Jaco and Kinect with ARTags
 1. Create an approximate transformation between the kinect and jaco (in vision.launch, named 'jaco_kinect')
 2. Launch jaco_calibration.launch
 3. Open Rviz
