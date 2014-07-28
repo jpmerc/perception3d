@@ -24,6 +24,8 @@ ObjectExtractor::ObjectExtractor(bool showViewer, ros::NodeHandle p_nh){
     NumberOfSnapshots = 0;
     directory = "/home/robot/rosWorkspace/src/perception3d/";
 
+    m_transform_pc.reset(new pcl::PointCloud<PointT>);
+
     setPCLViewer();
 }
 
@@ -97,6 +99,11 @@ void ObjectExtractor::printToPCLViewer(){
     pcl::visualization::PointCloudColorHandlerCustom<PointT> centroid_color (tracked_object_centroid, 255, 0, 255);
     pclViewer->addPointCloud<PointT> (tracked_object_centroid, centroid_color, "centroid");
     pclViewer->setPointCloudRenderingProperties (pcl::visualization::PCL_VISUALIZER_POINT_SIZE, 12, "centroid");
+
+    pcl::visualization::PointCloudColorHandlerCustom<PointT> tf_color (m_transform_pc, 255, 0, 255);
+    pclViewer->addPointCloud<PointT> (m_transform_pc, tf_color, "tf");
+    pclViewer->setPointCloudRenderingProperties (pcl::visualization::PCL_VISUALIZER_POINT_SIZE, 12, "tf");
+
 }
 
 // -------------------------------------------------------------------------------------------------------- //
@@ -242,6 +249,13 @@ tf::StampedTransform ObjectExtractor::getCentroidPositionRGBFrame(){
     tf::Pose tf_pose;
     tf_pose.setIdentity();
     tf_pose.setOrigin(tf::Vector3(object_pose[2],-object_pose[0],-object_pose[1]));
+
+    cout << "---Detected Object Centroid---" << endl;
+    cout << "x: " <<  object_pose[2] << endl;
+    cout << "y: " << -object_pose[0] << endl;
+    cout << "z: " << -object_pose[1] << endl;
+    cout << endl;
+
     return tf::StampedTransform(tf_pose, ros::Time::now(), "camera_rgb_frame", "detected_object_centroids");
 }
 

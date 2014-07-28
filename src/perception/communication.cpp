@@ -249,28 +249,50 @@ void Communication::publishRelativePoseTF(tf::Transform relative_pose){
 }
 
 
+void Communication::testTFandSurfaceTransforms(){
 
 
+    pcl::PointCloud<pcl::PointXYZRGB>::Ptr input_pointcloud = m_object_ex_ptr->getObjectToGrasp();
+    std::vector<Eigen::Matrix4f,Eigen::aligned_allocator<Eigen::Matrix4f> > tf_vector;
+    pcl::PointCloud<pcl::VFHSignature308>::Ptr sig = m_object_ex_ptr->m_object_recognition.makeCVFH(input_pointcloud,tf_vector);
 
 
+    static tf::TransformBroadcaster br;
+    tf::StampedTransform object_tf = m_object_ex_ptr->getCentroidPositionRGBFrame();
+    br.sendTransform(object_tf);
+
+    m_object_ex_ptr->m_transform_pc->clear();
+    for(int i=0; i < tf_vector.size(); i++){
+        Eigen::Matrix4f matrix = tf_vector.at(i);
+        tf::Transform tf_ = tfFromEigen(matrix);
+        tf::Vector3 vec = tf_.getOrigin();
+        tf_.setOrigin(tf::Vector3(vec.getZ(),-vec.getX(),-vec.getY()));
+        std::stringstream ss;
+        ss << i;
+        std::string str = "surfaceTransform_" + ss.str();
+        br.sendTransform(tf::StampedTransform(tf_,ros::Time::now(),"camera_rgb_frame",str));
+
+        PointT pt;
+        pt.x = vec.getX(); pt.y = vec.getY(); pt.z = vec.getZ();
+        m_object_ex_ptr->m_transform_pc->push_back(pt);
+
+    }
+
+}
 
 
+tf::Transform Communication::tfFromEigen(Eigen::Matrix4f trans)
+{
+    Eigen::Matrix4f mf = trans; //The matrix I want to convert
+    Eigen::Matrix4d md(mf.cast<double>());
+    Eigen::Affine3d affine(md);
+    tf::Transform transform_;
+    tf::transformEigenToTF(affine,transform_);
+    tf::Quaternion test = transform_.getRotation().normalize();
+    transform_.setRotation(test);
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+    return transform_;
+}
 
 
 

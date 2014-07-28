@@ -81,6 +81,7 @@ public:
     boost::shared_ptr<pcl::visualization::PCLVisualizer> pclViewer;
     Object_recognition m_object_recognition;
     std::vector<pcl::PointCloud<PointT>::Ptr> object_vector;
+    pcl::PointCloud<PointT>::Ptr m_transform_pc;
 
 private:
     // Methods

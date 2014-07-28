@@ -21,13 +21,17 @@ void callbackThread(){
 }
 
 void trainFunctionTestThread(Communication *communication_ptr){
-//    ros::NodeHandle n;ros::Rate r(1);
-//    while(n.ok()){
-//        communication_ptr->train();
-//        r.sleep();
-//    }
-    sleep(8);
-    communication_ptr->train();
+    ros::NodeHandle n;ros::Rate r(10);
+    while(n.ok()){
+        communication_ptr->testTFandSurfaceTransforms();
+        r.sleep();
+    }
+
+    //sleep(5);
+    //communication_ptr->train();
+
+
+
 //    int count = 0;
 //    int timeToWait = 20;
 //    while(true){
@@ -36,8 +40,8 @@ void trainFunctionTestThread(Communication *communication_ptr){
 //        if(count >= timeToWait) break;
 //    }
 
-    sleep(15);
-    communication_ptr->repeat();
+    //sleep(15);
+    //communication_ptr->repeat();
 }
 
 int main (int argc, char** argv){

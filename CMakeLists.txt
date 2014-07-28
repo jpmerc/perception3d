@@ -11,12 +11,15 @@ find_package(catkin REQUIRED COMPONENTS
   pcl_msgs
   image_transport
   jaco_driver
+  tf
+  tf_conversions
 )
 
 find_package( PCL REQUIRED )
+
 include_directories(  ${catkin_INCLUDE_DIRS}
-		  ${PCL_INCLUDE_DIRS}
- 		include
+                      ${PCL_INCLUDE_DIRS}
+                      include
                 #gtest-1.7.0/include
 )
 

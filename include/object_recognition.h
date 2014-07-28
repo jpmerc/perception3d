@@ -40,7 +40,10 @@
 #include <pcl/keypoints/uniform_sampling.h>
 #include <Eigen/Eigen>
 #include <pcl/filters/voxel_grid.h>
-
+#include <tf_conversions/tf_eigen.h>
+#include <pcl_ros/transforms.h>
+#include <angles/angles.h>
+#include <numeric>
 
 typedef pcl::PointXYZRGB PointT;
 
@@ -66,6 +69,11 @@ public:
     double mergePointCVFH(pcl::PointCloud<PointT>::Ptr p_cloud_src_feature,
                           pcl::PointCloud<PointT>::Ptr p_cloud_target_feature,
                           Eigen::Matrix4f &transform_guess);
+
+    double mergePointCVFH(pcl::PointCloud<PointT>::Ptr p_cloud_src_feature,
+                          pcl::PointCloud<PointT>::Ptr p_cloud_target_feature,
+                          Eigen::Matrix4f &transform_guess,
+                          double &executionTime);
 
 //    pcl::PointCloud<pcl::FPFHSignature33>::Ptr calculateFPFH(pcl::PointCloud<PointT>::Ptr p_cloud,
 //                                                             pcl::PointCloud<PointT>::Ptr p_feature,
@@ -131,7 +139,7 @@ public:
 
     pcl::PointCloud<PointT>::Ptr transformAndVoxelizePointCloud(pcl::PointCloud<PointT>::Ptr in_source, pcl::PointCloud<PointT>::Ptr in_target, Eigen::Matrix4f in_transform);
 
-
+    double m_rmse_recognition_threshold;
 
 private:
 
@@ -155,7 +163,7 @@ private:
     ros::Time m_us_bd_shot_time;
 
     //FileAPI m_bd;
-    double m_rmse_recognition_threshold;
+
 
 
 };

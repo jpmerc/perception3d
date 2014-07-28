@@ -9,8 +9,12 @@
 #include <jaco_custom.h>
 
 #include <Eigen/Eigen>
+#include <Eigen/Geometry>
 #include <eigen_conversions/eigen_msg.h>
+#include <tf/transform_datatypes.h>
 #include <tf_conversions/tf_eigen.h>
+
+
 
 class Communication
 {
@@ -29,6 +33,9 @@ public:
 
     void train();
     void repeat();
+
+    void testTFandSurfaceTransforms();
+    tf::Transform tfFromEigen(Eigen::Matrix4f trans);
 
 
 private:
