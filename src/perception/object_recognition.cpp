@@ -425,6 +425,8 @@ int Object_recognition::OURCVFHRecognition(pcl::PointCloud<PointT>::Ptr in_pc, F
 // Returns a vector of the form [ObjectIndexFromFineTransform ObjectIndexFromCoarseTransform AverageTimeForFineTransforms AverageTimeForCoarseTransforms]
 std::vector<double> Object_recognition::OURCVFHRecognition(pcl::PointCloud<PointT>::Ptr in_pc, std::vector<pcl::PointCloud<PointT>::Ptr> hypotheses){
 
+    std::cout << "There are " << hypotheses << " hypotheses to check for recognition" << std::endl;
+
     std::vector<double> whole_PC_scores;
     std::vector<double> whole_PC_times;
     std::vector<Eigen::Matrix4f> whole_PC_transforms;
@@ -455,6 +457,7 @@ std::vector<double> Object_recognition::OURCVFHRecognition(pcl::PointCloud<Point
 
         // Loop for different initial transforms (only yaw angle)
         for(double j=0; j <= 360; j=j+5){
+            std::cout << "Guess angles : " << j << std::endl;
             tf::Transform initial_guess_tf;
             initial_guess_tf.setIdentity();
             tf::Quaternion quat;
@@ -491,11 +494,11 @@ std::vector<double> Object_recognition::OURCVFHRecognition(pcl::PointCloud<Point
             }
         }
 
-        avgTime_fine   = avgTime_fine   / loopIteration;
-        avgTime_coarse = avgTime_coarse / loopIteration;
+        //avgTime_fine   = avgTime_fine   / loopIteration;
+        //avgTime_coarse = avgTime_coarse / loopIteration;
 
-        std::cout << "It took in average " << avgTime_coarse << " seconds to do ICP with sampled pointclouds of this object" << std::endl;
-        std::cout << "It took in average " << avgTime_fine   << " seconds to do ICP with full pointclouds of this object"    << std::endl;
+        std::cout << "It took " << avgTime_coarse << " seconds to do ICP with sampled pointclouds of this object" << std::endl;
+        std::cout << "It took " << avgTime_fine   << " seconds to do ICP with full pointclouds of this object"    << std::endl;
 
         whole_PC_times.push_back(avgTime_fine);
         whole_PC_scores.push_back(smallestScore_fine);
