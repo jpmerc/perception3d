@@ -425,7 +425,7 @@ int Object_recognition::OURCVFHRecognition(pcl::PointCloud<PointT>::Ptr in_pc, F
 // Returns a vector of the form [ObjectIndexFromFineTransform ObjectIndexFromCoarseTransform AverageTimeForFineTransforms AverageTimeForCoarseTransforms]
 std::vector<double> Object_recognition::OURCVFHRecognition(pcl::PointCloud<PointT>::Ptr in_pc, std::vector<pcl::PointCloud<PointT>::Ptr> hypotheses){
 
-    std::cout << "There are " << hypotheses << " hypotheses to check for recognition" << std::endl;
+    std::cout << "There are " << hypotheses.size() << " hypotheses to check for recognition" << std::endl;
 
     std::vector<double> whole_PC_scores;
     std::vector<double> whole_PC_times;
