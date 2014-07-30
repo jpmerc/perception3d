@@ -470,10 +470,10 @@ std::vector<double> Object_recognition::OURCVFHRecognition(pcl::PointCloud<Point
             double time_coarse = 0;
 
             double score_coarse = mergePointCVFH(in_pc_sampled,obj_sampled,coarse_transform,time_coarse);
-            std::cout << "It took " << avgTime_coarse << " seconds to do ICP with sampled pointcloud" << std::endl;
+            std::cout << "It took " << time_coarse << " seconds to do ICP with sampled pointcloud" << std::endl;
 
             double score_fine   = mergePointCVFH(in_pc,obj,fine_transform,time_fine);
-            std::cout << "It took " << avgTime_fine   << " seconds to do ICP with full pointcloud"    << std::endl;
+            std::cout << "It took " << time_fine   << " seconds to do ICP with full pointcloud"    << std::endl;
 
 
             avgTime_fine   += time_fine;
