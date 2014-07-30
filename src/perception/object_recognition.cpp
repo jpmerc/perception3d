@@ -182,36 +182,36 @@ pcl::PointCloud<pcl::VFHSignature308>::Ptr Object_recognition::calculateCVFHUS(p
     ourCVFH.getCentroidNormalClusters(normal_centroids);
 
 
-    cout << "---Centroid---" << endl;
-    for(int i=0; i < centroids.size() ; i++){
-        Eigen::Vector3f vec = centroids.at(i);
-        cout << "x: " <<  vec[2] << endl;
-        cout << "y: " << -vec[0] << endl;
-        cout << "z: " << -vec[1] << endl;
-        cout << endl;
-    }
+//    cout << "---Centroid---" << endl;
+//    for(int i=0; i < centroids.size() ; i++){
+//        Eigen::Vector3f vec = centroids.at(i);
+//        cout << "x: " <<  vec[2] << endl;
+//        cout << "y: " << -vec[0] << endl;
+//        cout << "z: " << -vec[1] << endl;
+//        cout << endl;
+//    }
 
-    cout << "---Normal Centroids---" << endl;
-    for(int i=0; i < normal_centroids.size() ; i++){
-        Eigen::Vector3f vec = normal_centroids.at(i);
-        cout << "x: " <<  vec[2] << endl;
-        cout << "y: " << -vec[0] << endl;
-        cout << "z: " << -vec[1] << endl;
-        cout << endl;
-    }
+//    cout << "---Normal Centroids---" << endl;
+//    for(int i=0; i < normal_centroids.size() ; i++){
+//        Eigen::Vector3f vec = normal_centroids.at(i);
+//        cout << "x: " <<  vec[2] << endl;
+//        cout << "y: " << -vec[0] << endl;
+//        cout << "z: " << -vec[1] << endl;
+//        cout << endl;
+//    }
 
-    cout << "---Transforms---" << endl;
-    for(int i=0; i < tf.size() ; i++){
-        Eigen::Matrix4d md(tf.at(i).cast<double>());
-        Eigen::Affine3d affine(md);
-        tf::Transform transform_;
-        tf::transformEigenToTF(affine,transform_);
-        tf::Vector3 vec = transform_.getOrigin();
-        cout << "x: " <<  vec.getZ() << endl;
-        cout << "y: " << -vec.getX() << endl;
-        cout << "z: " << -vec.getY() << endl;
-        cout << endl;
-    }
+//    cout << "---Transforms---" << endl;
+//    for(int i=0; i < tf.size() ; i++){
+//        Eigen::Matrix4d md(tf.at(i).cast<double>());
+//        Eigen::Affine3d affine(md);
+//        tf::Transform transform_;
+//        tf::transformEigenToTF(affine,transform_);
+//        tf::Vector3 vec = transform_.getOrigin();
+//        cout << "x: " <<  vec.getZ() << endl;
+//        cout << "y: " << -vec.getX() << endl;
+//        cout << "z: " << -vec.getY() << endl;
+//        cout << endl;
+//    }
 
     std::cout << "CVFH size = " << returnCloud->size() << std::endl;
 
@@ -368,8 +368,8 @@ int Object_recognition::OURCVFHRecognition(pcl::PointCloud<PointT>::Ptr in_pc, F
             }
         }
 
-        avgTime_fine   = avgTime_fine   / loopIteration;
-        avgTime_coarse = avgTime_coarse / loopIteration;
+        //avgTime_fine   = avgTime_fine   / loopIteration;
+        //avgTime_coarse = avgTime_coarse / loopIteration;
 
         whole_PC_times.push_back(avgTime_fine);
         whole_PC_scores.push_back(smallestScore_fine);
@@ -383,10 +383,10 @@ int Object_recognition::OURCVFHRecognition(pcl::PointCloud<PointT>::Ptr in_pc, F
 
     // Retrieve the object with the best score (Object is recognized)
     double fine_time_avg   = std::accumulate(whole_PC_times.begin(),whole_PC_times.end(),0);
-    fine_time_avg = fine_time_avg / whole_PC_times.size();
+    //fine_time_avg = fine_time_avg / whole_PC_times.size();
 
     double coarse_time_avg = std::accumulate(sampled_PC_times.begin(),sampled_PC_times.end(),0);
-    coarse_time_avg = coarse_time_avg / sampled_PC_times.size();
+    //coarse_time_avg = coarse_time_avg / sampled_PC_times.size();
 
 
     int    fine_smallest_distance_index   = -1;
@@ -512,10 +512,10 @@ std::vector<double> Object_recognition::OURCVFHRecognition(pcl::PointCloud<Point
 
     // Retrieve the object with the best score (Object is recognized)
     double fine_time_avg = std::accumulate(whole_PC_times.begin(),whole_PC_times.end(),0);
-    fine_time_avg = fine_time_avg / whole_PC_times.size();
+    //fine_time_avg = fine_time_avg / whole_PC_times.size();
 
     double coarse_time_avg = std::accumulate(sampled_PC_times.begin(),sampled_PC_times.end(),0);
-    coarse_time_avg = coarse_time_avg / sampled_PC_times.size();
+    //coarse_time_avg = coarse_time_avg / sampled_PC_times.size();
 
 
     int    fine_smallest_distance_index   = -1;
