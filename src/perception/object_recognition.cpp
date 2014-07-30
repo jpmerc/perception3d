@@ -315,9 +315,16 @@ int Object_recognition::OURCVFHRecognition(pcl::PointCloud<PointT>::Ptr in_pc, F
     std::vector<double> sampled_PC_times;
     std::vector<Eigen::Matrix4f> sampled_PC_transforms;
 
+    //Sample Pointclouds
+    pcl::PointCloud<PointT>::Ptr in_pc_sampled(new pcl::PointCloud<PointT>);
+    computeUniformSampling(in_pc,in_pc_sampled);
+
     // Loop over object hypotheses
     for(int i=0; i < object_hypotheses.size(); i++){
         ObjectBd obj = object_hypotheses.at(i);
+        pcl::PointCloud<PointT>::Ptr obj_sampled(new pcl::PointCloud<PointT>);
+        computeUniformSampling(obj.getPointCloud(),obj_sampled);
+
         double smallestScore_fine = 99999;
         Eigen::Matrix4f smallestTransform_fine;
         double smallestScore_coarse = 99999;
@@ -344,7 +351,7 @@ int Object_recognition::OURCVFHRecognition(pcl::PointCloud<PointT>::Ptr in_pc, F
             double time_coarse = 0;
 
             double score_fine   = mergePointCVFH(in_pc,obj.getPointCloud(),fine_transform,time_fine);
-            double score_coarse = mergePointCVFH(in_pc,obj.getPointCloud(),coarse_transform,time_coarse);
+            double score_coarse = mergePointCVFH(in_pc_sampled,obj_sampled,coarse_transform,time_coarse);
 
             avgTime_fine   += time_fine;
             avgTime_coarse += time_coarse;
@@ -415,12 +422,157 @@ int Object_recognition::OURCVFHRecognition(pcl::PointCloud<PointT>::Ptr in_pc, F
 }
 
 
+// Returns a vector of the form [ObjectIndexFromFineTransform ObjectIndexFromCoarseTransform AverageTimeForFineTransforms AverageTimeForCoarseTransforms]
+std::vector<double> Object_recognition::OURCVFHRecognition(pcl::PointCloud<PointT>::Ptr in_pc, std::vector<pcl::PointCloud<PointT>::Ptr> hypotheses){
+
+    std::vector<double> whole_PC_scores;
+    std::vector<double> whole_PC_times;
+    std::vector<Eigen::Matrix4f> whole_PC_transforms;
+
+    std::vector<double> sampled_PC_scores;
+    std::vector<double> sampled_PC_times;
+    std::vector<Eigen::Matrix4f> sampled_PC_transforms;
+
+    //Sample Pointclouds
+    pcl::PointCloud<PointT>::Ptr in_pc_sampled(new pcl::PointCloud<PointT>);
+    computeUniformSampling(in_pc,in_pc_sampled);
+
+    // Loop over object hypotheses
+    for(int i=0; i < hypotheses.size(); i++){
+        std::cout << "Looking at object #" << i << std::endl;
+        pcl::PointCloud<PointT>::Ptr obj = hypotheses.at(i);
+        pcl::PointCloud<PointT>::Ptr obj_sampled(new pcl::PointCloud<PointT>);
+        computeUniformSampling(obj,obj_sampled);
+
+        double smallestScore_fine = 99999;
+        Eigen::Matrix4f smallestTransform_fine;
+        double smallestScore_coarse = 99999;
+        Eigen::Matrix4f smallestTransform_coarse;
+
+        double avgTime_fine = 0;
+        double avgTime_coarse = 0;
+        int loopIteration = 0;
+
+        // Loop for different initial transforms (only yaw angle)
+        for(double j=0; j <= 360; j=j+5){
+            tf::Transform initial_guess_tf;
+            initial_guess_tf.setIdentity();
+            tf::Quaternion quat;
+            quat.setRPY(0,0,angles::from_degrees(j));
+            initial_guess_tf.setRotation(quat);
+            Eigen::Matrix4f initial_guess_matrix;
+            pcl_ros::transformAsMatrix(initial_guess_tf,initial_guess_matrix);
+
+            Eigen::Matrix4f fine_transform   = initial_guess_matrix;
+            Eigen::Matrix4f coarse_transform = initial_guess_matrix;
+
+            double time_fine   = 0;
+            double time_coarse = 0;
+
+            double score_coarse = mergePointCVFH(in_pc_sampled,obj_sampled,coarse_transform,time_coarse);
+            std::cout << "It took " << avgTime_coarse << " seconds to do ICP with sampled pointcloud" << std::endl;
+
+            double score_fine   = mergePointCVFH(in_pc,obj,fine_transform,time_fine);
+            std::cout << "It took " << avgTime_fine   << " seconds to do ICP with full pointcloud"    << std::endl;
+
+
+            avgTime_fine   += time_fine;
+            avgTime_coarse += time_coarse;
+            loopIteration++;
+
+            if(score_fine < smallestScore_fine){
+                smallestScore_fine = score_fine;
+                smallestTransform_fine = fine_transform;
+            }
+
+            if(score_coarse < smallestScore_coarse){
+                smallestScore_coarse = score_coarse;
+                smallestTransform_coarse = coarse_transform;
+            }
+        }
+
+        avgTime_fine   = avgTime_fine   / loopIteration;
+        avgTime_coarse = avgTime_coarse / loopIteration;
+
+        std::cout << "It took in average " << avgTime_coarse << " seconds to do ICP with sampled pointclouds of this object" << std::endl;
+        std::cout << "It took in average " << avgTime_fine   << " seconds to do ICP with full pointclouds of this object"    << std::endl;
+
+        whole_PC_times.push_back(avgTime_fine);
+        whole_PC_scores.push_back(smallestScore_fine);
+        whole_PC_transforms.push_back(smallestTransform_fine);
+
+        sampled_PC_times.push_back(avgTime_coarse);
+        sampled_PC_scores.push_back(smallestScore_coarse);
+        sampled_PC_transforms.push_back(smallestTransform_coarse);
+
+    }
+
+    // Retrieve the object with the best score (Object is recognized)
+    double fine_time_avg = std::accumulate(whole_PC_times.begin(),whole_PC_times.end(),0);
+    fine_time_avg = fine_time_avg / whole_PC_times.size();
+
+    double coarse_time_avg = std::accumulate(sampled_PC_times.begin(),sampled_PC_times.end(),0);
+    coarse_time_avg = coarse_time_avg / sampled_PC_times.size();
+
+
+    int    fine_smallest_distance_index   = -1;
+    int    coarse_smallest_distance_index = -1;
+    double fine_smallest_distance         = 99999.0;
+    double coarse_smallest_distance       = 99999.0;
+
+    for(int i=0; i < sampled_PC_scores.size(); i++){
+        double fine_distance = whole_PC_scores.at(i);
+        if(fine_distance < fine_smallest_distance){
+            fine_smallest_distance = fine_distance;
+            fine_smallest_distance_index = i;
+            //trans = whole_PC_transforms.at(i);
+        }
+
+        double coarse_distance = sampled_PC_scores.at(i);
+        if(coarse_distance < coarse_smallest_distance){
+            coarse_smallest_distance = coarse_distance;
+            coarse_smallest_distance_index = i;
+        }
+    }
+
+    //std::cout << "Object # retrieved with ICP on WHOLE Pointcloud : "   << fine_smallest_distance_index << std::endl;
+    //std::cout << "Object # retrieved with ICP on SAMPLED Pointcloud : " << coarse_smallest_distance     << std::endl;
+
+
+    std::vector<double> returnVector;
+
+
+    if(fine_smallest_distance < m_rmse_recognition_threshold){
+        returnVector.push_back(fine_smallest_distance_index);
+    }
+
+    else{
+        returnVector.push_back(-1.0);
+    }
+
+    if(coarse_smallest_distance < m_rmse_recognition_threshold){
+        returnVector.push_back(coarse_smallest_distance);
+    }
+
+    else{
+        returnVector.push_back(-1.0);
+    }
+
+    returnVector.push_back(fine_time_avg);
+    returnVector.push_back(coarse_time_avg);
+
+    return returnVector;
+
+}
+
+
+
 
 
 // Returns a matrix of the form :
 // Column 0 : Surface index of the input pointcloud
 // Column 1 : Histogram index in the database
-// Column 2 : Surface index of the object the histogram belongs to
+// Column 2 : Surface index of the object the histogram belongs to (not used)
 
 std::vector<std::vector<int> > Object_recognition::getNNSurfaces(pcl::PointCloud<pcl::VFHSignature308>::Ptr p_cloud, pcl::PointCloud<pcl::VFHSignature308>::Ptr p_bd_cloud, int NNnumber)
 {
