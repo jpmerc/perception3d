@@ -4,27 +4,34 @@
   <arg name="PI2" value="1.570796327" />
 
   <!-- JACO DRIVER -->
-  <group ns="jaco">
-    <node name="jaco_arm_driver" pkg="jaco_driver" type="jaco_arm_driver" output="screen" cwd="node" />
-    <node name="jaco_tf_updater" pkg="jaco_driver" type="jaco_tf_updater" output="screen" cwd="node" />
-  </group>
+
+    <node name="jaco_arm_driver" pkg="jaco_driver" type="jaco_arm_driver" output="screen" cwd="node" >
+            <param name="joint_angular_vel_timeout" value="0.001" />
+    </node>
+    <node name="jaco_tf_updater" pkg="jaco_driver" type="jaco_tf_updater" output="screen" cwd="node">
+        <remap from="in/joint_angles" to="/jaco_arm_driver/out/joint_angles"/>
+    </node>
+
   
   <!-- <node name="jaco_joint_states" pkg="custom_jaco" type="jaco_joint_states" output="screen" /> -->
 
   <!-- JACO DISPLAY -->
 	<arg name="gui" default="false" />
+	
 	<param name="robot_description" command="$(find xacro)/xacro.py '$(find jaco_model)/urdf/standalone_arm.xacro'" />
+  <rosparam param="source_list">[jaco_arm_driver/out/joint_state]</rosparam>
   <node name="joint_state_publisher" pkg="joint_state_publisher" type="joint_state_publisher"> 
-	  <param name="use_gui" value="$(arg gui)"/>
-	  <rosparam param="source_list">[jaco/joint_state]</rosparam> 
-  </node> 	
+    <param name="publish_default_positions" value="false"/>
+    <param name="use_gui" value="$(arg gui)"/>
+  </node>
   
   
 	<node name="robot_state_publisher" pkg="robot_state_publisher" type="state_publisher" > 
-	  <!--  <remap from="joint_states" to="/jaco/joint_state"/>   -->
+	    <!-- <remap from="joint_states" to="/jaco_arm_driver/out/joint_state"/>   -->
 	</node> 
 	
 		<!-- Link jaco_tf_updater with robot_state_publisher -->
 	<node pkg="tf" type="static_transform_publisher" name="jaco_joints_and_links" args="0 0 0 $(arg PI2) 0 0 arm_base root 100" /> 
+
 	
 </launch>

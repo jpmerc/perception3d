@@ -11,6 +11,7 @@ find_package(catkin REQUIRED COMPONENTS
   pcl_msgs
   image_transport
   jaco_driver
+  moveit_ros_planning_interface
 )
 
 find_package( PCL REQUIRED )
@@ -111,3 +112,12 @@ add_executable(jaco_calibration src/jacoTests/calibration.cpp)
 target_link_libraries(jaco_calibration ${catkin_LIBRARIES} ${PCL_LIBRARIES})
 add_dependencies(jaco_calibration perception3d_gencpp)
 
+add_executable(testMoveit src/moveitTest/testMoveit.cpp)
+target_link_libraries(testMoveit ${catkin_LIBRARIES} ${PCL_LIBRARIES} lperception)
+add_dependencies(testMoveit perception3d_gencpp)
+
+add_executable(terminalListener src/moveitTest/terminalListener.cpp)
+target_link_libraries(terminalListener ${catkin_LIBRARIES} ${PCL_LIBRARIES})
+
+add_executable(arm_action_server src/arm_action_server.cpp)
+target_link_libraries(arm_action_server ${catkin_LIBRARIES} ${PCL_LIBRARIES})

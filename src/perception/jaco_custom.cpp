@@ -2,7 +2,8 @@
 
 using namespace std;
 
-JacoCustom::JacoCustom(ros::NodeHandle &node){
+JacoCustom::JacoCustom(ros::NodeHandle &node)
+{
     end_program = false;
 
     arm_is_stopped = false;
@@ -12,6 +13,8 @@ JacoCustom::JacoCustom(ros::NodeHandle &node){
     fingers_are_stopped = false;
     check_fingers_status = false;
     fingers_are_stopped_counter = 0;
+
+
 }
 
 
@@ -256,7 +259,35 @@ void JacoCustom::wait_for_fingers_stopped(){
     check_fingers_status = false;
 }
 
+////JeanJean
 
+void JacoCustom::jeanMoveup(double distance){
+    actionlib::SimpleActionClient<jaco_msgs::ArmPoseAction> action_client("/jaco/arm_pose",true);
+    action_client.waitForServer();
+    jaco_msgs::ArmPoseGoal pose_goal = jaco_msgs::ArmPoseGoal();
+
+    arm_mutex.lock();
+    pose_goal.pose = this->arm_pose;
+    pose_goal.pose.header.frame_id = "/jaco_api_origin";
+    pose_goal.pose.pose.position.z += distance;
+    arm_mutex.unlock();
+
+    //test moveit JeanJean
+
+    moveit::planning_interface::MoveGroup group("arm");
+    moveit::planning_interface::PlanningSceneInterface planningSceneInterface;
+
+    moveit::planning_interface::MoveGroup::Plan myPlan;
+    bool success = group.plan(myPlan);
+    if(success)
+        group.move();
+
+
+
+
+    //action_client.sendGoal(pose_goal);
+    wait_for_arm_stopped();
+}
 
 
 

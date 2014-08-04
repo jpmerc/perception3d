@@ -4,6 +4,7 @@
 #include <jaco_custom.h>
 #include <fileAPI.h>
 
+#include <moveit/robot_model_loader/robot_model_loader.h>
 
 ObjectExtractor *OBJ_EXTRACTOR_PTR;
 JacoCustom *JACO_PTR;
