@@ -18,6 +18,16 @@
 #include <tf/transform_broadcaster.h>
 
 
+#include <moveit/move_group_interface/move_group.h>
+#include <moveit/planning_scene_interface/planning_scene_interface.h>
+
+#include <moveit_msgs/DisplayRobotState.h>
+#include <moveit_msgs/DisplayTrajectory.h>
+
+#include <moveit_msgs/AttachedCollisionObject.h>
+#include <moveit_msgs/CollisionObject.h>
+
+
 class JacoCustom{
 public:
     JacoCustom(ros::NodeHandle &node);
@@ -32,6 +42,8 @@ public:
     jaco_msgs::FingerPosition getFingersPosition();
     tf::StampedTransform getArmPositionFromCamera();
     tf::StampedTransform getGraspArmPosition();
+
+    void jeanMoveup(double distance);
 
 private:
 

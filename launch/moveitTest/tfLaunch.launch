@@ -1,0 +1,5 @@
+<launch>
+
+<node pkg="tf" type="static_transform_publisher" name="jaco_kinect" args="-0.61 0.40 0.52 -0.02 0.299 0.01178  root camera_link 100" />
+
+</launch>

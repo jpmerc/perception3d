@@ -1,5 +1,7 @@
 <launch>
     <node pkg="perception3d" type="perception" name="perception" respawn="false" output="screen">
       <param name="directory_url"  value="$(find perception3d)/dataSet_bd" />
+      <param name="planning_plugin" value="ompl_interface/OMPLPlanner" />
+      <param name="request_adaters" value="default_planner_request_adapters" />
     </node>
 </launch>
