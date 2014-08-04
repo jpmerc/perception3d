@@ -2,3 +2,4 @@
 snapshots/*
 CMakeLists.txt.user*
 */*.*~
+*.orig
