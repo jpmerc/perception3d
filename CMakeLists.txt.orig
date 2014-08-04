@@ -11,9 +11,12 @@ find_package(catkin REQUIRED COMPONENTS
   pcl_msgs
   image_transport
   jaco_driver
+<<<<<<< HEAD
   moveit_ros_planning_interface
+=======
   tf
   tf_conversions
+>>>>>>> a866e047c12d95b4449b30d264e3487ed2da40bb
 )
 
 find_package( PCL REQUIRED )
