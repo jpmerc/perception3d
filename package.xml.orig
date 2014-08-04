@@ -16,9 +16,12 @@
   <build_depend>libpcl-all-dev</build_depend>
   <build_depend>rospy</build_depend>
   <build_depend>jaco_driver</build_depend>
+<<<<<<< HEAD
   <build_depend>moveit_ros_planning_interface</build_depend>
+=======
   <build_depend>tf</build_depend>
   <build_depend>tf_conversions</build_depend>
+>>>>>>> a866e047c12d95b4449b30d264e3487ed2da40bb
 
   <run_depend>pcl_conversions</run_depend>
   <run_depend>pcl_ros</run_depend>
@@ -28,9 +31,12 @@
   <run_depend>libpcl-all</run_depend>
   <run_depend>rospy</run_depend>
   <run_depend>jaco_driver</run_depend>
+<<<<<<< HEAD
   <run_depend>moveit_ros_planning_interface</run_depend>
+=======
   <run_depend>tf</run_depend>
   <run_depend>tf_conversions</run_depend>
+>>>>>>> a866e047c12d95b4449b30d264e3487ed2da40bb
 
   <export>
 
