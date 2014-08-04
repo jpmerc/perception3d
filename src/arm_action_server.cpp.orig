@@ -103,6 +103,7 @@ void callBackAngles(const control_msgs::FollowJointTrajectoryGoalConstPtr& p_inp
         sendPosition.angles.joint6 = position[5];
 
         ac.sendGoal(sendPosition);
+<<<<<<< HEAD
         //debug
         std::cout << "Position1 == " << position[0] << std::endl;
         std::cout << "Position2 == " << position[1] << std::endl;
@@ -114,8 +115,10 @@ void callBackAngles(const control_msgs::FollowJointTrajectoryGoalConstPtr& p_inp
         /////////////////////////////////////////////////////////////
 
         ac.waitForResult(ros::Duration(1.0));
+=======
 
         ac.waitForResult(ros::Duration(30.0));
+>>>>>>> dc5607aee57f9a7fe546029c63dd84a52d32f163
     }
     control_msgs::FollowJointTrajectoryResult result;
     p_server->setSucceeded(result);
