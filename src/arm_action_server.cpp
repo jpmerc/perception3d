@@ -115,7 +115,6 @@ void callBackAngles(const control_msgs::FollowJointTrajectoryGoalConstPtr& p_inp
 
         ac.waitForResult(ros::Duration(1.0));
 
-        ac.waitForResult(ros::Duration(30.0));
     }
     control_msgs::FollowJointTrajectoryResult result;
     p_server->setSucceeded(result);

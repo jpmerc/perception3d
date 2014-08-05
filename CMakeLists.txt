@@ -85,7 +85,6 @@ add_executable(perception
   src/perception/fileAPI.cpp
   src/perception/object_recognition.cpp
   src/perception/objectBd.cpp
-
 )
 target_link_libraries(perception ${catkin_LIBRARIES} ${PCL_LIBRARIES})
 add_dependencies(perception perception3d_gencpp)
@@ -124,3 +123,6 @@ target_link_libraries(terminalListener ${catkin_LIBRARIES} ${PCL_LIBRARIES})
 
 add_executable(arm_action_server src/arm_action_server.cpp)
 target_link_libraries(arm_action_server ${catkin_LIBRARIES} ${PCL_LIBRARIES})
+
+add_executable( moveit_jaco_listener src/moveit_jaco_listener.cpp)
+target_link_libraries(moveit_jaco_listener ${catkin_LIBRARIES} ${PCL_LIBRARIES} lperception)

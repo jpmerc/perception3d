@@ -44,6 +44,7 @@ public:
     tf::StampedTransform getGraspArmPosition();
 
     void jeanMoveup(double distance);
+    void moveitPlugin(geometry_msgs::PoseStamped p_pose);//The communication chanel to moveit
 
 private:
 
@@ -70,6 +71,8 @@ private:
 
     tf::Transform tool_position_tf;
     tf::TransformBroadcaster position_broadcaster;
+
+    ros::Publisher moveitPublisher;//New publisher, from now we absolute need the nodehandle to run this class
 
 
 };

@@ -14,6 +14,8 @@ JacoCustom::JacoCustom(ros::NodeHandle &node)
     check_fingers_status = false;
     fingers_are_stopped_counter = 0;
 
+    moveitPublisher = node.advertise<geometry_msgs::PoseStamped>("/jaco_command",1);
+
 
 }
 
@@ -263,33 +265,46 @@ void JacoCustom::wait_for_fingers_stopped(){
 
 void JacoCustom::jeanMoveup(double distance){
     actionlib::SimpleActionClient<jaco_msgs::ArmPoseAction> action_client("/jaco/arm_pose",true);
-    action_client.waitForServer();
+    //action_client.waitForServer();
     jaco_msgs::ArmPoseGoal pose_goal = jaco_msgs::ArmPoseGoal();
 
     arm_mutex.lock();
     pose_goal.pose = this->arm_pose;
-    pose_goal.pose.header.frame_id = "/jaco_api_origin";
+    pose_goal.pose.header.frame_id = "/jaco_link_base";
     pose_goal.pose.pose.position.z += distance;
     arm_mutex.unlock();
 
     //test moveit JeanJean
 
     moveit::planning_interface::MoveGroup group("arm");
-    moveit::planning_interface::PlanningSceneInterface planningSceneInterface;
 
     moveit::planning_interface::MoveGroup::Plan myPlan;
     group.setPoseTarget(pose_goal.pose);
     bool success = group.plan(myPlan);
     if(success)
+    {
+        std::cout << "the plan work" << std::endl;
         group.move();
-
-
+    }
+        else{
+            std::cout << "the plan fail" << std::endl;
+        }
 
 
     //action_client.sendGoal(pose_goal);
-    wait_for_arm_stopped();
+    //wait_for_arm_stopped();
 }
 
+/*
+  New function to communicate with the move group.
+  It publish the pose that we need to compute a path.
+  The listener (moveit_jaco_listener) will call the move_group node and execute the move command.
+  So we can finish any command from the arm with this command to communicate with the move_group.
+  We need this publisher because the move command need to be in a separate queue.
+  */
 
+void JacoCustom::moveitPlugin(geometry_msgs::PoseStamped p_pose)
+{
 
-
+    moveitPublisher.publish(p_pose);
+}
