@@ -59,7 +59,7 @@ void JacoCustom::fingers_position_callback(const jaco_msgs::FingerPositionConstP
     fingers_pose = *input_fingers;
     fingers_mutex.unlock();
 
-    //cout << "finger 1 : " << input_fingers->Finger_1 << endl;
+    //cout << " 1 : " << input_fingers->Finger_1 << endl;
 
 }
 
@@ -68,9 +68,9 @@ void JacoCustom::open_fingers(){
     actionlib::SimpleActionClient<jaco_msgs::SetFingersPositionAction> action_client("jaco/finger_joint_angles",true);
     action_client.waitForServer();
     jaco_msgs::SetFingersPositionGoal fingers = jaco_msgs::SetFingersPositionGoal();
-    fingers.fingers.Finger_1 = 0;
-    fingers.fingers.Finger_2 = 0;
-    fingers.fingers.Finger_3 = 0;
+    fingers.fingers.finger1 = 0;
+    fingers.fingers.finger2 = 0;
+    fingers.fingers.finger3 = 0;
     action_client.sendGoal(fingers);
     wait_for_fingers_stopped();
 }
@@ -79,9 +79,9 @@ void JacoCustom::close_fingers(){
     actionlib::SimpleActionClient<jaco_msgs::SetFingersPositionAction> action_client("jaco/finger_joint_angles",true);
     action_client.waitForServer();
     jaco_msgs::SetFingersPositionGoal fingers = jaco_msgs::SetFingersPositionGoal();
-    fingers.fingers.Finger_1 = 60;
-    fingers.fingers.Finger_2 = 60;
-    fingers.fingers.Finger_3 = 60;
+    fingers.fingers.finger1 = 60;
+    fingers.fingers.finger2 = 60;
+    fingers.fingers.finger3 = 60;
     action_client.sendGoal(fingers);
     wait_for_fingers_stopped();
 }
@@ -171,7 +171,7 @@ tf::StampedTransform JacoCustom::getGraspArmPosition(){
 
     // If the fingers are closed by more than threshold angle, open the fingers
     double treshold = 10.0;
-    if(old_pose.Finger_1 > treshold || old_pose.Finger_2 > treshold || old_pose.Finger_3 > treshold){
+    if(old_pose.finger1 > treshold || old_pose.finger2 > treshold || old_pose.finger3 > treshold){
         open_fingers();
     }
 
@@ -184,11 +184,11 @@ tf::StampedTransform JacoCustom::getGraspArmPosition(){
         new_pose = getFingersPosition();
 
         // break the loop if the count is bigger or equal than 5 or if the angle of the fingers are bigger than a certain angle (threshold)
-        if(closing_count >= 5 || new_pose.Finger_1 > closed_threshold || new_pose.Finger_2 > closed_threshold || new_pose.Finger_3 > closed_threshold){
+        if(closing_count >= 5 || new_pose.finger1 > closed_threshold || new_pose.finger2 > closed_threshold || new_pose.finger3 > closed_threshold){
             cond = false;
         }
         // increment the counter if the angles of the fingers are bigger than the previous iteration
-        else if(new_pose.Finger_1 > old_pose.Finger_1 || new_pose.Finger_2 > old_pose.Finger_2 || new_pose.Finger_3 > old_pose.Finger_3){
+        else if(new_pose.finger1 > old_pose.finger1 || new_pose.finger2 > old_pose.finger2 || new_pose.finger3 > old_pose.finger3){
             closing_count++;
         }
         else{
@@ -219,9 +219,9 @@ bool JacoCustom::is_same_pose(geometry_msgs::PoseStamped* pose1, geometry_msgs::
 }
 
 bool JacoCustom::is_same_pose(jaco_msgs::FingerPosition* pose1, jaco_msgs::FingerPositionConstPtr pose2){
-    bool cond1 = pose1->Finger_1 == pose2->Finger_1;
-    bool cond2 = pose1->Finger_2 == pose2->Finger_2;
-    bool cond3 = pose1->Finger_3 == pose2->Finger_3;
+    bool cond1 = pose1->finger1 == pose2->finger1;
+    bool cond2 = pose1->finger2 == pose2->finger2;
+    bool cond3 = pose1->finger3 == pose2->finger3;
 
     if(cond1 && cond2 && cond3){
         return true;
@@ -278,6 +278,7 @@ void JacoCustom::jeanMoveup(double distance){
     moveit::planning_interface::PlanningSceneInterface planningSceneInterface;
 
     moveit::planning_interface::MoveGroup::Plan myPlan;
+    group.setPoseTarget(pose_goal.pose);
     bool success = group.plan(myPlan);
     if(success)
         group.move();

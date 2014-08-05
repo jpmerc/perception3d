@@ -149,6 +149,10 @@ void ObjectExtractor::keyboard_callback(const pcl::visualization::KeyboardEvent 
             std::cout << filename << std::endl;
 
             pcl::io::savePCDFileASCII(path,*object_to_grasp);
+            std::stringstream ss;
+            ss << directory << base_filename << NumberOfSnapshots << ".png";
+            std::string path2 = ss.str();
+            viewer->saveScreenshot("/home/robot/snapshot_jean.png");
 
         }
     }
