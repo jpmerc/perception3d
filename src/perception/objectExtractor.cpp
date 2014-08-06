@@ -253,13 +253,13 @@ tf::StampedTransform ObjectExtractor::getCentroidPositionRGBFrame(){
     tf::Pose tf_pose;
     tf_pose.setIdentity();
     tf_pose.setOrigin(tf::Vector3(object_pose[2],-object_pose[0],-object_pose[1]));
-
+/* Comment to debug the corner padding
     cout << "---Detected Object Centroid---" << endl;
     cout << "x: " <<  object_pose[2] << endl;
     cout << "y: " << -object_pose[0] << endl;
     cout << "z: " << -object_pose[1] << endl;
     cout << endl;
-
+*/
     return tf::StampedTransform(tf_pose, ros::Time::now(), "camera_rgb_frame", "detected_object_centroids");
 }
 
@@ -358,6 +358,70 @@ void ObjectExtractor::find_corner(const PointT& p_left, const PointT& p_right, c
     p_point_cloud_output->points.push_back(bottom_left);
     p_point_cloud_output->points.push_back(bottom_right);
 }
+//------------------------------------------------------------------------------------------------//
+void ObjectExtractor::paddingCorner(pcl::PointCloud<PointT>::Ptr p_memoryCloud_ptr,
+                                    pcl::PointCloud<PointT>::Ptr p_cloud_ptr,
+                                    int p_distance)
+{
+    std::cout << "Memory point Cloud" << std::endl;
+    for(int i = 0; i < p_memoryCloud_ptr->size(); i++)
+    {
+        std::cout << p_memoryCloud_ptr->at(i) << std::endl;
+    }
+    std::cout << "Point Cloud" << std::endl;
+    for(int i = 0; i < p_cloud_ptr->size(); i++)
+    {
+        std::cout << p_cloud_ptr->at(i) << std::endl;
+    }
+
+
+    for(int i = 0; i < p_cloud_ptr->size(); i += 4)
+    {
+        PointT topLeft = p_cloud_ptr->at(i);
+        PointT topRight = p_cloud_ptr->at(i+1);
+        PointT bottomLeft = p_cloud_ptr->at(i+2);
+        PointT bottomRight = p_cloud_ptr->at(i+3);
+        for(int j = 0; j < p_memoryCloud_ptr->size(); j+=4)
+        {
+            PointT topLeftM = p_memoryCloud_ptr->at(j);
+            PointT topRightM = p_memoryCloud_ptr->at(j+1);
+            PointT bottomLeftM = p_memoryCloud_ptr->at(j+2);
+            PointT bottomRightM = p_memoryCloud_ptr->at(j+3);
+
+            if(distancePadding(topLeft, topLeftM, p_distance) and
+                    distancePadding(topRight, topRightM, p_distance) and
+                    distancePadding(bottomLeft, bottomLeftM, p_distance) and
+                    distancePadding(bottomRight, bottomRightM, p_distance))
+            {
+                p_cloud_ptr->at(i) = topLeftM;
+                p_cloud_ptr->at(i+1) = topRightM;
+                p_cloud_ptr->at(i+2) = bottomLeftM;
+                p_cloud_ptr->at(i+3) = bottomRightM;
+                break;
+            }
+            else
+                break;
+        }
+    }
+}
+
+//------------------------------------------------------------------------------------------------//
+bool ObjectExtractor::distancePadding(PointT p_point, PointT p_mPoint, int p_distance)
+{
+    float deltaX = p_point.x - p_mPoint.x;
+    float deltaY = p_point.y - p_mPoint.y;
+
+    float c = sqrt(pow(deltaX, 2) + pow(deltaY,2));
+    bool validation = false;
+
+    if(c <= p_distance)
+    {
+        validation = true;
+    }
+
+    return validation;
+}
+
 
 //------------------------------------------------------------------------------------------------------------//
 Eigen::Matrix<float,4,1> ObjectExtractor::projection2d_matrix(const Eigen::Matrix<float,4,1>& p_matrix)
@@ -418,23 +482,23 @@ void ObjectExtractor::draw_square(std::vector<unsigned char>& p_array, PointT p_
         //draw the down line
         for(int i = p_bottom_left.x; i <= p_bottom_right.x; i++)
         {
-            change_pixel_color(p_array, i, p_bottom_left.y,0,255,0);
+            change_pixel_color(p_array, i, p_bottom_left.y);
         }
         //draw the left line
         for(int i = p_top_left.y; i <= p_bottom_left.y; i++)
         {
-            change_pixel_color(p_array, p_top_left.x, i,0,0,255);
+            change_pixel_color(p_array, p_top_left.x, i);
         }
         //draw the right line
         for(int i = p_top_right.y; i <=p_bottom_right.y; i++)
         {
-            change_pixel_color(p_array, p_top_right.x, i,255,255,0);
+            change_pixel_color(p_array, p_top_right.x, i);
         }
     }
 }
 
 //-----------------------------------------------------------------------------------------------------//
-void ObjectExtractor::image_processing(pcl::PointCloud<PointT>::Ptr p_point_cloud_corner, sensor_msgs::Image p_image_input)
+void ObjectExtractor::image_processing(pcl::PointCloud<PointT>::Ptr p_point_cloud_corner, sensor_msgs::Image& p_image_input)
 {
     int compteur = 0;
     PointT top_left(255,0,0);
@@ -460,10 +524,7 @@ void ObjectExtractor::image_processing(pcl::PointCloud<PointT>::Ptr p_point_clou
     m_image_memory.width = p_image_input.width;
     m_image_memory.height = p_image_input.height;
     m_image_memory.step = p_image_input.step;
-    for(int  i =0; i < p_image_input.data.size(); i ++)
-    {
-        m_image_memory.data.push_back(p_image_input.data.at(i));
-    }
+    m_image_memory.data = m_image_received_input.data;
 }
 
 //---------------------------------------------------------------------------------------------------------------//
@@ -530,6 +591,8 @@ int ObjectExtractor::coordinate_processing(const float p_coordinate[],
 //----------------------------------------------------------------------------------------------------------------------------//
 void ObjectExtractor::point_cloud_processing()
 {
+    //function pour faire le padding sur les corners avant de les dessiner sur l'image
+    paddingCorner(m_memory_point_cloud_corner_ptr, m_point_cloud_corner_ptr, 10);
     image_processing(m_point_cloud_corner_ptr, m_image_received_input);
     *m_memory_point_cloud_corner_ptr = *m_point_cloud_corner_ptr;
     m_memory_distance_vector = m_distance_vector;

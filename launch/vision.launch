@@ -26,7 +26,7 @@
   </node> -->
 	
 	<!-- Euclidean Object Extraction -->
-  <node pkg="perception3d" type="objects_extraction" name="objects_extraction" respawn="false" output="screen">
+  <node pkg="perception3d" type="perception" name="perception" respawn="false" output="screen">
     <param name="objects_visualizer"  value="true" />
   </node>
 	

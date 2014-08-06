@@ -67,7 +67,8 @@ public:
     void projection2d_pointCloud(const pcl::PointCloud<PointT>& p_point_cloud, std::vector<pcl::PointCloud<PointT>::Ptr>& p_vector_output);
     void change_pixel_color(std::vector<unsigned char>& p_array, int p_x, int p_y, int p_b = 255, int p_g = 0, int p_r = 0);
     void draw_square(std::vector<unsigned char>& p_array, PointT p_top_left, PointT p_top_right, PointT p_bottom_left, PointT p_bottom_right);
-    void image_processing(pcl::PointCloud<PointT>::Ptr p_point_cloud_corner, sensor_msgs::Image p_image_input);
+    void paddingCorner(pcl::PointCloud<PointT>::Ptr p_memoryCloud_ptr, pcl::PointCloud<PointT>::Ptr p_cloud_ptr, int p_distance);
+    void image_processing(pcl::PointCloud<PointT>::Ptr p_point_cloud_corner, sensor_msgs::Image& p_image_input);
     int position_finder_vector(const float p_coordinate[], const pcl::PointCloud<PointT>& p_point_cloud_corner, const std::vector<float> p_distance_vector);
 
     int coordinate_processing(const float p_coordinate[],
@@ -91,6 +92,8 @@ private:
     pcl::PointCloud<PointT>::Ptr extract_object_from_indices(pcl::PointCloud<PointT>::Ptr cloud_input,pcl::PointIndices object_indices);
     void setPCLViewer();
     void refreshObjectCentroid();
+
+    bool distancePadding(PointT p_point, PointT p_mPoint, int p_distance);
 
 
 
