@@ -3,6 +3,15 @@
 using namespace std;
 
 /*
+  Presently, there is two versions of the API.  One version have the tf and the other dont.  It was
+  for backward compatibility during test.  Eventualy the version with no tf will not be used.
+  Currently I don't use it anywere in my code and ObjectBd is fully compatible with the two versions.
+  */
+
+
+
+
+/*
   The default constructor.
   param[in] directory take a string to the root directory of the BD.  The bd must be organise like
   this root/cvfh, root/pointCloud, root/poseObject, root/poseArm.  Will load all the object and the
@@ -91,6 +100,16 @@ ObjectBd FileAPI::createObject(pcl::PointCloud<pcl::VFHSignature308>::Ptr object
         return createdObject;
     }
 }
+
+/*
+  The function to create a new object.  Will make sure that the new name is consitant for the BD.
+  It is the only fonction to create an object and ensure no name clash.
+  param[in] object_signature the OURCVFH signature for the object.
+  param[in] object_pointCloud the original point cloud for the object.
+  param[in] relative_arm_pose the the arm pose for the object
+  param[in] object_pose the pose for the object
+  param[in] p_tf the vector containing the tf from the OURCVFH
+  */
 
 ObjectBd FileAPI::createObject(pcl::PointCloud<pcl::VFHSignature308>::Ptr object_signature,
                                pcl::PointCloud<pcl::PointXYZRGB>::Ptr object_pointcloud,
@@ -257,6 +276,10 @@ void FileAPI::save(pcl::PointCloud<pcl::VFHSignature308>::Ptr object_signature,
 
     saveObject(createdObject);
 }
+
+/*
+  The function to save a new object.  Will creat a new object with a good name and will save it.
+  */
 
 void FileAPI::save(pcl::PointCloud<pcl::VFHSignature308>::Ptr object_signature,
                    pcl::PointCloud<pcl::PointXYZRGB>::Ptr object_pointCloud,

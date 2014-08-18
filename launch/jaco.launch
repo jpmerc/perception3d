@@ -32,6 +32,10 @@
 	
 		<!-- Link jaco_tf_updater with robot_state_publisher -->
 	<node pkg="tf" type="static_transform_publisher" name="jaco_joints_and_links" args="0 0 0 $(arg PI2) 0 0 arm_base root 100" /> 
+	
+	<!-- Launch the arm action server to communicate with moveit -->
+	
+	<node pkg="perception3d" type="arm_action_server" name="arm_action_server" output="screen" />
 
 	
 </launch>

@@ -289,6 +289,11 @@ Eigen::Matrix<float,4,1> ObjectExtractor::compute_centroid_point(const pcl::Poin
 }
 
 //--------------------------------------------------------------------------------------------------------//
+/*
+  Find the limit of the point cloud.  Will find the corner of the point cloud after.
+  param[in] p_matrix the centroid matrix of the point cloud.
+  param[in] p_ptr the point cloud to search in
+  */
 void ObjectExtractor::point_cloud_limit_finder (Eigen::Matrix<float, 4, 1> p_matrix, pcl::PointCloud<PointT>::Ptr p_ptr)
 {
     float x = p_matrix(0,0);
@@ -331,6 +336,15 @@ void ObjectExtractor::point_cloud_limit_finder (Eigen::Matrix<float, 4, 1> p_mat
 }
 
 //------------------------------------------------------------------------------------------------------------------//
+/*
+  Funtion to find the corner from 4 point.
+  param[in] p_left the more left point.
+  param[in] p_right the more right point
+  param[in] p_top  more top point
+  param[in] p_bottom the more bottom point
+  param[out] p_point_cloud_output the point cloud to keep the point.  The order is top left, top right,
+  bottom left, bottom right.
+  */
 void ObjectExtractor::find_corner(const PointT& p_left, const PointT& p_right, const PointT& p_top, const PointT& p_bottom, pcl::PointCloud<PointT>::Ptr& p_point_cloud_output)
 {
     PointT top_right(255,0,0);
@@ -359,22 +373,16 @@ void ObjectExtractor::find_corner(const PointT& p_left, const PointT& p_right, c
     p_point_cloud_output->points.push_back(bottom_right);
 }
 //------------------------------------------------------------------------------------------------//
+/*
+  Funtion to see if the corner is in padding zone.
+  param[in] p_memoryCloud_ptr the old point cloud to search in.
+  param[out] p_cloud_ptr the point cloud that containt the new point cloud.
+  pram[in] p_distance the thresold distance to use.
+  */
 void ObjectExtractor::paddingCorner(pcl::PointCloud<PointT>::Ptr p_memoryCloud_ptr,
                                     pcl::PointCloud<PointT>::Ptr p_cloud_ptr,
                                     int p_distance)
 {
-    std::cout << "Memory point Cloud" << std::endl;
-    for(int i = 0; i < p_memoryCloud_ptr->size(); i++)
-    {
-        std::cout << p_memoryCloud_ptr->at(i) << std::endl;
-    }
-    std::cout << "Point Cloud" << std::endl;
-    for(int i = 0; i < p_cloud_ptr->size(); i++)
-    {
-        std::cout << p_cloud_ptr->at(i) << std::endl;
-    }
-
-
     for(int i = 0; i < p_cloud_ptr->size(); i += 4)
     {
         PointT topLeft = p_cloud_ptr->at(i);
@@ -406,6 +414,12 @@ void ObjectExtractor::paddingCorner(pcl::PointCloud<PointT>::Ptr p_memoryCloud_p
 }
 
 //------------------------------------------------------------------------------------------------//
+/*
+  Function that look if the distance from 2 point are lower than de p_distance.  Search for a radius.
+  param[in] p_point the point the we use.
+  param[in] p_mPoint the point we have in memory
+  param[in] p_distance the maximum distance.
+  */
 bool ObjectExtractor::distancePadding(PointT p_point, PointT p_mPoint, int p_distance)
 {
     float deltaX = p_point.x - p_mPoint.x;
@@ -435,6 +449,12 @@ Eigen::Matrix<float,4,1> ObjectExtractor::projection2d_matrix(const Eigen::Matri
 }
 
 //------------------------------------------------------------------------------------------------------------------//
+/*
+  Function to project the a point cloud in the 2d.  Its now set with the kinect focal.
+  param[in] p_point_cloud the point cloud input.
+  param[in] p_vector_output a vector that containt the point cloud in 2d.  Used this way to project
+  the object in 2d.
+  */
 void ObjectExtractor::projection2d_pointCloud(const pcl::PointCloud<PointT>& p_point_cloud, std::vector<pcl::PointCloud<PointT>::Ptr>& p_vector_output)
 {
     pcl::PointCloud<PointT>::Ptr point_cloud_2d(new pcl::PointCloud<PointT>);
@@ -451,6 +471,15 @@ void ObjectExtractor::projection2d_pointCloud(const pcl::PointCloud<PointT>& p_p
 }
 
 //-------------------------------------------------------------------------------------------------//
+/*
+  Change the pixel color of a RGB image
+  param[in] p_array the image array
+  param[in] p_x the x pixel coordinate
+  param[in] p_y the y pixel coordinate
+  param[in] p_b the blue color [0-255]
+  param[in] p_g the green color [0-255]
+  param[in] p_r the red color [0-255]
+  */
 void ObjectExtractor::change_pixel_color(std::vector<unsigned char>& p_array, int p_x, int p_y, int p_b, int p_g, int p_r)
 {
     if(p_x < 0)
@@ -470,6 +499,14 @@ void ObjectExtractor::change_pixel_color(std::vector<unsigned char>& p_array, in
 }
 
 //------------------------------------------------------------------------------------------------------------------------//
+/*
+  Function that draw a square in a rgb image.
+  param[in] p_array a vector that containt the rgb image.
+  param[in] p_top_left the top left point
+  param[in] p_top_right the top right point
+  param[in] p_bottom_left the bottom left point
+  param[in] p_bottom_right the bottom right point
+  */
 void ObjectExtractor::draw_square(std::vector<unsigned char>& p_array, PointT p_top_left, PointT p_top_right, PointT p_bottom_left, PointT p_bottom_right)
 {
     if(p_array.size() == 921600)
@@ -498,6 +535,12 @@ void ObjectExtractor::draw_square(std::vector<unsigned char>& p_array, PointT p_
 }
 
 //-----------------------------------------------------------------------------------------------------//
+/*
+  Fonction used to change the rgb image received by the camera when a point cloud is received.
+  Will draw the square arount the object.
+  param[in] p_point_cloud_corner the corner point cloud.
+  param[out] p_image_input the image received that match the point cloud.
+  */
 void ObjectExtractor::image_processing(pcl::PointCloud<PointT>::Ptr p_point_cloud_corner, sensor_msgs::Image& p_image_input)
 {
     int compteur = 0;
@@ -528,6 +571,13 @@ void ObjectExtractor::image_processing(pcl::PointCloud<PointT>::Ptr p_point_clou
 }
 
 //---------------------------------------------------------------------------------------------------------------//
+/*
+  Find if the coordinate correspond to a object or not.
+  param[in] p_coordinate the coordinate received
+  param[in] p_point_cloud_corner the memory point cloud corner.
+  param[in] p_distance_vector the memory distance of the object.
+  return the position of the object or -1 if the coordinate dont belong to an object.
+  */
 int ObjectExtractor::position_finder_vector(const float p_coordinate[], const pcl::PointCloud<PointT>& p_point_cloud_corner, const std::vector<float> p_distance_vector)
 {
     std::vector<int> position_vector;
@@ -562,30 +612,35 @@ int ObjectExtractor::position_finder_vector(const float p_coordinate[], const pc
 
 
 //----------------------------------------------------------------------------------------------------------------------//
-
+/*
+  The fonction that process the coordinate send by the tablet.
+  param[in] p_coordinate the coordinate received
+  param[in] p_bd the signature db
+  */
 int ObjectExtractor::coordinate_processing(const float p_coordinate[],
                                            pcl::PointCloud<pcl::VFHSignature308>::Ptr p_bd)
 {
     int position_in_vector = position_finder_vector(p_coordinate,*m_memory_point_cloud_corner_ptr,m_memory_distance_vector);
     if(position_in_vector != -1)
-    {
+    {/*
         //fait la reconnaisance d'object avec le point cloud qui se trouve a la position
         int positionVectorObject = m_object_recognition.object_recon(object_vector.at(position_in_vector)
-                                                                     , p_bd);
+                                                                     , p_bd);*/
         //debug response to android
         std_msgs::String send_string;
         send_string.data = "p_un;deux";
         m_pub_android.publish(send_string);
         send_string.data = "object_recon";
         m_pub_android.publish(send_string);
-        return positionVectorObject;
+        //return positionVectorObject;
     }
-    //debug response to android
-    std_msgs::String send_string;
-    send_string.data = "p_un;deux";
-    m_pub_android.publish(send_string);
-    send_string.data = "object_recon";
-    m_pub_android.publish(send_string);
+    if(position_in_vector == -1)
+    {
+        std::cout << "no object clicked" << std::endl;
+        std_msgs::String sendString;
+        sendString.data = "no_object";
+        m_pub_android.publish(sendString);
+    }
 }
 
 //----------------------------------------------------------------------------------------------------------------------------//
@@ -601,6 +656,9 @@ void ObjectExtractor::point_cloud_processing()
 
 
 //---------------------------------------------------------------------------------------------------------------------------------------//
+/*
+  Call all the calback depend of what the kinect have send.  Image or point cloud.
+  */
 void ObjectExtractor::spin_once()
 {
     if(m_point_cloud_received)

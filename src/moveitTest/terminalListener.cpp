@@ -1,6 +1,12 @@
 #include <ros/ros.h>
 #include <std_msgs/String.h>
 
+/*
+  Its a simple therminal listener to debug think.  It will publish a string that contain the line in
+  the terminal.
+  */
+
+
 int main(int argc, char** argv)
 {
     ros::init(argc, argv, "/terminal_listener");

@@ -65,26 +65,11 @@ double Object_recognition::mergePointCVFH(pcl::PointCloud<PointT>::Ptr p_cloud_s
                                           pcl::PointCloud<PointT>::Ptr p_cloud_target_feature,
                                           Eigen::Matrix4f &transform_guess)
 {
-    ros::Time begin = ros::Time::now();
-
-    pcl::IterativeClosestPoint<PointT, PointT> icp;
-    //float maxDistanceICP = 0.2;
-    icp.setInputSource(p_cloud_src_feature);
-    icp.setInputTarget(p_cloud_target_feature);
-    //icp.setMaxCorrespondenceDistance(maxDistanceICP);
-    icp.setMaximumIterations(40);
-    pcl::PointCloud<PointT> Final;
-    icp.align(Final,transform_guess);
-    m_icp_fitness_score = icp.getFitnessScore();
-
-    ros::Time end = ros::Time::now();
-
-    //std::cout << GREEN << "ICP Time = " << end - begin << RESET << std::endl;
-    //std::cout << "ICP Transformation Score = " << icp.getFitnessScore() << std::endl;
-
-
-    transform_guess = icp.getFinalTransformation();
-    return m_icp_fitness_score;
+    double time;
+    return mergePointCVFH(p_cloud_src_feature,
+                          p_cloud_target_feature,
+                          transform_guess,
+                          time);
 }
 
 double Object_recognition::mergePointCVFH(pcl::PointCloud<PointT>::Ptr p_cloud_src_feature,
@@ -152,11 +137,49 @@ void Object_recognition::computeUniformSampling(pcl::PointCloud<PointT>::Ptr p_c
 }
 
 
-// Returns the OUR-CVFH Histograms (1 per surface) and also outputs the transform of each of these surfaces in argument tf
-pcl::PointCloud<pcl::VFHSignature308>::Ptr Object_recognition::calculateCVFHUS(pcl::PointCloud<PointT>::Ptr p_cloud,
+/*
+  This is a version with lest parameter to compute OURVFH.  It call the one with the more parameter.
+  */
+pcl::PointCloud<pcl::VFHSignature308>::Ptr Object_recognition::calculateCVFH(pcl::PointCloud<PointT>::Ptr p_cloud,
                                                                                pcl::PointCloud<pcl::Normal>::Ptr p_normal,
-                                                                               std::vector<Eigen::Matrix4f,Eigen::aligned_allocator<Eigen::Matrix4f> > &tf
-                                                                               )
+                                                                               std::vector<Eigen::Matrix4f,Eigen::aligned_allocator<Eigen::Matrix4f> > &tf)
+{
+    std::vector<Eigen::Vector3f> centroid;
+    pcl::PointCloud<pcl::VFHSignature308>::Ptr returnSig(new pcl::PointCloud<pcl::VFHSignature308>);
+    std::vector<pcl::PointIndices> indicesVect;
+    returnSig = calculateCVFH(p_cloud, p_normal, tf, centroid, indicesVect);
+    return returnSig;
+}
+
+/*
+  This is a version with lest parameter to compute OURVFH.  It call the one with the more parameter.
+  */
+pcl::PointCloud<pcl::VFHSignature308>::Ptr Object_recognition::calculateCVFH(pcl::PointCloud<PointT>::Ptr p_cloud,
+                                                                              pcl::PointCloud<pcl::Normal>::Ptr p_normal,
+                                                                              std::vector<Eigen::Matrix4f,Eigen::aligned_allocator<Eigen::Matrix4f> > &tf,
+                                                                              std::vector<Eigen::Vector3f> &p_centroid)
+{
+    pcl::PointCloud<pcl::VFHSignature308>::Ptr returnSig(new pcl::PointCloud<pcl::VFHSignature308>);
+    std::vector<pcl::PointIndices> indicesVect;
+    returnSig = calculateCVFH(p_cloud, p_normal, tf, p_centroid,indicesVect);
+    return returnSig;
+
+}
+
+/*
+  This is the main function to compute OURCVFH.
+  param[in] p_cloud the point cloud you want to compute the signature.
+  param[in] p_normal the point cloud normal.
+  param[out] tf the transform from SGURF to camare returned by the OURCVFH algorithm.
+  param[out] p_centroid the centroid of every cluster used by the algorithm.
+  param[out] p_indice the indice that represent every cluster used by the algoritm.  It should be
+  in the same order that the centroid and the tf.
+  */
+pcl::PointCloud<pcl::VFHSignature308>::Ptr Object_recognition::calculateCVFH(pcl::PointCloud<PointT>::Ptr p_cloud,
+                                                                              pcl::PointCloud<pcl::Normal>::Ptr p_normal,
+                                                                              std::vector<Eigen::Matrix4f,Eigen::aligned_allocator<Eigen::Matrix4f> > &tf,
+                                                                              std::vector<Eigen::Vector3f> &p_centroid,
+                                                                              std::vector<pcl::PointIndices>& p_indice)
 {
     pcl::OURCVFHEstimation<PointT, pcl::Normal, pcl::VFHSignature308> ourCVFH;
     pcl::search::KdTree<PointT>::Ptr kdtree (new pcl::search::KdTree<PointT>);
@@ -173,49 +196,69 @@ pcl::PointCloud<pcl::VFHSignature308>::Ptr Object_recognition::calculateCVFHUS(p
 
     pcl::PointCloud<pcl::VFHSignature308>::Ptr returnCloud(new pcl::PointCloud<pcl::VFHSignature308>);
     ourCVFH.compute(*returnCloud);
-    ourCVFH.getTransforms(tf);
 
-
-    std::vector< Eigen::Vector3f > centroids;
     std::vector< Eigen::Vector3f > normal_centroids;
-    ourCVFH.getCentroidClusters(centroids);
+
+    ourCVFH.getTransforms(tf);
+    ourCVFH.getCentroidClusters(p_centroid);
     ourCVFH.getCentroidNormalClusters(normal_centroids);
+    ourCVFH.getClusterIndices(p_indice);
 
 
-//    cout << "---Centroid---" << endl;
-//    for(int i=0; i < centroids.size() ; i++){
-//        Eigen::Vector3f vec = centroids.at(i);
-//        cout << "x: " <<  vec[2] << endl;
-//        cout << "y: " << -vec[0] << endl;
-//        cout << "z: " << -vec[1] << endl;
-//        cout << endl;
-//    }
+//        cout << "---Centroid---" << endl;
+//        for(int i=0; i < p_centroid.size() ; i++){
+//            Eigen::Vector3f vec = p_centroid.at(i);
+//            cout << "x: " <<  vec[2] << endl;
+//            cout << "y: " << -vec[0] << endl;
+//            cout << "z: " << -vec[1] << endl;
+//            cout << endl;
+//        }
 
-//    cout << "---Normal Centroids---" << endl;
-//    for(int i=0; i < normal_centroids.size() ; i++){
-//        Eigen::Vector3f vec = normal_centroids.at(i);
-//        cout << "x: " <<  vec[2] << endl;
-//        cout << "y: " << -vec[0] << endl;
-//        cout << "z: " << -vec[1] << endl;
-//        cout << endl;
-//    }
+//        cout << "---Normal Centroids---" << endl;
+//        for(int i=0; i < normal_centroids.size() ; i++){
+//            Eigen::Vector3f vec = normal_centroids.at(i);
+//            cout << "x: " <<  vec[2] << endl;
+//            cout << "y: " << -vec[0] << endl;
+//            cout << "z: " << -vec[1] << endl;
+//            cout << endl;
+//        }
 
-//    cout << "---Transforms---" << endl;
-//    for(int i=0; i < tf.size() ; i++){
-//        Eigen::Matrix4d md(tf.at(i).cast<double>());
-//        Eigen::Affine3d affine(md);
-//        tf::Transform transform_;
-//        tf::transformEigenToTF(affine,transform_);
-//        tf::Vector3 vec = transform_.getOrigin();
-//        cout << "x: " <<  vec.getZ() << endl;
-//        cout << "y: " << -vec.getX() << endl;
-//        cout << "z: " << -vec.getY() << endl;
-//        cout << endl;
-//    }
-
-    std::cout << "CVFH size = " << returnCloud->size() << std::endl;
+//        cout << "---Transforms---" << endl;
+//        for(int i=0; i < tf.size() ; i++){
+//            Eigen::Matrix4d md(tf.at(i).cast<double>());
+//            Eigen::Affine3d affine(md);
+//            tf::Transform transform_;
+//            tf::transformEigenToTF(affine,transform_);
+//            tf::Vector3 vec = transform_.getOrigin();
+//            cout << "x: " <<  vec.getZ() << endl;
+//            cout << "y: " << -vec.getX() << endl;
+//            cout << "z: " << -vec.getY() << endl;
+//            cout << endl;
+//        }
+//    std::cout << "CVFH size = " << returnCloud->size() << std::endl;
 
     return returnCloud;
+
+}
+
+/*
+  A function that extract point from a point cloud.
+  param[in] p_cloud the initial point cloud.
+  param[in] p_indices the indice you want to extract the the p_cloud.
+  param[out] p_cloudOut the cloud that have been extract.
+  */
+
+void Object_recognition::pointCloudExtractor(pcl::PointCloud<pcl::PointXYZRGB>::Ptr p_cloud,
+                                             pcl::PointIndices p_indices,
+                                             pcl::PointCloud<pcl::PointXYZRGB>::Ptr p_cloudOut)
+{
+    pcl::PointIndicesPtr indicePtr(new pcl::PointIndices);
+    *indicePtr = p_indices;
+    pcl::ExtractIndices<pcl::PointXYZRGB> extract;
+    extract.setInputCloud(p_cloud);
+    extract.setIndices(indicePtr);
+    extract.setNegative(false);
+    extract.filter(*p_cloudOut);
 }
 
 
@@ -269,11 +312,11 @@ void Object_recognition::usProcessingCVFH(pcl::PointCloud<PointT>::Ptr p_ptr_clo
     // Calculation of the signature
     std::vector<Eigen::Matrix4f,Eigen::aligned_allocator<Eigen::Matrix4f> > cloud_vfh_tf;
     pcl::PointCloud<pcl::VFHSignature308>::Ptr cloud_vfh_ptr (new pcl::PointCloud<pcl::VFHSignature308>);
-    *cloud_vfh_ptr = *(calculateCVFHUS(cloud_us_ptr, cloud_us_normal_ptr, cloud_vfh_tf));
+    *cloud_vfh_ptr = *(calculateCVFH(cloud_us_ptr, cloud_us_normal_ptr, cloud_vfh_tf));
 
     std::vector<Eigen::Matrix4f,Eigen::aligned_allocator<Eigen::Matrix4f> > cloud_bd_tf;
     pcl::PointCloud<pcl::VFHSignature308>::Ptr cloud_bd_vfh_ptr (new pcl::PointCloud<pcl::VFHSignature308>);
-    *cloud_bd_vfh_ptr = *(calculateCVFHUS(cloud_us_bd_ptr, cloud_us_bd_normal_ptr, cloud_bd_tf));
+    *cloud_bd_vfh_ptr = *(calculateCVFH(cloud_us_bd_ptr, cloud_us_bd_normal_ptr, cloud_bd_tf));
 
     // Merge (ICP)
     transformationMatrix = mergePointCVFH(cloud_vfh_ptr, cloud_bd_vfh_ptr, cloud_us_ptr, cloud_us_bd_ptr);
@@ -569,9 +612,6 @@ std::vector<double> Object_recognition::OURCVFHRecognition(pcl::PointCloud<Point
 }
 
 
-
-
-
 // Returns a matrix of the form :
 // Column 0 : Surface index of the input pointcloud
 // Column 1 : Histogram index in the database
@@ -612,51 +652,32 @@ std::vector<std::vector<int> > Object_recognition::getNNSurfaces(pcl::PointCloud
 }
 
 
+/*
+  The function will search for the best math for the signature and the signature hold in the bd.
+  This function will only return the index found.
+  param[in] p_cloud the signature you want to match.
+  param[in] p_bd_cloud the cloud that containt the signature db.
+  return int the best math index.
+  */
 
 int Object_recognition::histogramComparison(pcl::PointCloud<pcl::VFHSignature308>::Ptr p_cloud,
                                             pcl::PointCloud<pcl::VFHSignature308>::Ptr p_bd_cloud)
-
 {
-    pcl::KdTreeFLANN<pcl::VFHSignature308>::Ptr kdtree (new pcl::KdTreeFLANN<pcl::VFHSignature308>);
-
-    kdtree->setInputCloud(p_bd_cloud);
-
-    std::vector<int> index(1);
-    std::vector<float> sqrDistance(1);
-
-    std::vector<int> memoryIndex;
-    std::vector<float> memoryDistance;
-
-    for(int i = 0; i < p_cloud->size(); i++)
-    {
-        kdtree->nearestKSearch(p_cloud->at(i), 1, index, sqrDistance);
-        memoryIndex.push_back(index[0]);
-        memoryDistance.push_back(sqrDistance[0]);
-    }
-
-    int smallestDistance = sqrDistance[0];
-    int smallestDistanceIndex = memoryIndex[0];
-    for(int i = 0; i < sqrDistance.size(); i++)
-    {
-        if (smallestDistance > sqrDistance[i])
-        {
-            smallestDistance = sqrDistance[i];
-            smallestDistanceIndex = memoryIndex[i];
-        }
-    }
-
-    std::cout << "The best match is = " << smallestDistanceIndex << std::endl;
-    std::cout << "The sqrt distance is = " << smallestDistance << std::endl;
-    return smallestDistanceIndex;
+    std::vector<float> returnVector = histogramComparisonVector(p_cloud, p_bd_cloud);
+    return returnVector[0];
 }
 
+
 /*
-  A new comparison just to use in the test, its a copy of histogramComparison but with a different
-  return type.
+  The function will search for the best math for the signature and the signature hold in the bd.
+  param[in] p_cloud the signature you want to match.
+  param[in] p_bd_cloud the cloud that containt the signature db.
+  return std::vector<float> the firt value is the best math index.  The second is the smallest
+  distance.
   */
 
 std::vector<float> Object_recognition::histogramComparisonVector(pcl::PointCloud<pcl::VFHSignature308>::Ptr p_cloud,
-                                            pcl::PointCloud<pcl::VFHSignature308>::Ptr p_bd_cloud)
+                                                                 pcl::PointCloud<pcl::VFHSignature308>::Ptr p_bd_cloud)
 
 {
     pcl::KdTreeFLANN<pcl::VFHSignature308>::Ptr kdtree (new pcl::KdTreeFLANN<pcl::VFHSignature308>);
@@ -706,13 +727,62 @@ pcl::PointCloud<pcl::VFHSignature308>::Ptr Object_recognition::makeCVFH(pcl::Poi
 
     pcl::PointCloud<pcl::VFHSignature308>::Ptr cloud_vfh_ptr (new pcl::PointCloud<pcl::VFHSignature308>);
     std::vector<Eigen::Matrix4f,Eigen::aligned_allocator<Eigen::Matrix4f> > tf_;
-    cloud_vfh_ptr = calculateCVFHUS(p_ptr_cloud, cloud_us_normal_ptr,tf_);
+    cloud_vfh_ptr = calculateCVFH(p_ptr_cloud, cloud_us_normal_ptr,tf_);
 
     return cloud_vfh_ptr;
 
 }
 
-pcl::PointCloud<pcl::VFHSignature308>::Ptr Object_recognition::makeCVFH(pcl::PointCloud<PointT>::Ptr p_ptr_cloud, std::vector<Eigen::Matrix4f,Eigen::aligned_allocator<Eigen::Matrix4f> > &tf_)
+/*
+  Its a version with less parameter of makeCVFH mainly used for backward compability.  Its basicaly
+  call the makeCVFH with more parameter.
+  */
+pcl::PointCloud<pcl::VFHSignature308>::Ptr Object_recognition::makeCVFH(pcl::PointCloud<PointT>::Ptr p_ptr_cloud,
+                                                                        std::vector<Eigen::Matrix4f,Eigen::aligned_allocator<Eigen::Matrix4f> > &tf_)
+{
+    std::vector<Eigen::Vector3f> centroidVec;
+    std::vector<pcl::PointCloud<pcl::PointXYZRGB>::Ptr> indicesVec;
+
+    pcl::PointCloud<pcl::VFHSignature308>::Ptr cloud_vfh_ptr (new pcl::PointCloud<pcl::VFHSignature308>);
+    cloud_vfh_ptr = makeCVFH(p_ptr_cloud,
+                             tf_,
+                             centroidVec,
+                             indicesVec);
+
+    return cloud_vfh_ptr;
+
+}
+
+/*
+  Its a version with less parameter of makeCVFH mainly used for backward compability.  Its basicaly
+  call the makeCVFH with more parameter.
+  */
+pcl::PointCloud<pcl::VFHSignature308>::Ptr Object_recognition::makeCVFH(pcl::PointCloud<PointT>::Ptr p_ptr_cloud,
+                                                                        std::vector<Eigen::Matrix4f,Eigen::aligned_allocator<Eigen::Matrix4f> > &tf_,
+                                                                        std::vector<Eigen::Vector3f>& p_centroid)
+{
+    std::vector<pcl::PointCloud<pcl::PointXYZRGB>::Ptr> indicesVec;
+    pcl::PointCloud<pcl::VFHSignature308>::Ptr cloud_vfh_ptr(new pcl::PointCloud<pcl::VFHSignature308>);
+    cloud_vfh_ptr = makeCVFH(p_ptr_cloud,
+                             tf_,
+                             p_centroid,
+                             indicesVec);
+
+    return cloud_vfh_ptr;
+}
+
+/*
+  Compute the OURVFH for a point cloud.
+  param[in] p_ptr_cloud the point cloud you want to compute the signature.
+  param[out] tf_ the transform for SGURF that the algorithm return.
+  param[out] p_centroid the centroid of every cluster used in the computation.
+  param[out] p_surface a vector that containt point cloud.  The point cloud are the different surface
+  used in the computation.
+  */
+pcl::PointCloud<pcl::VFHSignature308>::Ptr Object_recognition::makeCVFH(pcl::PointCloud<PointT>::Ptr p_ptr_cloud,
+                                                                        std::vector<Eigen::Matrix4f,Eigen::aligned_allocator<Eigen::Matrix4f> > &tf_,
+                                                                        std::vector<Eigen::Vector3f>& p_centroid,
+                                                                        std::vector<pcl::PointCloud<pcl::PointXYZRGB>::Ptr>& p_surface)
 {
     pcl::PointCloud<PointT>::Ptr cloud_us_ptr(new pcl::PointCloud<PointT>);
     //computeUniformSampling(p_ptr_cloud, cloud_us_ptr);
@@ -720,10 +790,17 @@ pcl::PointCloud<pcl::VFHSignature308>::Ptr Object_recognition::makeCVFH(pcl::Poi
     compute_normal(p_ptr_cloud, cloud_us_normal_ptr);
 
     pcl::PointCloud<pcl::VFHSignature308>::Ptr cloud_vfh_ptr (new pcl::PointCloud<pcl::VFHSignature308>);
-    cloud_vfh_ptr = calculateCVFHUS(p_ptr_cloud, cloud_us_normal_ptr,tf_);
+    std::vector<pcl::PointIndices> pointIndice_vec;
+    cloud_vfh_ptr = calculateCVFH(p_ptr_cloud, cloud_us_normal_ptr,tf_, p_centroid, pointIndice_vec);
+
+    for(int i = 0; i < pointIndice_vec.size(); i++)
+    {
+        pcl::PointCloud<pcl::PointXYZRGB>::Ptr pointSurface(new pcl::PointCloud<pcl::PointXYZRGB>);
+        pointCloudExtractor(p_ptr_cloud, pointIndice_vec.at(i), pointSurface);
+        p_surface.push_back(pointSurface);
+    }
 
     return cloud_vfh_ptr;
-
 }
 
 
@@ -758,6 +835,7 @@ pcl::PointCloud<PointT>::Ptr Object_recognition::transformAndVoxelizePointCloud(
 
     return cloud_filtered;
 }
+
 
 //Eigen::Matrix4f Object_recognition::mergePointClouds(   pcl::PointCloud<pcl::FPFHSignature33>::Ptr f_src,
 //                                                        pcl::PointCloud<pcl::FPFHSignature33>::Ptr f_target,

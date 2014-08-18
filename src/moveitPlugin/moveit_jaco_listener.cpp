@@ -4,6 +4,15 @@
 #include <moveit/move_group_interface/move_group.h>
 #include <moveit/planning_scene_interface/planning_scene_interface.h>
 
+/*
+  This is the plugin to communicate with the move_group node.
+  The move_group node its core of moveit.  Its where the planning is compute and where all the
+  datas is received.
+  It take a PoseStamped message and it call the moveGroup interface.
+  We need this beacause the moveGroup need to be in its own queue.
+  */
+
+
 
 
 void callBack(geometry_msgs::PoseStampedConstPtr p_input)

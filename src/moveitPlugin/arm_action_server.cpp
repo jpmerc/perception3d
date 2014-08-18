@@ -7,10 +7,49 @@
 #include <jaco_msgs/ArmJointAnglesAction.h>
 #include <trajectory_msgs/JointTrajectoryPoint.h>
 #include <actionlib/client/simple_action_client.h>
+#include <angles/angles.h>
+
 
 ros::Publisher pub;
 ros::Publisher pubTest;
-float PI = 3.14159265359;
+float PI = 3.14159265358979323846;
+
+/** \addtogroup container_ops_grp
+  * @{ */
+
+  /** Modifies the given angle to translate it into the [0,2pi[ range.
+  * \note Take care of not instancing this template for integer numbers, since it only works for float, double and long double.
+  * \sa wrapToPi, wrapTo2Pi, unwrap2PiSequence
+  */
+  template <class T>
+  inline void wrapTo2PiInPlace(T &a)
+  {
+  bool was_neg = a<0;
+  a = fmod(a, static_cast<T>(2.0*PI) );
+  if (was_neg) a+=static_cast<T>(2.0*PI);
+  }
+
+  /** Modifies the given angle to translate it into the [0,2pi[ range.
+  * \note Take care of not instancing this template for integer numbers, since it only works for float, double and long double.
+  * \sa wrapToPi, wrapTo2Pi, unwrap2PiSequence
+  */
+  template <class T>
+  inline T wrapTo2Pi(T a)
+  {
+  wrapTo2PiInPlace(a);
+  return a;
+  }
+
+  /** Modifies the given angle to translate it into the ]-pi,pi] range.
+  * \note Take care of not instancing this template for integer numbers, since it only works for float, double and long double.
+  * \sa wrapTo2Pi, wrapToPiInPlace, unwrap2PiSequence
+  */
+  template <class T>
+  inline T wrapToPi(T a)
+  {
+  return wrapTo2Pi( a + static_cast<T>(PI) )-static_cast<T>(PI);
+}
+
 
 void callBackVelocity(const control_msgs::FollowJointTrajectoryGoalConstPtr& p_input, actionlib::SimpleActionServer<control_msgs::FollowJointTrajectoryAction>* p_server)
 {
@@ -53,6 +92,7 @@ void callBackVelocity(const control_msgs::FollowJointTrajectoryGoalConstPtr& p_i
         timeToSend += diff;
         std::cout << "TimeToSend == " << timeToSend << std::endl;
         std::cout << "Diff ==" << diff << std::endl;
+
 
         sendedMessage.joint1 = (velocitiesVec[0] * 180)/PI;
         sendedMessage.joint2 = (velocitiesVec[1] * 180)/PI;
@@ -104,6 +144,7 @@ void callBackAngles(const control_msgs::FollowJointTrajectoryGoalConstPtr& p_inp
 
         ac.sendGoal(sendPosition);
         //debug
+
         std::cout << "Position1 == " << position[0] << std::endl;
         std::cout << "Position2 == " << position[1] << std::endl;
         std::cout << "Position3 == " << position[2] << std::endl;

@@ -3,7 +3,7 @@
 	<node pkg="perception3d" type="testMoveit" name="testMoveit" respawn="false" output="screen"/> 
 	<node pkg="perception3d" type="terminalListener" name="terminalListener" respawn="false" output="screen"/>
 
-	<include file="$(find myJaco)/launch/demo.launch">
+	<include file="$(find my_jaco)/launch/main.launch">
 	</include>
 	<include file="$(find perception3d)/launch/kinect.launch">
 	</include>

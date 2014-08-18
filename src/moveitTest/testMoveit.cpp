@@ -4,6 +4,12 @@
 
 #include <jaco_custom.h>
 
+/*
+  A test file that call JacoCustom to test the moveit pipeline.  It listen to terminal_listener
+  topic.  So you can move the arm with the terminal.
+  */
+
+
 
 std::string MESSAGE;
 
@@ -35,38 +41,7 @@ int main(int argc, char** argv)
 
     JacoCustom ja(nh);
 
-    //ros::Subscriber sub = nh.subscribe("/terminal_listener", 1, callBack);
-/*
-    while(ros::ok())
-    {
-        ros::spinOnce();
-        std::cout << MESSAGE << std::endl;
-        if(MESSAGE.size() != 0)
-        {
-            double distance = atof(MESSAGE.c_str());
-            ja.jeanMoveup(distance);
-            std::cout << "Distance " << distance << std::endl;
-            MESSAGE = "";
-        }
-        ros::Rate r(30);
-                r.sleep();
 
-    moveit::planning_interface::MoveGroup group("arm");
-
-    moveit::planning_interface::MoveGroup::Plan myPlan;
-    group.setRandomTarget ();
-    bool success = group.plan(myPlan);
-    if(success)
-    {
-        std::cout << "the plan work" << std::endl;
-        //group.move();
-    }
-        else{
-            std::cout << "the plan fail" << std::endl;
-        }
-
-    ros::shutdown();
-*/
     ros::CallbackQueue queue;
     ros::SubscribeOptions options = ros::SubscribeOptions::create<std_msgs::String>("/terminal_listener",
                                                                                     1,

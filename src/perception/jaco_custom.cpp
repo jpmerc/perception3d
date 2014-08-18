@@ -262,7 +262,7 @@ void JacoCustom::wait_for_fingers_stopped(){
 }
 
 ////JeanJean
-
+//A simple test function to test moveit.
 void JacoCustom::jeanMoveup(double distance){
     actionlib::SimpleActionClient<jaco_msgs::ArmPoseAction> action_client("/jaco/arm_pose",true);
     //action_client.waitForServer();
@@ -276,23 +276,7 @@ void JacoCustom::jeanMoveup(double distance){
 
     //test moveit JeanJean
 
-    moveit::planning_interface::MoveGroup group("arm");
-
-    moveit::planning_interface::MoveGroup::Plan myPlan;
-    group.setPoseTarget(pose_goal.pose);
-    bool success = group.plan(myPlan);
-    if(success)
-    {
-        std::cout << "the plan work" << std::endl;
-        group.move();
-    }
-        else{
-            std::cout << "the plan fail" << std::endl;
-        }
-
-
-    //action_client.sendGoal(pose_goal);
-    //wait_for_arm_stopped();
+    moveitPlugin(pose_goal.pose);
 }
 
 /*

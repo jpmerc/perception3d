@@ -12,7 +12,7 @@
 	<!-- Disable for moveit implementation  Will put it back later on
 	<node pkg="tf" type="static_transform_publisher" name="ARtag" args="0 0.03 -0.06 0 0 0 jaco_joint_6 ARtag 100" />  -->
 	
-	<!-- Plane Segmentation   Disable for test purpose -->
+	<!-- Plane Segmentation -->
   <node pkg="perception3d" type="segmentation" name="segmentation" respawn="false" output="screen">
     <param name="pcl_visualizer"  value="true" />
     <param name="topic_in" value="/camera/depth_registered/points" />

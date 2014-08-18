@@ -11,6 +11,10 @@ Communication::Communication(ObjectExtractor *p_obj_e, FileAPI *p_api, JacoCusto
 }
 
 //-----------------------------------------------------------------------------------//
+/*
+  The call back when the apps send a coordinate.
+  All the message send begin with a letter (ex c_...).  The callBack will execute the right command.
+  */
 void Communication::callback_android_listener(const std_msgs::String &p_input)
 {
 
@@ -24,6 +28,10 @@ void Communication::callback_android_listener(const std_msgs::String &p_input)
 }
 
 //---------------------------------------------------------------------------------//
+/*
+  Parse the the message received from the tablet when its a coordinate.
+  Param[in]  std_msgs::String a string message that tha tablet send.
+  */
 void Communication::coordinate_processing(std_msgs::String p_coordinate)
 {
     m_coordinate_received = true;
@@ -48,6 +56,10 @@ void Communication::coordinate_processing(std_msgs::String p_coordinate)
 }
 
 //----------------------------------------------------------------------------------------//
+/*
+  Parse the the message received from the tablet when the user deceide to take the object.
+  Param[in]  std_msgs::String a string message that tha tablet send.
+  */
 void Communication::grasp_processing(std_msgs::String p_grasp)
 {
     m_coordinate_received = false;
@@ -56,6 +68,10 @@ void Communication::grasp_processing(std_msgs::String p_grasp)
 }
 
 //------------------------------------------------------------------------------------------//
+/*
+  Parse the the message received from the tablet when the user deceide to train.
+  Param[in]  std_msgs::String a string message that tha tablet send.
+  */
 void Communication::train_processing(std_msgs::String p_train)
 {
     m_coordinate_received = false;
@@ -254,19 +270,27 @@ void Communication::testTFandSurfaceTransforms(){
 
     pcl::PointCloud<pcl::PointXYZRGB>::Ptr input_pointcloud = m_object_ex_ptr->getObjectToGrasp();
     std::vector<Eigen::Matrix4f,Eigen::aligned_allocator<Eigen::Matrix4f> > tf_vector;
-    pcl::PointCloud<pcl::VFHSignature308>::Ptr sig = m_object_ex_ptr->m_object_recognition.makeCVFH(input_pointcloud,tf_vector);
+    std::vector<Eigen::Vector3f> centroidVec;
+    pcl::PointCloud<pcl::VFHSignature308>::Ptr sig = m_object_ex_ptr->m_object_recognition.makeCVFH(input_pointcloud,tf_vector, centroidVec);
 
 
     static tf::TransformBroadcaster br;
     tf::StampedTransform object_tf = m_object_ex_ptr->getCentroidPositionRGBFrame();
     br.sendTransform(object_tf);
 
+    /*
+      To get the transfrom work we need to get the centroid directly from the ourcvfh algo.
+      I make a new function that take the centroid in parameters.
+      So this way we can set the orrigin of the tf
+      */
     m_object_ex_ptr->m_transform_pc->clear();
     for(int i=0; i < tf_vector.size(); i++){
         Eigen::Matrix4f matrix = tf_vector.at(i);
         tf::Transform tf_ = tfFromEigen(matrix);
         tf::Vector3 vec = tf_.getOrigin();
-        tf_.setOrigin(tf::Vector3(vec.getZ(),-vec.getX(),-vec.getY()));
+        tf::Vector3 vec2(centroidVec[i](2,0), -(centroidVec[i](0,0)), -(centroidVec[i](1,0)));
+        //tf_.setOrigin(tf::Vector3(vec.getZ(),-vec.getX(),-vec.getY()));
+        tf_.setOrigin(vec2);
         std::stringstream ss;
         ss << i;
         std::string str = "surfaceTransform_" + ss.str();
@@ -290,6 +314,8 @@ tf::Transform Communication::tfFromEigen(Eigen::Matrix4f trans)
     tf::transformEigenToTF(affine,transform_);
     tf::Quaternion test = transform_.getRotation().normalize();
     transform_.setRotation(test);
+
+
 
     return transform_;
 }

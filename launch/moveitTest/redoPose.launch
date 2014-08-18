@@ -1,0 +1,8 @@
+<launch>
+
+	<node pkg="perception3d" type="redoPose" name="redoPose" respawn="false" output="screen">
+		<param name="log_file" type="string" value="/home/robot/rosWorkspace/src/perception3d/bagJaco/pose.txt"/>
+	</node>
+	
+
+</launch>
