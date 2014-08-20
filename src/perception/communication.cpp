@@ -286,22 +286,49 @@ void Communication::testTFandSurfaceTransforms(){
     m_object_ex_ptr->m_transform_pc->clear();
     for(int i=0; i < tf_vector.size(); i++){
         Eigen::Matrix4f matrix = tf_vector.at(i);
-        tf::Transform tf_ = tfFromEigen(matrix);
-        tf::Vector3 vec = tf_.getOrigin();
-        tf::Vector3 vec2(centroidVec[i](2,0), -(centroidVec[i](0,0)), -(centroidVec[i](1,0)));
-        //tf_.setOrigin(tf::Vector3(vec.getZ(),-vec.getX(),-vec.getY()));
+        tf::Transform tf_ = tfFromEigen(matrix);      
+        tf::Vector3 vec2(centroidVec[i](2,0), -(centroidVec[i](0,0)), -(centroidVec[i](1,0)));    
         tf_.setOrigin(vec2);
+
+        // Bad transformation (for testing purposes)
+        tf::Transform tf_2;
+        tf_2.setRotation(tf::Quaternion(0,0,0));
+        tf::Vector3 vec = tf_.getOrigin();
+        tf_2.setOrigin(tf::Vector3(vec.getZ(),-vec.getX(),-vec.getY()));
+
+        // Send transforms
         std::stringstream ss;
         ss << i;
         std::string str = "surfaceTransform_" + ss.str();
         br.sendTransform(tf::StampedTransform(tf_,ros::Time::now(),"camera_rgb_frame",str));
+        std::string str2 = "surfaceTransform_" + ss.str() +"_BAD";
+        br.sendTransform(tf::StampedTransform(tf_2,ros::Time::now(),"camera_rgb_frame",str2));
 
-        printf("Vector1 --->  %f | %f | %f \n", vec.getZ(), -vec.getX(), -vec.getY());
-        printf("Vector2 --->  %f | %f | %f \n", centroidVec[i](2,0),  -(centroidVec[i](0,0)), -(centroidVec[i](1,0)));
+        // Test aligning tfs
+        std::string str3 = "surfaceTransform_" + ss.str() +"_aligned";
+        tf::Vector3 translation = tf_2.getOrigin() - tf_.getOrigin();
+        tf::Transform diff;// = tf::Transform(quat, translation);
+        diff.setBasis(tf_.getBasis().transposeTimes(tf_2.getBasis()));
+        //diff.setOrigin(translation);
+
+        tf::StampedTransform test = tf::StampedTransform(diff,ros::Time::now(),str,str3);
+        br.sendTransform(test);
+        test.setOrigin(translation);
+
+        str3 += "_test";
+        tf::StampedTransform test2 = test;
+        test2.child_frame_id_ = str3;
+        br.sendTransform(test2);
+
+
+
+        printf("Vector1 --->  %f | %f | %f \n", tf_2.getOrigin().getX(), tf_2.getOrigin().getY(), tf_2.getOrigin().getZ());
+        printf("Vector2 --->  %f | %f | %f \n", tf_.getOrigin().getX(), tf_.getOrigin().getY(), tf_.getOrigin().getZ());
+        printf("Vector3 --->  %f | %f | %f \n", test.getOrigin().getX(), test.getOrigin().getY(), test.getOrigin().getZ());
         std::cout << std::endl;
 
         PointT pt;
-        pt.x = vec.getX(); pt.y = vec.getY(); pt.z = vec.getZ();
+        pt.x = vec2.getX(); pt.y = vec2.getY(); pt.z = vec2.getZ();
         m_object_ex_ptr->m_transform_pc->push_back(pt);
 
     }
