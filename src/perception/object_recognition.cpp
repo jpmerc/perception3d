@@ -339,129 +339,85 @@ void Object_recognition::usProcessingCVFH(pcl::PointCloud<PointT>::Ptr p_ptr_clo
 int Object_recognition::OURCVFHRecognition(pcl::PointCloud<PointT>::Ptr in_pc, FileAPI *fileAPI, Eigen::Matrix4f &trans){
 
     // Calculate the surface histograms for the input pointcloud
-    std::vector<Eigen::Matrix4f,Eigen::aligned_allocator<Eigen::Matrix4f> > surface_transforms;
-    pcl::PointCloud<pcl::VFHSignature308>::Ptr surface_histograms = makeCVFH(in_pc,surface_transforms);
+    std::vector<Eigen::Matrix4f,Eigen::aligned_allocator<Eigen::Matrix4f> > input_surface_transforms;
+    pcl::PointCloud<pcl::VFHSignature308>::Ptr input_surface_histograms = makeCVFH(in_pc,input_surface_transforms);
 
     // Get a certain number of the NN surface hypotheses from the object database
     pcl::PointCloud<pcl::VFHSignature308>::Ptr signature_database = fileAPI->getAllHistograms();
-    std::vector<std::vector<int> > NN_object_indices = getNNSurfaces(surface_histograms,signature_database,5);
+    std::vector<std::vector<int> > NN_object_indices = getNNSurfaces(input_surface_histograms,signature_database,5);
 
     // Get object hypotheses and initial transforms
-
     std::vector<ObjectBd> object_hypotheses = fileAPI->retrieveObjectFromHistogram( NN_object_indices.at(1) );
 
-    std::vector<double> whole_PC_scores;
-    std::vector<double> whole_PC_times;
-    std::vector<Eigen::Matrix4f> whole_PC_transforms;
+//    std::vector<double> whole_PC_scores;
+//    std::vector<double> whole_PC_times;
+//    std::vector<Eigen::Matrix4f> whole_PC_transforms;
 
-    std::vector<double> sampled_PC_scores;
-    std::vector<double> sampled_PC_times;
-    std::vector<Eigen::Matrix4f> sampled_PC_transforms;
+//    std::vector<double> sampled_PC_scores;
+//    std::vector<double> sampled_PC_times;
+//    std::vector<Eigen::Matrix4f> sampled_PC_transforms;
 
-    //Sample Pointclouds
-    pcl::PointCloud<PointT>::Ptr in_pc_sampled(new pcl::PointCloud<PointT>);
-    computeUniformSampling(in_pc,in_pc_sampled);
+//    //Sample Pointclouds
+//    pcl::PointCloud<PointT>::Ptr in_pc_sampled(new pcl::PointCloud<PointT>);
+//    computeUniformSampling(in_pc,in_pc_sampled);
 
     // Loop over object hypotheses
     for(int i=0; i < object_hypotheses.size(); i++){
-        ObjectBd obj = object_hypotheses.at(i);
-        pcl::PointCloud<PointT>::Ptr obj_sampled(new pcl::PointCloud<PointT>);
-        computeUniformSampling(obj.getPointCloud(),obj_sampled);
 
-        double smallestScore_fine = 99999;
-        Eigen::Matrix4f smallestTransform_fine;
-        double smallestScore_coarse = 99999;
-        Eigen::Matrix4f smallestTransform_coarse;
+        // Get input surface used for matching with corresponding hypothesis
+        int input_surface_number = NN_object_indices.at(0).at(i);
 
-        double avgTime_fine = 0;
-        double avgTime_coarse = 0;
-        int loopIteration = 0;
+        // Get object hypothesis
+        ObjectBd obj_hypothesis = object_hypotheses.at(i);
 
-        // Loop for different initial transforms (only yaw angle)
-        for(double j=0; j <= 360; j=j+5){
-            tf::Transform initial_guess_tf;
-            initial_guess_tf.setIdentity();
-            tf::Quaternion quat;
-            quat.setRPY(0,0,angles::from_degrees(j));
-            initial_guess_tf.setRotation(quat);
-            Eigen::Matrix4f initial_guess_matrix;
-            pcl_ros::transformAsMatrix(initial_guess_tf,initial_guess_matrix);
+        // Get hypothesis surface number
+        pcl::PointCloud<pcl::VFHSignature308>::Ptr input_sig(new pcl::PointCloud<pcl::VFHSignature308>);
+        input_sig->push_back(input_surface_histograms->at(input_surface_number));
+        int hypothesis_surface_number = histogramComparison(input_sig,obj_hypothesis.getSignature());
 
-            Eigen::Matrix4f fine_transform   = initial_guess_matrix;
-            Eigen::Matrix4f coarse_transform = initial_guess_matrix;
+        // Get initial transformation for ICP from the transforms of the 2 surfaces
+        Eigen::Matrix4f input__matrix       = input_surface_transforms.at(input_surface_number);
+        Eigen::Matrix4f hypothesis__matrix  = obj_hypothesis.getTransforms().at(hypothesis_surface_number);
 
-            double time_fine   = 0;
-            double time_coarse = 0;
 
-            double score_fine   = mergePointCVFH(in_pc,obj.getPointCloud(),fine_transform,time_fine);
-            double score_coarse = mergePointCVFH(in_pc_sampled,obj_sampled,coarse_transform,time_coarse);
 
-            avgTime_fine   += time_fine;
-            avgTime_coarse += time_coarse;
-            loopIteration++;
 
-            if(score_fine < smallestScore_fine){
-                smallestScore_fine = score_fine;
-                smallestTransform_fine = fine_transform;
-            }
-
-            if(score_coarse < smallestScore_coarse){
-                smallestScore_coarse = score_coarse;
-                smallestTransform_coarse = coarse_transform;
-            }
-        }
-
-        //avgTime_fine   = avgTime_fine   / loopIteration;
-        //avgTime_coarse = avgTime_coarse / loopIteration;
-
-        whole_PC_times.push_back(avgTime_fine);
-        whole_PC_scores.push_back(smallestScore_fine);
-        whole_PC_transforms.push_back(smallestTransform_fine);
-
-        sampled_PC_times.push_back(avgTime_coarse);
-        sampled_PC_scores.push_back(smallestScore_coarse);
-        sampled_PC_transforms.push_back(smallestTransform_coarse);
 
     }
 
-    // Retrieve the object with the best score (Object is recognized)
-    double fine_time_avg   = std::accumulate(whole_PC_times.begin(),whole_PC_times.end(),0);
-    //fine_time_avg = fine_time_avg / whole_PC_times.size();
-
-    double coarse_time_avg = std::accumulate(sampled_PC_times.begin(),sampled_PC_times.end(),0);
-    //coarse_time_avg = coarse_time_avg / sampled_PC_times.size();
 
 
-    int    fine_smallest_distance_index   = -1;
-    int    coarse_smallest_distance_index = -1;
-    double fine_smallest_distance         = 99999.0;
-    double coarse_smallest_distance       = 99999.0;
 
-    for(int i=0; i < sampled_PC_scores.size(); i++){
-        double fine_distance = whole_PC_scores.at(i);
-        if(fine_distance < fine_smallest_distance){
-            fine_smallest_distance = fine_distance;
-            fine_smallest_distance_index = i;
-            trans = whole_PC_transforms.at(i);
-        }
+//    int    fine_smallest_distance_index   = -1;
+//    int    coarse_smallest_distance_index = -1;
+//    double fine_smallest_distance         = 99999.0;
+//    double coarse_smallest_distance       = 99999.0;
 
-        double coarse_distance = sampled_PC_scores.at(i);
-        if(coarse_distance < coarse_smallest_distance){
-            coarse_smallest_distance = coarse_distance;
-            coarse_smallest_distance_index = i;
-        }
-    }
+//    for(int i=0; i < sampled_PC_scores.size(); i++){
+//        double fine_distance = whole_PC_scores.at(i);
+//        if(fine_distance < fine_smallest_distance){
+//            fine_smallest_distance = fine_distance;
+//            fine_smallest_distance_index = i;
+//            trans = whole_PC_transforms.at(i);
+//        }
 
-    std::cout << "Object # retrieved with ICP on WHOLE Pointcloud : "   << fine_smallest_distance_index << std::endl;
-    std::cout << "Object # retrieved with ICP on SAMPLED Pointcloud : " << coarse_smallest_distance     << std::endl;
+//        double coarse_distance = sampled_PC_scores.at(i);
+//        if(coarse_distance < coarse_smallest_distance){
+//            coarse_smallest_distance = coarse_distance;
+//            coarse_smallest_distance_index = i;
+//        }
+//    }
 
-    if(fine_smallest_distance < m_rmse_recognition_threshold){
-        return NN_object_indices.at(1).at(fine_smallest_distance_index);
-    }
+//    std::cout << "Object # retrieved with ICP on WHOLE Pointcloud : "   << fine_smallest_distance_index << std::endl;
+//    std::cout << "Object # retrieved with ICP on SAMPLED Pointcloud : " << coarse_smallest_distance     << std::endl;
 
-    else{
-        return -1;
-    }
+//    if(fine_smallest_distance < m_rmse_recognition_threshold){
+//        return NN_object_indices.at(1).at(fine_smallest_distance_index);
+//    }
+
+//    else{
+//        return -1;
+//    }
 }
 
 

@@ -296,6 +296,10 @@ void Communication::testTFandSurfaceTransforms(){
         std::string str = "surfaceTransform_" + ss.str();
         br.sendTransform(tf::StampedTransform(tf_,ros::Time::now(),"camera_rgb_frame",str));
 
+        printf("Vector1 --->  %f | %f | %f \n", vec.getZ(), -vec.getX(), -vec.getY());
+        printf("Vector2 --->  %f | %f | %f \n", centroidVec[i](2,0),  -(centroidVec[i](0,0)), -(centroidVec[i](1,0)));
+        std::cout << std::endl;
+
         PointT pt;
         pt.x = vec.getX(); pt.y = vec.getY(); pt.z = vec.getZ();
         m_object_ex_ptr->m_transform_pc->push_back(pt);
