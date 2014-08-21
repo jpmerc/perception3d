@@ -306,24 +306,25 @@ void Communication::testTFandSurfaceTransforms(){
 
         // Test aligning tfs
         std::string str3 = "surfaceTransform_" + ss.str() +"_aligned";
-        tf::Vector3 translation = tf_2.getOrigin() - tf_.getOrigin();
-        tf::Transform diff;// = tf::Transform(quat, translation);
-        diff.setBasis(tf_.getBasis().transposeTimes(tf_2.getBasis()));
+        //tf::Vector3 translation = tf_2.getOrigin() - tf_.getOrigin();
+        //tf::Transform diff = tf::Transform(tf_.getBasis().transposeTimes(tf_2.getBasis()), translation);
+        tf::Transform diff = tf_.inverseTimes(tf_2);
+
         //diff.setOrigin(translation);
 
         tf::StampedTransform test = tf::StampedTransform(diff,ros::Time::now(),str,str3);
         br.sendTransform(test);
-        test.setOrigin(translation);
+       // test.setOrigin(translation);
 
-        str3 += "_test";
-        tf::StampedTransform test2 = test;
-        test2.child_frame_id_ = str3;
-        br.sendTransform(test2);
+//        str3 += "_test";
+//        tf::StampedTransform test2 = test;
+//        test2.child_frame_id_ = str3;
+//        br.sendTransform(test2);
 
 
 
-        printf("Vector1 --->  %f | %f | %f \n", tf_2.getOrigin().getX(), tf_2.getOrigin().getY(), tf_2.getOrigin().getZ());
-        printf("Vector2 --->  %f | %f | %f \n", tf_.getOrigin().getX(), tf_.getOrigin().getY(), tf_.getOrigin().getZ());
+        printf("Vector1 --->  %f | %f | %f \n", tf_.getOrigin().getX(), tf_.getOrigin().getY(), tf_.getOrigin().getZ());
+        printf("Vector2 --->  %f | %f | %f \n", tf_2.getOrigin().getX(), tf_2.getOrigin().getY(), tf_2.getOrigin().getZ());
         printf("Vector3 --->  %f | %f | %f \n", test.getOrigin().getX(), test.getOrigin().getY(), test.getOrigin().getZ());
         std::cout << std::endl;
 
