@@ -160,7 +160,6 @@ void Communication::train(){
         object_pointcloud = m_object_ex_ptr->m_object_recognition.transformAndVoxelizePointCloud(input_pointcloud, obj.getPointCloud(),calculated_object_transform);
         object_pose_vector = obj.getObjectPose();
         relative_arm_pose_vector = obj.getArmPose();
-
         surface_transforms = obj.getTransforms();
         name = obj.getName();
     }
@@ -183,9 +182,9 @@ void Communication::train(){
     //tf::StampedTransform arm_pose_before_grasp = m_jaco_ptr->getArmPositionFromCamera();
 
     // RELATIVE POSE
-    tf::Transform arm_rel_pose;
-    tf::Vector3 translation = arm_pose_before_grasp.getOrigin() - object_tf.getOrigin();
-    arm_rel_pose = tf::Transform(object_tf.getBasis().transposeTimes(arm_pose_before_grasp.getBasis()), translation);
+    tf::Transform arm_rel_pose = arm_pose_before_grasp.inverseTimes(object_tf);
+//    tf::Vector3 translation = arm_pose_before_grasp.getOrigin() - object_tf.getOrigin();
+//    arm_rel_pose = tf::Transform(object_tf.getBasis().transposeTimes(arm_pose_before_grasp.getBasis()), translation);
     relative_arm_pose_vector.push_back(arm_rel_pose);
 
     // TO VIEW FRAMES
@@ -312,9 +311,6 @@ tf::Transform Communication::tfFromEigen(Eigen::Matrix4f trans)
     tf::transformEigenToTF(affine,transform_);
     tf::Quaternion test = transform_.getRotation().normalize();
     transform_.setRotation(test);
-
-
-
     return transform_;
 }
 

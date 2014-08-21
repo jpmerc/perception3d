@@ -66,10 +66,7 @@ double Object_recognition::mergePointCVFH(pcl::PointCloud<PointT>::Ptr p_cloud_s
                                           Eigen::Matrix4f &transform_guess)
 {
     double time;
-    return mergePointCVFH(p_cloud_src_feature,
-                          p_cloud_target_feature,
-                          transform_guess,
-                          time);
+    return mergePointCVFH(p_cloud_src_feature,p_cloud_target_feature,transform_guess,time);
 }
 
 double Object_recognition::mergePointCVFH(pcl::PointCloud<PointT>::Ptr p_cloud_src_feature,
@@ -357,17 +354,10 @@ int Object_recognition::OURCVFHRecognition(pcl::PointCloud<PointT>::Ptr in_pc, F
     // Get object hypotheses and initial transforms
     std::vector<ObjectBd> object_hypotheses = fileAPI->retrieveObjectFromHistogram( NN_object_indices.at(1) );
 
-//    std::vector<double> whole_PC_scores;
-//    std::vector<double> whole_PC_times;
-//    std::vector<Eigen::Matrix4f> whole_PC_transforms;
-
-//    std::vector<double> sampled_PC_scores;
-//    std::vector<double> sampled_PC_times;
-//    std::vector<Eigen::Matrix4f> sampled_PC_transforms;
-
-//    //Sample Pointclouds
-//    pcl::PointCloud<PointT>::Ptr in_pc_sampled(new pcl::PointCloud<PointT>);
-//    computeUniformSampling(in_pc,in_pc_sampled);
+    double smallestScore = 9999999999;
+    Eigen::Matrix4f smallestScoreTransform;
+    double total_time = 0;
+    int return_index = -1;
 
     // Loop over object hypotheses
     for(int i=0; i < object_hypotheses.size(); i++){
@@ -384,48 +374,40 @@ int Object_recognition::OURCVFHRecognition(pcl::PointCloud<PointT>::Ptr in_pc, F
         int hypothesis_surface_number = histogramComparison(input_sig,obj_hypothesis.getSignature());
 
         // Get initial transformation for ICP from the transforms of the 2 surfaces
-        Eigen::Matrix4f input__matrix       = input_surface_transforms.at(input_surface_number);
-        Eigen::Matrix4f hypothesis__matrix  = obj_hypothesis.getTransforms().at(hypothesis_surface_number);
+        Eigen::Matrix4f input_matrix       = input_surface_transforms.at(input_surface_number);
+        Eigen::Matrix4f hypothesis_matrix  = obj_hypothesis.getTransforms().at(hypothesis_surface_number);
 
+        tf::Transform input_tf = tfFromEigen(input_matrix);
+        tf::Transform hypothesis_tf = tfFromEigen(hypothesis_matrix);
 
+        // Initial guess (hypothesis -> input)
+        tf::Transform initial_guess_tf = input_tf.inverseTimes(hypothesis_tf);
+        Eigen::Matrix4f initial_guess_matrix;
+        pcl_ros::transformAsMatrix(initial_guess_tf,initial_guess_matrix);
 
+        // ICP
+        double execution_time = 0;
+        double icp_score = mergePointCVFH(in_pc, obj_hypothesis.getPointCloud(), initial_guess_matrix, execution_time);
 
-
+        if(icp_score < smallestScore){
+            return_index = i;
+            smallestScore = icp_score;
+            smallestScoreTransform = initial_guess_matrix;
+        }
+        total_time += execution_time;
     }
 
 
+    printf("It took %.4f seconds to test %d hypotheses with ICP \n,",total_time, object_hypotheses.size());
 
+    if(icp_score <= m_rmse_recognition_threshold){
+        trans = smallestScoreTransform;
+        return return_index;
+    }
 
-//    int    fine_smallest_distance_index   = -1;
-//    int    coarse_smallest_distance_index = -1;
-//    double fine_smallest_distance         = 99999.0;
-//    double coarse_smallest_distance       = 99999.0;
-
-//    for(int i=0; i < sampled_PC_scores.size(); i++){
-//        double fine_distance = whole_PC_scores.at(i);
-//        if(fine_distance < fine_smallest_distance){
-//            fine_smallest_distance = fine_distance;
-//            fine_smallest_distance_index = i;
-//            trans = whole_PC_transforms.at(i);
-//        }
-
-//        double coarse_distance = sampled_PC_scores.at(i);
-//        if(coarse_distance < coarse_smallest_distance){
-//            coarse_smallest_distance = coarse_distance;
-//            coarse_smallest_distance_index = i;
-//        }
-//    }
-
-//    std::cout << "Object # retrieved with ICP on WHOLE Pointcloud : "   << fine_smallest_distance_index << std::endl;
-//    std::cout << "Object # retrieved with ICP on SAMPLED Pointcloud : " << coarse_smallest_distance     << std::endl;
-
-//    if(fine_smallest_distance < m_rmse_recognition_threshold){
-//        return NN_object_indices.at(1).at(fine_smallest_distance_index);
-//    }
-
-//    else{
-//        return -1;
-//    }
+    else{
+        return -1;
+    }
 }
 
 
@@ -800,6 +782,16 @@ pcl::PointCloud<PointT>::Ptr Object_recognition::transformAndVoxelizePointCloud(
     return cloud_filtered;
 }
 
+tf::Transform Object_recognition::tfFromEigen(Eigen::Matrix4f trans){
+    Eigen::Matrix4f mf = trans; //The matrix I want to convert
+    Eigen::Matrix4d md(mf.cast<double>());
+    Eigen::Affine3d affine(md);
+    tf::Transform transform_;
+    tf::transformEigenToTF(affine,transform_);
+    tf::Quaternion test = transform_.getRotation().normalize();
+    transform_.setRotation(test);
+    return transform_;
+}
 
 //Eigen::Matrix4f Object_recognition::mergePointClouds(   pcl::PointCloud<pcl::FPFHSignature33>::Ptr f_src,
 //                                                        pcl::PointCloud<pcl::FPFHSignature33>::Ptr f_target,

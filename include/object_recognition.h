@@ -163,6 +163,8 @@ public:
 
     pcl::PointCloud<PointT>::Ptr transformAndVoxelizePointCloud(pcl::PointCloud<PointT>::Ptr in_source, pcl::PointCloud<PointT>::Ptr in_target, Eigen::Matrix4f in_transform);
 
+    tf::Transform tfFromEigen(Eigen::Matrix4f trans);
+
     double m_rmse_recognition_threshold;
 
 private:
