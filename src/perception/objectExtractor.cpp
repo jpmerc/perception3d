@@ -617,9 +617,12 @@ int ObjectExtractor::position_finder_vector(const float p_coordinate[], const pc
   param[in] p_coordinate the coordinate received
   param[in] p_bd the signature db
   */
-int ObjectExtractor::coordinate_processing(const float p_coordinate[],
-                                           pcl::PointCloud<pcl::VFHSignature308>::Ptr p_bd)
-{
+int ObjectExtractor::coordinate_processing(const float p_coordinate[], FileAPI *fileAPIptr){
+
+    //pcl::PointCloud<pcl::VFHSignature308>::Ptr histograms = fileAPIptr->getAllHistograms();
+
+    //Gotta recognize objects and fill the UI with all info available to repeat or teach
+
     int position_in_vector = position_finder_vector(p_coordinate,*m_memory_point_cloud_corner_ptr,m_memory_distance_vector);
     if(position_in_vector != -1)
     {/*
