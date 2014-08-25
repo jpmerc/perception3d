@@ -397,10 +397,10 @@ int Object_recognition::OURCVFHRecognition(pcl::PointCloud<PointT>::Ptr in_pc, F
         total_time += execution_time;
     }
 
+    int numberObjects =  object_hypotheses.size();
+    printf("It took %.4f seconds to test %d hypotheses with ICP \n,", total_time, numberObjects);
 
-    printf("It took %.4f seconds to test %d hypotheses with ICP \n,",total_time, object_hypotheses.size());
-
-    if(icp_score <= m_rmse_recognition_threshold){
+    if(smallestScore <= m_rmse_recognition_threshold){
         trans = smallestScoreTransform;
         return return_index;
     }
