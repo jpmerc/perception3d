@@ -619,30 +619,28 @@ int ObjectExtractor::position_finder_vector(const float p_coordinate[], const pc
   */
 int ObjectExtractor::coordinate_processing(const float p_coordinate[], FileAPI *fileAPIptr){
 
-    //pcl::PointCloud<pcl::VFHSignature308>::Ptr histograms = fileAPIptr->getAllHistograms();
+    pcl::PointCloud<pcl::VFHSignature308>::Ptr histograms = fileAPIptr->getAllHistograms();
 
     //Gotta recognize objects and fill the UI with all info available to repeat or teach
 
     int position_in_vector = position_finder_vector(p_coordinate,*m_memory_point_cloud_corner_ptr,m_memory_distance_vector);
-    if(position_in_vector != -1)
-    {/*
+    if(position_in_vector != -1){
         //fait la reconnaisance d'object avec le point cloud qui se trouve a la position
-        int positionVectorObject = m_object_recognition.object_recon(object_vector.at(position_in_vector)
-                                                                     , p_bd);*/
+        int positionVectorObject = m_object_recognition.object_recon(object_vector.at(position_in_vector), histograms);
         //debug response to android
         std_msgs::String send_string;
         send_string.data = "p_un;deux";
         m_pub_android.publish(send_string);
         send_string.data = "object_recon";
         m_pub_android.publish(send_string);
-        //return positionVectorObject;
+        return positionVectorObject;
     }
-    if(position_in_vector == -1)
-    {
+    else{
         std::cout << "no object clicked" << std::endl;
         std_msgs::String sendString;
         sendString.data = "no_object";
         m_pub_android.publish(sendString);
+        return -1;
     }
 }
 
@@ -660,7 +658,7 @@ void ObjectExtractor::point_cloud_processing()
 
 //---------------------------------------------------------------------------------------------------------------------------------------//
 /*
-  Call all the calback depend of what the kinect have send.  Image or point cloud.
+  Call all the calback depend of what the kinect have sent.  Image or point cloud.
   */
 void ObjectExtractor::spin_once()
 {
@@ -689,3 +687,6 @@ void ObjectExtractor::refreshObjectCentroid(){
 }
 
 
+void ObjectExtractor::publishToAndroidDevice(std::string message){
+    m_pub_android.publish(message);
+}

@@ -16,6 +16,7 @@
 
 
 
+
 class Communication
 {
 public:
@@ -37,6 +38,8 @@ public:
     void testTFandSurfaceTransforms();
     tf::Transform tfFromEigen(Eigen::Matrix4f trans);
 
+    void fillUserInterfaceWithObjectInfo();
+
 
 private:
 
@@ -54,6 +57,8 @@ private:
     tf::Transform m_relative_pose;
     void publishRelativePoseTF(tf::Transform relative_pose);
     bool m_publish_relative_pose;
+
+    int selected_object_index;
 
 };
 

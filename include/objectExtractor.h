@@ -77,6 +77,8 @@ public:
 
     void spin_once();
 
+    void publishToAndroidDevice(std::string message);
+
 
     // Variables
     boost::shared_ptr<pcl::visualization::PCLVisualizer> pclViewer;
