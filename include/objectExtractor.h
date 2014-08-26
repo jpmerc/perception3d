@@ -72,7 +72,7 @@ public:
     void image_processing(pcl::PointCloud<PointT>::Ptr p_point_cloud_corner, sensor_msgs::Image& p_image_input);
     int position_finder_vector(const float p_coordinate[], const pcl::PointCloud<PointT>& p_point_cloud_corner, const std::vector<float> p_distance_vector);
 
-    int coordinate_processing(const float p_coordinate[], FileAPI *fileAPIptr);
+    pcl::PointCloud<PointT>::Ptr coordinate_processing(const float p_coordinate[]);
     void point_cloud_processing();
 
     void spin_once();

@@ -617,31 +617,36 @@ int ObjectExtractor::position_finder_vector(const float p_coordinate[], const pc
   param[in] p_coordinate the coordinate received
   param[in] p_bd the signature db
   */
-int ObjectExtractor::coordinate_processing(const float p_coordinate[], FileAPI *fileAPIptr){
-
-    pcl::PointCloud<pcl::VFHSignature308>::Ptr histograms = fileAPIptr->getAllHistograms();
-
+pcl::PointCloud<PointT>::Ptr ObjectExtractor::coordinate_processing(const float p_coordinate[]){
     //Gotta recognize objects and fill the UI with all info available to repeat or teach
-
     int position_in_vector = position_finder_vector(p_coordinate,*m_memory_point_cloud_corner_ptr,m_memory_distance_vector);
-    if(position_in_vector != -1){
-        //fait la reconnaisance d'object avec le point cloud qui se trouve a la position
-        int positionVectorObject = m_object_recognition.object_recon(object_vector.at(position_in_vector), histograms);
-        //debug response to android
-        std_msgs::String send_string;
-        send_string.data = "p_un;deux";
-        m_pub_android.publish(send_string);
-        send_string.data = "object_recon";
-        m_pub_android.publish(send_string);
-        return positionVectorObject;
+    pcl::PointCloud<PointT>::Ptr returnCloud(new pcl::PointCloud<PointT>);
+
+    if(position_in_vector > 0){
+        returnCloud = object_vector.at(position_in_vector);
     }
-    else{
-        std::cout << "no object clicked" << std::endl;
-        std_msgs::String sendString;
-        sendString.data = "no_object";
-        m_pub_android.publish(sendString);
-        return -1;
-    }
+
+    return returnCloud;
+
+//    if(position_in_vector != -1){
+//        //fait la reconnaisance d'object avec le point cloud qui se trouve a la position
+//        int positionVectorObject = m_object_recognition.object_recon(object_vector.at(position_in_vector), histograms);
+//        //debug response to android
+//        std_msgs::String send_string;
+//        send_string.data = "p_un;deux";
+//        m_pub_android.publish(send_string);
+//        send_string.data = "object_recon";
+//        m_pub_android.publish(send_string);
+//        return positionVectorObject;
+//    }
+//    else{
+//        std::cout << "no object clicked" << std::endl;
+//        std_msgs::String sendString;
+//        sendString.data = "no_object";
+//        m_pub_android.publish(sendString);
+//        return -1;
+//    }
+
 }
 
 //----------------------------------------------------------------------------------------------------------------------------//
@@ -688,5 +693,7 @@ void ObjectExtractor::refreshObjectCentroid(){
 
 
 void ObjectExtractor::publishToAndroidDevice(std::string message){
-    m_pub_android.publish(message);
+    std_msgs::String message_to_send; ;
+    message_to_send.data = message;
+    m_pub_android.publish(message_to_send);
 }

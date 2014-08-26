@@ -21,29 +21,29 @@ void callbackThread(){
     }
 }
 
-void trainFunctionTestThread(Communication *communication_ptr){
-    ros::NodeHandle n;ros::Rate r(10);
-    while(n.ok()){
-        communication_ptr->testTFandSurfaceTransforms();
-        r.sleep();
-    }
-
-    //sleep(5);
-    //communication_ptr->train();
-
-
-
-//    int count = 0;
-//    int timeToWait = 20;
-//    while(true){
-//        sleep(1);
-//        cout << count++ << endl;
-//        if(count >= timeToWait) break;
+//void trainFunctionTestThread(Communication *communication_ptr){
+//    ros::NodeHandle n;ros::Rate r(10);
+//    while(n.ok()){
+//        communication_ptr->testTFandSurfaceTransforms();
+//        r.sleep();
 //    }
 
-    //sleep(15);
-    //communication_ptr->repeat();
-}
+//    //sleep(5);
+//    //communication_ptr->train();
+
+
+
+////    int count = 0;
+////    int timeToWait = 20;
+////    while(true){
+////        sleep(1);
+////        cout << count++ << endl;
+////        if(count >= timeToWait) break;
+////    }
+
+//    //sleep(15);
+//    //communication_ptr->repeat();
+//}
 
 int main (int argc, char** argv){
     ros::init (argc, argv, "perception");
@@ -78,7 +78,7 @@ int main (int argc, char** argv){
     boost::thread spin_thread(callbackThread);
 
     // Thread to test the training phase of the system
-    boost::thread trainTest(trainFunctionTestThread,communication_ptr);
+    //boost::thread trainTest(trainFunctionTestThread,communication_ptr);
 
     // Spin threads
     ros::Rate r(5);

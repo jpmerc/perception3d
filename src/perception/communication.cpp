@@ -104,12 +104,26 @@ void Communication::spin_once()
 {
     if(m_coordinate_received)
     {
-        selected_object_index = m_object_ex_ptr->coordinate_processing(m_coordinate_user_sended,m_api_ptr);
-        //selected_object = m_api_ptr->getObjectByIndex(obj_index);
-        m_object_ex_ptr->spin_once();
+        pcl::PointCloud<PointT>::Ptr input_pointcloud = m_object_ex_ptr->coordinate_processing(m_coordinate_user_sended);
+        if(input_pointcloud->size() > 0){
+            // An object was clicked on
+            Eigen::Matrix4f calculated_object_transform;
+            selected_object_index = m_object_ex_ptr->m_object_recognition.OURCVFHRecognition(input_pointcloud, m_api_ptr, calculated_object_transform);
 
-        // Fill user interface with object info
-        fillUserInterfaceWithObjectInfo();
+            // Refresh image and pointcloud
+            m_object_ex_ptr->spin_once();
+
+            // Fill user interface with object info
+            fillUserInterfaceWithObjectInfo();
+
+        }
+
+        else{
+            //There is no object where the user clicked
+            m_object_ex_ptr->publishToAndroidDevice("no_object");
+        }
+
+
 
     }
     else if(m_train_received)
@@ -321,23 +335,31 @@ tf::Transform Communication::tfFromEigen(Eigen::Matrix4f trans)
 void Communication::fillUserInterfaceWithObjectInfo(){
 
     int numberOfGrasps = 0;
-    if(selected_object_index > 0){
-       ObjectBd selected_object = m_api_ptr->getObjectByIndex(selected_object_index);
-       numberOfGrasps = selected_object.getArmPose().size();
+    if(selected_object_index >= 0){
+        // Object is recognized
+        ObjectBd selected_object = m_api_ptr->getObjectByIndex(selected_object_index);
+        numberOfGrasps = selected_object.getArmPose().size();
+
+        string sendString = "p_";
+        string grasp_text = "";
+        for(int i=0; i < numberOfGrasps; i++){
+            stringstream ss;
+            ss << (i+1);
+            grasp_text += "Grasp_" + ss.str();
+            if((i+1) < numberOfGrasps){
+                grasp_text += ";" ;
+            }
+        }
+
+        sendString += grasp_text;
+        m_object_ex_ptr->publishToAndroidDevice(sendString);
+        m_object_ex_ptr->publishToAndroidDevice("object_recon");
     }
 
-    string grasp_text = "";
-    for(int i=0; i < numberOfGrasps; i++){
-        stringstream ss;
-        ss << i;
-        grasp_text = "Grasp_" + ss.str();
+    else{
+        // Object is unrecognized
+        m_object_ex_ptr->publishToAndroidDevice("object_not_recon");
     }
-
-    m_object_ex_ptr->publishToAndroidDevice(grasp_text);
-
-
-
-
 
 }
 

@@ -349,7 +349,18 @@ int Object_recognition::OURCVFHRecognition(pcl::PointCloud<PointT>::Ptr in_pc, F
 
     // Get a certain number of the NN surface hypotheses from the object database
     pcl::PointCloud<pcl::VFHSignature308>::Ptr signature_database = fileAPI->getAllHistograms();
-    std::vector<std::vector<int> > NN_object_indices = getNNSurfaces(input_surface_histograms,signature_database,5);
+    int database_size = signature_database->size();
+    int numberOfHypothesesPerSurface = 5;
+
+    // Condition on the database size
+    if(database_size < 1){
+        return -1;
+    }
+    else if(database_size < numberOfHypothesesPerSurface){
+        numberOfHypothesesPerSurface = database_size;
+    }
+
+    std::vector<std::vector<int> > NN_object_indices = getNNSurfaces(input_surface_histograms,signature_database,numberOfHypothesesPerSurface);
 
     // Get object hypotheses and initial transforms
     std::vector<ObjectBd> object_hypotheses = fileAPI->retrieveObjectFromHistogram( NN_object_indices.at(1) );
@@ -626,41 +637,49 @@ std::vector<float> Object_recognition::histogramComparisonVector(pcl::PointCloud
                                                                  pcl::PointCloud<pcl::VFHSignature308>::Ptr p_bd_cloud)
 
 {
-    pcl::KdTreeFLANN<pcl::VFHSignature308>::Ptr kdtree (new pcl::KdTreeFLANN<pcl::VFHSignature308>);
+    if(p_cloud->size() > 0 && p_bd_cloud->size() > 0){
+        pcl::KdTreeFLANN<pcl::VFHSignature308>::Ptr kdtree (new pcl::KdTreeFLANN<pcl::VFHSignature308>);
 
-    kdtree->setInputCloud(p_bd_cloud);
+        kdtree->setInputCloud(p_bd_cloud);
 
-    std::vector<int> index(1);
-    std::vector<float> sqrDistance(1);
+        std::vector<int> index;
+        std::vector<float> sqrDistance;
 
-    std::vector<int> memoryIndex;
-    std::vector<float> memoryDistance;
+        std::vector<int> memoryIndex;
+        std::vector<float> memoryDistance;
 
-    for(int i = 0; i < p_cloud->size(); i++)
-    {
-        kdtree->nearestKSearch(p_cloud->at(i), 1, index, sqrDistance);
-        memoryIndex.push_back(index[0]);
-        memoryDistance.push_back(sqrDistance[0]);
-    }
-
-    int smallestDistance = sqrDistance[0];
-    int smallestDistanceIndex = memoryIndex[0];
-    for(int i = 0; i < sqrDistance.size(); i++)
-    {
-        if (smallestDistance > sqrDistance[i])
+        for(int i = 0; i < p_cloud->size(); i++)
         {
-            smallestDistance = sqrDistance[i];
-            smallestDistanceIndex = memoryIndex[i];
+            kdtree->nearestKSearch(p_cloud->at(i), 1, index, sqrDistance);
+            memoryIndex.push_back(index[0]);
+            memoryDistance.push_back(sqrDistance[0]);
         }
+
+        int smallestDistance = sqrDistance[0];
+        int smallestDistanceIndex = memoryIndex[0];
+        for(int i = 0; i < sqrDistance.size(); i++)
+        {
+            if (smallestDistance > sqrDistance[i])
+            {
+                smallestDistance = sqrDistance[i];
+                smallestDistanceIndex = memoryIndex[i];
+            }
+        }
+
+        std::vector<float> returnVector;
+        returnVector.push_back(smallestDistanceIndex);
+        returnVector.push_back(smallestDistance);
+
+        std::cout << "The best match is = " << smallestDistanceIndex << std::endl;
+        std::cout << "The sqrt distance is = " << smallestDistance << std::endl;
+        return returnVector;
     }
 
-    std::vector<float> returnVector;
-    returnVector.push_back(smallestDistanceIndex);
-    returnVector.push_back(smallestDistance);
-
-    std::cout << "The best match is = " << smallestDistanceIndex << std::endl;
-    std::cout << "The sqrt distance is = " << smallestDistance << std::endl;
-    return returnVector;
+    else{
+        std::vector<float> returnVector;
+        returnVector.push_back(-1);
+        return returnVector;
+    }
 }
 
 

@@ -74,7 +74,7 @@ ObjectBd FileAPI::createObject(pcl::PointCloud<pcl::VFHSignature308>::Ptr object
 {
     if(object_signature->size() <= 0)
     {
-        throw (std::runtime_error("The object don't have a signature"));
+        throw (std::runtime_error("The object doesn't have a signature"));
     }
     else if(object_pointcloud->size() <= 0)
     {
@@ -102,7 +102,7 @@ ObjectBd FileAPI::createObject(pcl::PointCloud<pcl::VFHSignature308>::Ptr object
 }
 
 /*
-  The function to create a new object.  Will make sure that the new name is consitant for the BD.
+  The function to create a new object.  Will make sure that the new name is consistent for the BD.
   It is the only fonction to create an object and ensure no name clash.
   param[in] object_signature the OURCVFH signature for the object.
   param[in] object_pointCloud the original point cloud for the object.
