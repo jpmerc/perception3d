@@ -61,16 +61,16 @@ Eigen::Matrix4f Object_recognition::mergePointCVFH(pcl::PointCloud<pcl::VFHSigna
 
 // Takes initial guess as input argument. It modifies it to return the final transformation.
 // The function returns the score.
-double Object_recognition::mergePointCVFH(pcl::PointCloud<PointT>::Ptr p_cloud_src_feature,
-                                          pcl::PointCloud<PointT>::Ptr p_cloud_target_feature,
+double Object_recognition::mergePointCVFH(pcl::PointCloud<PointT>::Ptr p_cloud_src,
+                                          pcl::PointCloud<PointT>::Ptr p_cloud_target,
                                           Eigen::Matrix4f &transform_guess)
 {
     double time;
-    return mergePointCVFH(p_cloud_src_feature,p_cloud_target_feature,transform_guess,time);
+    return mergePointCVFH(p_cloud_src,p_cloud_target,transform_guess,time);
 }
 
-double Object_recognition::mergePointCVFH(pcl::PointCloud<PointT>::Ptr p_cloud_src_feature,
-                                          pcl::PointCloud<PointT>::Ptr p_cloud_target_feature,
+double Object_recognition::mergePointCVFH(pcl::PointCloud<PointT>::Ptr p_cloud_src,
+                                          pcl::PointCloud<PointT>::Ptr p_cloud_target,
                                           Eigen::Matrix4f &transform_guess,
                                           double &executionTime)
 {
@@ -78,8 +78,8 @@ double Object_recognition::mergePointCVFH(pcl::PointCloud<PointT>::Ptr p_cloud_s
 
     pcl::IterativeClosestPoint<PointT, PointT> icp;
     //float maxDistanceICP = 0.2;
-    icp.setInputSource(p_cloud_src_feature);
-    icp.setInputTarget(p_cloud_target_feature);
+    icp.setInputSource(p_cloud_src);
+    icp.setInputTarget(p_cloud_target);
     //icp.setMaxCorrespondenceDistance(maxDistanceICP);
     icp.setMaximumIterations(40);
     pcl::PointCloud<PointT> Final;
@@ -391,7 +391,7 @@ int Object_recognition::OURCVFHRecognition(pcl::PointCloud<PointT>::Ptr in_pc, F
         tf::Transform input_tf = tfFromEigen(input_matrix);
         tf::Transform hypothesis_tf = tfFromEigen(hypothesis_matrix);
 
-        // Initial guess (hypothesis -> input)
+        // Initial guess (input -> hypothesis)
         tf::Transform initial_guess_tf = input_tf.inverseTimes(hypothesis_tf);
         Eigen::Matrix4f initial_guess_matrix;
         pcl_ros::transformAsMatrix(initial_guess_tf,initial_guess_matrix);

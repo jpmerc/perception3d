@@ -57,6 +57,7 @@ public:
     void toggle_showUI();
     Eigen::Vector4f getGraspCentroid();
     pcl::PointCloud<PointT>::Ptr getObjectToGrasp();
+    void setObjectToGrasp(pcl::PointCloud<PointT>::Ptr grasp_cloud);
     tf::StampedTransform getCentroidPositionRGBFrame();
 
     void callback_rgb_camera(const sensor_msgs::Image& p_input);

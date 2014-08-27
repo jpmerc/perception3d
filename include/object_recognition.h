@@ -66,12 +66,12 @@ public:
                                    pcl::PointCloud<PointT>::Ptr p_cloud_src_feature,
                                    pcl::PointCloud<PointT>::Ptr p_cloud_target_feature);
 
-    double mergePointCVFH(pcl::PointCloud<PointT>::Ptr p_cloud_src_feature,
-                          pcl::PointCloud<PointT>::Ptr p_cloud_target_feature,
+    double mergePointCVFH(pcl::PointCloud<PointT>::Ptr p_cloud_src,
+                          pcl::PointCloud<PointT>::Ptr p_cloud_target,
                           Eigen::Matrix4f &transform_guess);
 
-    double mergePointCVFH(pcl::PointCloud<PointT>::Ptr p_cloud_src_feature,
-                          pcl::PointCloud<PointT>::Ptr p_cloud_target_feature,
+    double mergePointCVFH(pcl::PointCloud<PointT>::Ptr p_cloud_src,
+                          pcl::PointCloud<PointT>::Ptr p_cloud_target,
                           Eigen::Matrix4f &transform_guess,
                           double &executionTime);
 

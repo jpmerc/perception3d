@@ -59,6 +59,10 @@ private:
     bool m_publish_relative_pose;
 
     int selected_object_index;
+    pcl::PointCloud<PointT>::Ptr selected_pointcloud;
+    Eigen::Matrix4f calculated_object_transform;
+    int grasp_list_index;
+
 
 };
 

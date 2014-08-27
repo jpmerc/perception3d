@@ -246,6 +246,10 @@ pcl::PointCloud<PointT>::Ptr ObjectExtractor::getObjectToGrasp(){
     return object_to_grasp;
 }
 
+void ObjectExtractor::setObjectToGrasp(pcl::PointCloud<PointT>::Ptr grasp_cloud){
+     object_to_grasp = grasp_cloud;
+}
+
 // -------------------------------------------------------------------------------------------------------- //
 tf::StampedTransform ObjectExtractor::getCentroidPositionRGBFrame(){
     Eigen::Vector4f object_pose = getGraspCentroid();

@@ -255,13 +255,11 @@ void Communication::repeat(){
 
        tf::Transform environment_arm_pose = model_pose + arm_rel_transform.inverse() + scene_to_model.inverse();
 
-       //tf::Transform object_in_scene = calculated_object_transform
-
-
-       // Publish TF in a thread and listen to it
 
        // Move the arm (MoveIt instead of direct moveToPoint function)
-
+       geometry_msgs::PoseStamped goal;
+       goal.pose.orientation = environment_arm_pose.getRotation();
+       m_jaco_ptr->moveitPlugin();
 
 
 
