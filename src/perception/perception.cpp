@@ -21,12 +21,13 @@ void callbackThread(){
     }
 }
 
-//void trainFunctionTestThread(Communication *communication_ptr){
-//    ros::NodeHandle n;ros::Rate r(10);
-//    while(n.ok()){
+void trainFunctionTestThread(Communication *communication_ptr){
+    ros::NodeHandle n;ros::Rate r(10);
+    while(n.ok()){
 //        communication_ptr->testTFandSurfaceTransforms();
-//        r.sleep();
-//    }
+        communication_ptr->train();
+        r.sleep();
+    }
 
 //    //sleep(5);
 //    //communication_ptr->train();
@@ -43,7 +44,7 @@ void callbackThread(){
 
 //    //sleep(15);
 //    //communication_ptr->repeat();
-//}
+}
 
 int main (int argc, char** argv){
     ros::init (argc, argv, "perception");
@@ -69,8 +70,8 @@ int main (int argc, char** argv){
     ros::Subscriber sub3 = n.subscribe("/android_sender", 1, &Communication::callback_android_listener, communication_ptr);
 
     // Different Callback Queue for Jaco Callbacks (position)
-    const std::string arm_topic = "/jaco/tool_position";
-    const std::string fingers_topic = "/jaco/finger_position";
+    const std::string arm_topic = "/jaco_arm_driver/out/tool_position";
+    const std::string fingers_topic = "/jaco_arm_driver/out/finger_position";
     ros::SubscribeOptions fingers = ros::SubscribeOptions::create<jaco_msgs::FingerPosition>(fingers_topic,1,boost::bind(&JacoCustom::fingers_position_callback,JACO_PTR,_1),ros::VoidPtr(),&jaco_callbacks);
     ros::Subscriber sub_f = n.subscribe(fingers);
     ros::SubscribeOptions arm = ros::SubscribeOptions::create<geometry_msgs::PoseStamped>(arm_topic,1,boost::bind(&JacoCustom::arm_position_callback,JACO_PTR,_1),ros::VoidPtr(),&jaco_callbacks);
@@ -78,7 +79,7 @@ int main (int argc, char** argv){
     boost::thread spin_thread(callbackThread);
 
     // Thread to test the training phase of the system
-    //boost::thread trainTest(trainFunctionTestThread,communication_ptr);
+    boost::thread trainTest(trainFunctionTestThread,communication_ptr);
 
     // Spin threads
     ros::Rate r(5);

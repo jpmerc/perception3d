@@ -31,7 +31,8 @@
 	</node> 
 	
 		<!-- Link jaco_tf_updater with robot_state_publisher -->
-	<node pkg="tf" type="static_transform_publisher" name="jaco_joints_and_links" args="0 0 0 $(arg PI2) 0 0 arm_base root 100" /> 
+	<node pkg="tf" type="static_transform_publisher" name="jaco_joints_and_links" args="0 0 0 $(arg PI2) 0 0 arm_base root 100" />
+	<node pkg="tf" type="static_transform_publisher" name="root_to_api" args="0 0 0 0 0 0 root jaco_api_origin 100" /> 
 	
 	<!-- Launch the arm action server to communicate with moveit -->
 	
