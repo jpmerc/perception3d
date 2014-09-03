@@ -26,6 +26,8 @@ ObjectExtractor::ObjectExtractor(bool showViewer, ros::NodeHandle p_nh){
 
     m_transform_pc.reset(new pcl::PointCloud<PointT>);
 
+    save_object_to_DB_FLAG = false;
+
     setPCLViewer();
 }
 
@@ -119,6 +121,8 @@ void ObjectExtractor::keyboard_callback(const pcl::visualization::KeyboardEvent 
                 showUI=true;
             }
         }
+
+        // Select an other pointcloud as the object to grasp
         else if(event.getKeySym () == "s"){
             if(index_to_grasp+1 < object_vector.size()){
                 index_to_grasp++;
@@ -131,6 +135,7 @@ void ObjectExtractor::keyboard_callback(const pcl::visualization::KeyboardEvent 
 
         }
 
+        // Take a 2d snapshot of the viewer and save the 3d pointcloud of object to grasp
         else if(event.getKeySym () == "m"){
 
             std::string base_filename = "snapshot";
@@ -154,6 +159,13 @@ void ObjectExtractor::keyboard_callback(const pcl::visualization::KeyboardEvent 
             std::string path2 = ss.str();
             viewer->saveScreenshot("/home/robot/snapshot_jean.png");
 
+        }
+
+        // Save the selected 3D pointcloud in the database for recognition (sets a flag)
+        else if(event.getKeySym () == "x"){
+            if(!save_object_to_DB_FLAG){
+                save_object_to_DB_FLAG = true;
+            }
         }
     }
     else{

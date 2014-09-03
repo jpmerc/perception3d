@@ -25,7 +25,7 @@ void trainFunctionTestThread(Communication *communication_ptr){
     ros::NodeHandle n;ros::Rate r(10);
     while(n.ok()){
 //        communication_ptr->testTFandSurfaceTransforms();
-        communication_ptr->train();
+        communication_ptr->train(true,false);
         r.sleep();
     }
 
@@ -79,7 +79,7 @@ int main (int argc, char** argv){
     boost::thread spin_thread(callbackThread);
 
     // Thread to test the training phase of the system
-    boost::thread trainTest(trainFunctionTestThread,communication_ptr);
+    //boost::thread trainTest(trainFunctionTestThread,communication_ptr);
 
     // Spin threads
     ros::Rate r(5);
