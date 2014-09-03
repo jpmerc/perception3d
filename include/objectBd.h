@@ -44,7 +44,7 @@ public:
                         std::vector<Eigen::Matrix4f,Eigen::aligned_allocator<Eigen::Matrix4f> > p_tf);
 
 
-    ObjectBd& operator = (const ObjectBd& p_object);
+    //ObjectBd& operator = (const ObjectBd& p_object);
     bool operator == (const ObjectBd& p_object);
 
 

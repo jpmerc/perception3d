@@ -28,6 +28,7 @@
 	<!-- Euclidean Object Extraction -->
   <node pkg="perception3d" type="perception" name="perception" respawn="false" output="screen">
     <param name="objects_visualizer"  value="true" />
+    <param name="directory_url" value="$(find perception3d)/database" />
   </node>
 	
   <node pkg="perception3d" type="image_transport_node" name="image_transport_node" respawn="false" output="screen"/>

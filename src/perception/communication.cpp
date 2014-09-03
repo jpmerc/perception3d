@@ -11,6 +11,15 @@ Communication::Communication(ObjectExtractor *p_obj_e, FileAPI *p_api, JacoCusto
     m_train_received = false;
     selected_object_index = -1;
     grasp_list_index = -1;
+
+    // Recognition Tests Viewer
+    recognitionViewer.reset(new pcl::visualization::PCLVisualizer("Recognition Tests"));
+    recognitionViewer->setBackgroundColor (0, 0, 0);
+    recognitionViewer->initCameraParameters ();
+    recognitionViewer->setCameraPosition(0,0,0,0,0,1,0,-1,0);
+    vtkSmartPointer<vtkRenderWindow> renderWindow = recognitionViewer->getRenderWindow();
+    renderWindow->SetSize(800,450);
+    renderWindow->Render();
 }
 
 //-----------------------------------------------------------------------------------//
@@ -160,6 +169,7 @@ void Communication::spin_once()
 //-----------------------------------------------------------------------------------------------//
 void Communication::train(){
 
+    selected_object_index = m_object_ex_ptr->m_object_recognition.OURCVFHRecognition(m_object_ex_ptr->getObjectToGrasp(), m_api_ptr, calculated_object_transform);
 
     bool known_object = true;
     if(selected_object_index < 0){
@@ -195,13 +205,12 @@ void Communication::train(){
         // Calculate surface signatures and transforms (coordinate systems)
         object_signature = m_object_ex_ptr->m_object_recognition.makeCVFH(object_pointcloud,surface_transforms);
 
-
         // **************  OBJECT POSE (Change later for position of the object in the map)  ********************** camera_rgb_frame -> detected_object_centroids
         tf::StampedTransform object_tf = m_object_ex_ptr->getCentroidPositionRGBFrame();
         object_pose_vector.push_back(object_tf);
 
         // JACO POSE (camera_rgb_frame -> jaco_tool_position)
-        //   tf::StampedTransform arm_pose_before_grasp = m_jaco_ptr->getGraspArmPosition();
+        //tf::StampedTransform arm_pose_before_grasp = m_jaco_ptr->getGraspArmPosition();
         // For testing purposes only, comment the following line and uncomment previous one
         tf::StampedTransform arm_pose_before_grasp = m_jaco_ptr->getArmPositionFromCamera();
 
@@ -221,10 +230,10 @@ void Communication::train(){
         relative_arm_pose_vector.push_back(arm_rel_pose);
 
         // TO VIEW FRAMES
-//        static tf::TransformBroadcaster br;
-//        br.sendTransform(object_tf);
-//        br.sendTransform(arm_pose_before_grasp);
-//        br.sendTransform(tf::StampedTransform(arm_rel_pose,ros::Time::now(),"detected_object_centroids","jaco_tool_position_over"));
+        //        static tf::TransformBroadcaster br;
+        //        br.sendTransform(object_tf);
+        //        br.sendTransform(arm_pose_before_grasp);
+        //        br.sendTransform(tf::StampedTransform(arm_rel_pose,ros::Time::now(),"detected_object_centroids","jaco_tool_position_over"));
 
         //br.sendTransform(tf::StampedTransform(diff,ros::Time::now(),"detected_object_centroids","jaco_relative_pose"));
 
@@ -235,13 +244,13 @@ void Communication::train(){
 
 
         // SAVE
-        //    if(known_object){
-        //        obj.setAllAttribut(name,object_signature,object_pointcloud,relative_arm_pose_vector,object_pose_vector,surface_transforms);
-        //    }
+        if(known_object){
+            obj.setAllAttribut(name,object_signature,object_pointcloud,relative_arm_pose_vector,object_pose_vector,surface_transforms);
+        }
 
-        //    else{
-        //        m_api_ptr->save(object_signature,object_pointcloud,relative_arm_pose_vector,object_pose_vector,surface_transforms);
-        //    }
+        else{
+            m_api_ptr->save(object_signature,object_pointcloud,relative_arm_pose_vector,object_pose_vector,surface_transforms);
+        }
 
         m_relative_pose = arm_rel_pose;
 
@@ -250,28 +259,31 @@ void Communication::train(){
 
 void Communication::repeat(){
 
-       ObjectBd obj = m_api_ptr->retrieveObjectFromHistogram(selected_object_index);
-
-       // Select good index of arm_relative_pose (grasp position) from the list in User Interface
-       tf::Transform arm_rel_transform = obj.getArmPose().at(grasp_list_index);
-       tf::Transform scene_to_model =  m_object_ex_ptr->m_object_recognition.tfFromEigen(calculated_object_transform);
-       tf::Transform model_pose = obj.getObjectPose().at(0); //The reference is always the original pointcloud
-
-       tf::Transform environment_arm_pose;
-       environment_arm_pose.setOrigin(model_pose.getOrigin() - arm_rel_transform.getOrigin() - scene_to_model.getOrigin());
-       environment_arm_pose.setRotation(model_pose.getRotation() + arm_rel_transform.inverse().getRotation() + scene_to_model.inverse().getRotation());
+    selected_object_index = m_object_ex_ptr->m_object_recognition.OURCVFHRecognition(m_object_ex_ptr->getObjectToGrasp(), m_api_ptr, calculated_object_transform);
 
 
-       // Move the arm (MoveIt instead of direct moveToPoint function)
-       geometry_msgs::PoseStamped goal;
-       goal.pose.orientation.x =    environment_arm_pose.getRotation().getX();
-       goal.pose.orientation.y =    environment_arm_pose.getRotation().getY();
-       goal.pose.orientation.z =    environment_arm_pose.getRotation().getZ();
-       goal.pose.orientation.w =    environment_arm_pose.getRotation().getW();
-       goal.pose.position.x =  environment_arm_pose.getOrigin().getX();
-       goal.pose.position.y =  environment_arm_pose.getOrigin().getY();
-       goal.pose.position.z =  environment_arm_pose.getOrigin().getZ();
-       //m_jaco_ptr->moveitPlugin(goal);
+    ObjectBd obj = m_api_ptr->retrieveObjectFromHistogram(selected_object_index);
+
+    // Select good index of arm_relative_pose (grasp position) from the list in User Interface
+    tf::Transform arm_rel_transform = obj.getArmPose().at(grasp_list_index);
+    tf::Transform scene_to_model =  m_object_ex_ptr->m_object_recognition.tfFromEigen(calculated_object_transform);
+    tf::Transform model_pose = obj.getObjectPose().at(0); //The reference is always the original pointcloud
+
+    tf::Transform environment_arm_pose;
+    environment_arm_pose.setOrigin(model_pose.getOrigin() - arm_rel_transform.getOrigin() - scene_to_model.getOrigin());
+    environment_arm_pose.setRotation(model_pose.getRotation() + arm_rel_transform.inverse().getRotation() + scene_to_model.inverse().getRotation());
+
+
+    // Move the arm (MoveIt instead of direct moveToPoint function)
+    geometry_msgs::PoseStamped goal;
+    goal.pose.orientation.x =    environment_arm_pose.getRotation().getX();
+    goal.pose.orientation.y =    environment_arm_pose.getRotation().getY();
+    goal.pose.orientation.z =    environment_arm_pose.getRotation().getZ();
+    goal.pose.orientation.w =    environment_arm_pose.getRotation().getW();
+    goal.pose.position.x =  environment_arm_pose.getOrigin().getX();
+    goal.pose.position.y =  environment_arm_pose.getOrigin().getY();
+    goal.pose.position.z =  environment_arm_pose.getOrigin().getZ();
+    //m_jaco_ptr->moveitPlugin(goal);
 
 
 
@@ -326,8 +338,8 @@ void Communication::testTFandSurfaceTransforms(){
     m_object_ex_ptr->m_transform_pc->clear();
     for(int i=0; i < tf_vector.size(); i++){
         Eigen::Matrix4f matrix = tf_vector.at(i);
-        tf::Transform tf_ = tfFromEigen(matrix);      
-        tf::Vector3 vec2(centroidVec[i](2,0), -(centroidVec[i](0,0)), -(centroidVec[i](1,0)));    
+        tf::Transform tf_ = tfFromEigen(matrix);
+        tf::Vector3 vec2(centroidVec[i](2,0), -(centroidVec[i](0,0)), -(centroidVec[i](1,0)));
         tf_.setOrigin(vec2);
 
         // Send transform
@@ -363,7 +375,7 @@ void Communication::fillUserInterfaceWithObjectInfo(){
     int numberOfGrasps = 0;
     if(selected_object_index >= 0){
         // Object is recognized
-        ObjectBd selected_object = m_api_ptr->getObjectByIndex(selected_object_index);
+        ObjectBd selected_object = m_api_ptr->retrieveObjectFromHistogram(selected_object_index);
         numberOfGrasps = selected_object.getArmPose().size();
 
         string sendString = "p_";
@@ -389,4 +401,67 @@ void Communication::fillUserInterfaceWithObjectInfo(){
 
 }
 
+
+void Communication::testRecognition(){
+
+    pcl::PointCloud<PointT>::Ptr input_pointcloud = m_object_ex_ptr->getObjectToGrasp();
+    Eigen::Matrix4f input_to_model_transform;
+    int object_index = m_object_ex_ptr->m_object_recognition.OURCVFHRecognition(input_pointcloud, m_api_ptr, input_to_model_transform);
+
+    bool known_object = true;
+    if(object_index < 0){
+        known_object = false;
+    }
+
+    pcl::PointCloud<pcl::PointXYZRGB>::Ptr object_pointcloud(new pcl::PointCloud<pcl::PointXYZRGB>);
+    pcl::PointCloud<pcl::PointXYZRGB>::Ptr transformed_pointcloud(new pcl::PointCloud<pcl::PointXYZRGB>);
+    pcl::PointCloud<pcl::PointXYZRGB>::Ptr merged_pointcloud(new pcl::PointCloud<pcl::PointXYZRGB>);
+
+    ObjectBd obj;
+
+    if(known_object){
+        //Load object from Histogram position
+        obj = m_api_ptr->retrieveObjectFromHistogram(object_index);
+        object_pointcloud = obj.getPointCloud();
+
+//        tf::Transform scene_to_model =  m_object_ex_ptr->m_object_recognition.tfFromEigen(input_to_model_transform);
+//        tf::Vector3 translation = scene_to_model.getOrigin();
+//        tf::Quaternion quat = scene_to_model.getRotation();
+
+//        const Eigen::Vector3f offset(translation.getX(),translation.getY(),translation.getZ());
+//        const Eigen::Quaternionf rotation(quat.getW(),quat.getX(),quat.getY(),quat.getZ());
+
+        pcl::transformPointCloud(*input_pointcloud, *transformed_pointcloud, input_to_model_transform);
+        *merged_pointcloud  = *transformed_pointcloud + *object_pointcloud;
+    }
+
+    viewer_mutex.lock();
+    recognitionViewer->removeAllPointClouds();
+
+    // Input Pointcloud
+    pcl::visualization::PointCloudColorHandlerCustom<pcl::PointXYZRGB> yellow_color(input_pointcloud, 255, 255, 102);
+    recognitionViewer->addPointCloud<pcl::PointXYZRGB>(input_pointcloud, yellow_color, "input");
+    recognitionViewer->setPointCloudRenderingProperties (pcl::visualization::PCL_VISUALIZER_POINT_SIZE, 1, "input");
+
+    // Model Pointcloud
+    pcl::visualization::PointCloudColorHandlerCustom<pcl::PointXYZRGB> red_color(object_pointcloud, 255, 0, 0);
+    recognitionViewer->addPointCloud<pcl::PointXYZRGB>(object_pointcloud, red_color, "model");
+    recognitionViewer->setPointCloudRenderingProperties (pcl::visualization::PCL_VISUALIZER_POINT_SIZE, 1, "model");
+
+     //Transformed Pointcloud (input -> model)
+    pcl::visualization::PointCloudColorHandlerCustom<pcl::PointXYZRGB> blue_color(transformed_pointcloud, 0, 0, 255);
+    recognitionViewer->addPointCloud<pcl::PointXYZRGB>(transformed_pointcloud, blue_color, "transformed");
+    recognitionViewer->setPointCloudRenderingProperties (pcl::visualization::PCL_VISUALIZER_POINT_SIZE, 1, "transformed");
+
+//     Merged Pointcloud (new model)
+//     pcl::visualization::PointCloudColorHandlerCustom<pcl::PointXYZRGB> blue(transformed_pointcloud, 20, 213, 130);
+//     recognitionViewer->addPointCloud<pcl::PointXYZRGB>(transformed_pointcloud, blue, "transformed");
+//     recognitionViewer->setPointCloudRenderingProperties (pcl::visualization::PCL_VISUALIZER_POINT_SIZE, 1, "transformed");
+
+
+   // recognitionViewer->spinOnce(100);
+    viewer_mutex.unlock();
+
+
+}
 

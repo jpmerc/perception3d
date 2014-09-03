@@ -20,7 +20,7 @@ using namespace std;
 
 FileAPI::FileAPI(const string & directory):
     m_pathToBd(directory),
-    m_highest_index(1)
+    m_highest_index(0)
 {
     m_pathcvfh = m_pathToBd + "/cvfh";
     m_pathPointCloud = m_pathToBd + "/pointCloud";
@@ -467,7 +467,8 @@ ObjectBd FileAPI::retrieveObjectFromHistogram(int p_positionHisto) const
 
         if(sommeCVFH >= p_positionHisto)
         {
-            return m_bdObjectVector.at(i);
+            ObjectBd obj = m_bdObjectVector.at(i);
+            return obj;
         }
     }
 }

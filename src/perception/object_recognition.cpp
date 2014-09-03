@@ -16,7 +16,7 @@ Object_recognition::Object_recognition()
     m_sac_ia_correspondance_randomness = 20;
     m_normal_sphere_radius = 0.03;
 
-    m_rmse_recognition_threshold = 0.005;
+    m_rmse_recognition_threshold = 0.00025;
 }
 
 void Object_recognition::compute_normal(pcl::PointCloud<PointT>::Ptr p_cloud, pcl::PointCloud<pcl::Normal>::Ptr p_normal)
@@ -360,7 +360,8 @@ int Object_recognition::OURCVFHRecognition(pcl::PointCloud<PointT>::Ptr in_pc, F
         numberOfHypothesesPerSurface = database_size;
     }
 
-    std::vector<std::vector<int> > NN_object_indices = getNNSurfaces(input_surface_histograms,signature_database,numberOfHypothesesPerSurface);
+    std::vector<float> distances;
+    std::vector<std::vector<int> > NN_object_indices = getNNSurfaces(input_surface_histograms,signature_database,numberOfHypothesesPerSurface,distances);
 
     // Get object hypotheses and initial transforms
     std::vector<ObjectBd> object_hypotheses = fileAPI->retrieveObjectFromHistogram( NN_object_indices.at(1) );
@@ -380,9 +381,9 @@ int Object_recognition::OURCVFHRecognition(pcl::PointCloud<PointT>::Ptr in_pc, F
         ObjectBd obj_hypothesis = object_hypotheses.at(i);
 
         // Get hypothesis surface number
-        pcl::PointCloud<pcl::VFHSignature308>::Ptr input_sig(new pcl::PointCloud<pcl::VFHSignature308>);
-        input_sig->push_back(input_surface_histograms->at(input_surface_number));
-        int hypothesis_surface_number = histogramComparison(input_sig,obj_hypothesis.getSignature());
+        pcl::PointCloud<pcl::VFHSignature308>::Ptr hypothesis_sig(new pcl::PointCloud<pcl::VFHSignature308>);
+        hypothesis_sig->push_back(fileAPI->getHistogramByIndex(NN_object_indices.at(1).at(i)));
+        int hypothesis_surface_number = histogramComparison(hypothesis_sig,obj_hypothesis.getSignature());
 
         // Get initial transformation for ICP from the transforms of the 2 surfaces
         Eigen::Matrix4f input_matrix       = input_surface_transforms.at(input_surface_number);
@@ -401,17 +402,26 @@ int Object_recognition::OURCVFHRecognition(pcl::PointCloud<PointT>::Ptr in_pc, F
         double icp_score = mergePointCVFH(in_pc, obj_hypothesis.getPointCloud(), initial_guess_matrix, execution_time);
 
         if(icp_score < smallestScore){
-            return_index = i;
+            return_index = NN_object_indices.at(1).at(i);
             smallestScore = icp_score;
             smallestScoreTransform = initial_guess_matrix;
         }
         total_time += execution_time;
     }
 
-    int numberObjects =  object_hypotheses.size();
-    printf("It took %.4f seconds to test %d hypotheses with ICP \n,", total_time, numberObjects);
+    //int numberObjects =  object_hypotheses.size();
+    bool recognized = (smallestScore <= m_rmse_recognition_threshold);
 
-    if(smallestScore <= m_rmse_recognition_threshold){
+    float smallestSignatureDistance = 9999999999999999.0;
+    for(int i=0; i < distances.size(); i++){
+        if(distances.at(i) < smallestSignatureDistance) smallestSignatureDistance = distances.at(i);
+    }
+
+    //printf("It took %.4f seconds to test %d hypotheses with ICP \n,", total_time, numberObjects);
+    std::cout << "Score : " << smallestScore << "  Recognized : " << recognized <<
+                 "  Distance(sig) : " << smallestSignatureDistance <<  std::endl;
+
+    if(recognized){
         trans = smallestScoreTransform;
         return return_index;
     }
@@ -572,9 +582,12 @@ std::vector<double> Object_recognition::OURCVFHRecognition(pcl::PointCloud<Point
 // Returns a matrix of the form :
 // Column 0 : Surface index of the input pointcloud
 // Column 1 : Histogram index in the database
-// Column 2 : Surface index of the object the histogram belongs to (not used)
+// distances[out] : contains the distances between the histograms
 
-std::vector<std::vector<int> > Object_recognition::getNNSurfaces(pcl::PointCloud<pcl::VFHSignature308>::Ptr p_cloud, pcl::PointCloud<pcl::VFHSignature308>::Ptr p_bd_cloud, int NNnumber)
+std::vector<std::vector<int> > Object_recognition::getNNSurfaces(pcl::PointCloud<pcl::VFHSignature308>::Ptr p_cloud,
+                                                                 pcl::PointCloud<pcl::VFHSignature308>::Ptr p_bd_cloud,
+                                                                 int NNnumber,
+                                                                 std::vector<float> &distances)
 {
     pcl::KdTreeFLANN<pcl::VFHSignature308>::Ptr kdtree (new pcl::KdTreeFLANN<pcl::VFHSignature308>);
 
@@ -585,7 +598,7 @@ std::vector<std::vector<int> > Object_recognition::getNNSurfaces(pcl::PointCloud
 
     std::vector<int> input_surface_index;
     std::vector<int> output_histogram_index;
-    std::vector<int> output_surface_index;
+    //std::vector<int> output_distance;
 
     std::vector<std::vector<int> > memoryIndex;
     //std::vector<std::vector<float> > memoryDistance;
@@ -597,13 +610,14 @@ std::vector<std::vector<int> > Object_recognition::getNNSurfaces(pcl::PointCloud
         for(int j=0; j<index.size(); j++){
             input_surface_index.push_back(i);
             output_histogram_index.push_back(index.at(j));
+            distances.push_back(sqrDistance.at(j));
             //output_surface_index = functionToGetSurfaceIndex();
         }
     }
 
     memoryIndex.push_back(input_surface_index);
     memoryIndex.push_back(output_histogram_index);
-    memoryIndex.push_back(output_surface_index);
+   // memoryIndex.push_back(output_distance);
 
     return memoryIndex;
 }
@@ -670,8 +684,8 @@ std::vector<float> Object_recognition::histogramComparisonVector(pcl::PointCloud
         returnVector.push_back(smallestDistanceIndex);
         returnVector.push_back(smallestDistance);
 
-        std::cout << "The best match is = " << smallestDistanceIndex << std::endl;
-        std::cout << "The sqrt distance is = " << smallestDistance << std::endl;
+       // std::cout << "The best match is = " << smallestDistanceIndex << std::endl;
+       // std::cout << "The sqrt distance is = " << smallestDistance << std::endl;
         return returnVector;
     }
 
@@ -764,6 +778,9 @@ pcl::PointCloud<pcl::VFHSignature308>::Ptr Object_recognition::makeCVFH(pcl::Poi
         pointCloudExtractor(p_ptr_cloud, pointIndice_vec.at(i), pointSurface);
         p_surface.push_back(pointSurface);
     }
+
+    cloud_vfh_ptr->height = 1;
+    cloud_vfh_ptr->width = cloud_vfh_ptr->points.size();
 
     return cloud_vfh_ptr;
 }

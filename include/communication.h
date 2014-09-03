@@ -13,6 +13,9 @@
 #include <eigen_conversions/eigen_msg.h>
 #include <tf/transform_datatypes.h>
 #include <tf_conversions/tf_eigen.h>
+#include <pcl/visualization/pcl_visualizer.h>
+#include <pcl/visualization/keyboard_event.h>
+#include <vtkRenderWindow.h>
 
 
 
@@ -41,7 +44,12 @@ public:
     void fillUserInterfaceWithObjectInfo();
 
 
+    void testRecognition();
+    boost::shared_ptr<pcl::visualization::PCLVisualizer> recognitionViewer;
+
+
 private:
+    boost::mutex viewer_mutex;
 
     ObjectExtractor* m_object_ex_ptr;
     FileAPI* m_api_ptr;
