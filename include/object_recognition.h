@@ -158,8 +158,9 @@ public:
 
 
     std::vector<std::vector<int> > getNNSurfaces(pcl::PointCloud<pcl::VFHSignature308>::Ptr p_cloud,
-                                                                     pcl::PointCloud<pcl::VFHSignature308>::Ptr p_bd_cloud,
-                                                                     int NNnumber);
+                                                 pcl::PointCloud<pcl::VFHSignature308>::Ptr p_bd_cloud,
+                                                 int NNnumber,
+                                                 std::vector<float> &distances);
 
     pcl::PointCloud<PointT>::Ptr transformAndVoxelizePointCloud(pcl::PointCloud<PointT>::Ptr in_source, pcl::PointCloud<PointT>::Ptr in_target, Eigen::Matrix4f in_transform);
 

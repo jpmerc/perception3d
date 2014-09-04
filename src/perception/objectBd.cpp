@@ -129,24 +129,24 @@ std::vector<Eigen::Matrix4f,Eigen::aligned_allocator<Eigen::Matrix4f> > ObjectBd
 }
 
 
-ObjectBd& ObjectBd::operator =(const ObjectBd& p_object)
-{
-    m_name = p_object.getName();
-    *m_object_signature = *p_object.getSignature();
-    *m_object_point_cloud = *p_object.getPointCloud();
-    for(int i = 0; i < p_object.getArmPose().size(); i++)
-    {
-        m_relative_arm_pose.push_back(p_object.getArmPose().at(i));
-    }
-    for(int i = 0; i = p_object.getObjectPose().size(); i++)
-    {
-        m_object_pose.push_back(p_object.getObjectPose().at(i));
-    }
-    m_fullLoaded = p_object.objectIsComplete();
-    m_pcSize = p_object.getSize();
+//ObjectBd& ObjectBd::operator =(const ObjectBd& p_object)
+//{
+//    m_name = p_object.getName();
+//    *m_object_signature = *p_object.getSignature();
+//    *m_object_point_cloud = *p_object.getPointCloud();
+//    for(int i = 0; i < p_object.getArmPose().size(); i++)
+//    {
+//        m_relative_arm_pose.push_back(p_object.getArmPose().at(i));
+//    }
+//    for(int i = 0; i = p_object.getObjectPose().size(); i++)
+//    {
+//        m_object_pose.push_back(p_object.getObjectPose().at(i));
+//    }
+//    m_fullLoaded = p_object.objectIsComplete();
+//    m_pcSize = p_object.getSize();
 
-    return *this;
-}
+//    return *this;
+//}
 
 bool ObjectBd::operator ==(const ObjectBd& p_object)
 {

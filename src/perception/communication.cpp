@@ -12,7 +12,13 @@ Communication::Communication(ObjectExtractor *p_obj_e, FileAPI *p_api, JacoCusto
     selected_object_index = -1;
     grasp_list_index = -1;
 
-    saveToDBWithoutArmPoseThread = boost::thread(&Communication::saveToDBWithoutArmPose,this);
+    recognitionViewer.reset(new pcl::visualization::PCLVisualizer("Recognition Tests"));
+    recognitionViewer->setBackgroundColor (0, 0, 0);
+    recognitionViewer->initCameraParameters ();
+    recognitionViewer->setCameraPosition(0,0,0,0,0,1,0,-1,0);
+    vtkSmartPointer<vtkRenderWindow> renderWindow = recognitionViewer->getRenderWindow();
+    renderWindow->SetSize(800,450);
+    renderWindow->Render();
 }
 
 //-----------------------------------------------------------------------------------//
@@ -162,6 +168,7 @@ void Communication::spin_once()
 //-----------------------------------------------------------------------------------------------//
 void Communication::train(bool saveJacoPose, bool viewTF){
 
+    selected_object_index = m_object_ex_ptr->m_object_recognition.OURCVFHRecognition(m_object_ex_ptr->getObjectToGrasp(), m_api_ptr, calculated_object_transform);
 
     bool known_object = true;
     if(selected_object_index < 0){
@@ -196,7 +203,6 @@ void Communication::train(bool saveJacoPose, bool viewTF){
 
         // Calculate surface signatures and transforms (coordinate systems)
         object_signature = m_object_ex_ptr->m_object_recognition.makeCVFH(object_pointcloud,surface_transforms);
-
 
         // **************  OBJECT POSE (Change later for position of the object in the map)  ********************** camera_rgb_frame -> detected_object_centroids
         tf::StampedTransform object_tf = m_object_ex_ptr->getCentroidPositionRGBFrame();
@@ -260,6 +266,9 @@ void Communication::train(bool saveJacoPose, bool viewTF){
 }
 
 void Communication::repeat(){
+
+    selected_object_index = m_object_ex_ptr->m_object_recognition.OURCVFHRecognition(m_object_ex_ptr->getObjectToGrasp(), m_api_ptr, calculated_object_transform);
+
 
     ObjectBd obj = m_api_ptr->retrieveObjectFromHistogram(selected_object_index);
 
@@ -374,7 +383,7 @@ void Communication::fillUserInterfaceWithObjectInfo(){
     int numberOfGrasps = 0;
     if(selected_object_index >= 0){
         // Object is recognized
-        ObjectBd selected_object = m_api_ptr->getObjectByIndex(selected_object_index);
+        ObjectBd selected_object = m_api_ptr->retrieveObjectFromHistogram(selected_object_index);
         numberOfGrasps = selected_object.getArmPose().size();
 
         string sendString = "p_";
@@ -413,4 +422,67 @@ void Communication::saveToDBWithoutArmPose(){
     }
 }
 
+
+void Communication::testRecognition(){
+
+    pcl::PointCloud<PointT>::Ptr input_pointcloud = m_object_ex_ptr->getObjectToGrasp();
+    Eigen::Matrix4f input_to_model_transform;
+    int object_index = m_object_ex_ptr->m_object_recognition.OURCVFHRecognition(input_pointcloud, m_api_ptr, input_to_model_transform);
+
+    bool known_object = true;
+    if(object_index < 0){
+        known_object = false;
+    }
+
+    pcl::PointCloud<pcl::PointXYZRGB>::Ptr object_pointcloud(new pcl::PointCloud<pcl::PointXYZRGB>);
+    pcl::PointCloud<pcl::PointXYZRGB>::Ptr transformed_pointcloud(new pcl::PointCloud<pcl::PointXYZRGB>);
+    pcl::PointCloud<pcl::PointXYZRGB>::Ptr merged_pointcloud(new pcl::PointCloud<pcl::PointXYZRGB>);
+
+    ObjectBd obj;
+
+    if(known_object){
+        //Load object from Histogram position
+        obj = m_api_ptr->retrieveObjectFromHistogram(object_index);
+        object_pointcloud = obj.getPointCloud();
+
+//        tf::Transform scene_to_model =  m_object_ex_ptr->m_object_recognition.tfFromEigen(input_to_model_transform);
+//        tf::Vector3 translation = scene_to_model.getOrigin();
+//        tf::Quaternion quat = scene_to_model.getRotation();
+
+//        const Eigen::Vector3f offset(translation.getX(),translation.getY(),translation.getZ());
+//        const Eigen::Quaternionf rotation(quat.getW(),quat.getX(),quat.getY(),quat.getZ());
+
+        pcl::transformPointCloud(*input_pointcloud, *transformed_pointcloud, input_to_model_transform);
+        *merged_pointcloud  = *transformed_pointcloud + *object_pointcloud;
+    }
+
+    viewer_mutex.lock();
+    recognitionViewer->removeAllPointClouds();
+
+    // Input Pointcloud
+    pcl::visualization::PointCloudColorHandlerCustom<pcl::PointXYZRGB> yellow_color(input_pointcloud, 255, 255, 102);
+    recognitionViewer->addPointCloud<pcl::PointXYZRGB>(input_pointcloud, yellow_color, "input");
+    recognitionViewer->setPointCloudRenderingProperties (pcl::visualization::PCL_VISUALIZER_POINT_SIZE, 1, "input");
+
+    // Model Pointcloud
+    pcl::visualization::PointCloudColorHandlerCustom<pcl::PointXYZRGB> red_color(object_pointcloud, 255, 0, 0);
+    recognitionViewer->addPointCloud<pcl::PointXYZRGB>(object_pointcloud, red_color, "model");
+    recognitionViewer->setPointCloudRenderingProperties (pcl::visualization::PCL_VISUALIZER_POINT_SIZE, 1, "model");
+
+     //Transformed Pointcloud (input -> model)
+    pcl::visualization::PointCloudColorHandlerCustom<pcl::PointXYZRGB> blue_color(transformed_pointcloud, 0, 0, 255);
+    recognitionViewer->addPointCloud<pcl::PointXYZRGB>(transformed_pointcloud, blue_color, "transformed");
+    recognitionViewer->setPointCloudRenderingProperties (pcl::visualization::PCL_VISUALIZER_POINT_SIZE, 1, "transformed");
+
+//     Merged Pointcloud (new model)
+//     pcl::visualization::PointCloudColorHandlerCustom<pcl::PointXYZRGB> blue(transformed_pointcloud, 20, 213, 130);
+//     recognitionViewer->addPointCloud<pcl::PointXYZRGB>(transformed_pointcloud, blue, "transformed");
+//     recognitionViewer->setPointCloudRenderingProperties (pcl::visualization::PCL_VISUALIZER_POINT_SIZE, 1, "transformed");
+
+
+   // recognitionViewer->spinOnce(100);
+    viewer_mutex.unlock();
+
+
+}
 

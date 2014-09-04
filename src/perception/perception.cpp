@@ -23,28 +23,40 @@ void callbackThread(){
 
 void trainFunctionTestThread(Communication *communication_ptr){
     ros::NodeHandle n;ros::Rate r(10);
-    while(n.ok()){
-//        communication_ptr->testTFandSurfaceTransforms();
+//    while(n.ok()){
+////        communication_ptr->testTFandSurfaceTransforms();
         communication_ptr->train(true,false);
-        r.sleep();
-    }
+//        r.sleep();
+//    }
 
-//    //sleep(5);
-//    //communication_ptr->train();
+    sleep(7);
+    communication_ptr->train();
 
 
 
-////    int count = 0;
-////    int timeToWait = 20;
-////    while(true){
-////        sleep(1);
-////        cout << count++ << endl;
-////        if(count >= timeToWait) break;
-////    }
+//    int count = 0;
+//    int timeToWait = 60;
+//    while(true){
+//        sleep(1);
+//        cout << count++ << endl;
+//        if(count >= timeToWait) break;
+//    }
 
 //    //sleep(15);
-//    //communication_ptr->repeat();
+    communication_ptr->repeat();
 }
+
+void recognitionTestsThread(Communication *communication_ptr){
+    ros::NodeHandle n;
+    ros::Rate r(5);
+    sleep(8);
+    while(n.ok()){
+            communication_ptr->testRecognition();
+           // communication_ptr->recognitionViewer->spinOnce();
+            r.sleep();
+        }
+}
+
 
 int main (int argc, char** argv){
     ros::init (argc, argv, "perception");
@@ -80,12 +92,14 @@ int main (int argc, char** argv){
 
     //Thread to test the training phase of the system
     //boost::thread trainTest(trainFunctionTestThread,communication_ptr);
+    boost::thread recognitionTest(recognitionTestsThread,communication_ptr);
 
     // Spin threads
     ros::Rate r(5);
     while (ros::ok() && !OBJ_EXTRACTOR_PTR->pclViewer->wasStopped()) {
         ros::spinOnce();
         OBJ_EXTRACTOR_PTR->pclViewer->spinOnce (100);
+        communication_ptr->recognitionViewer->spinOnce(100);
         communication_ptr->spin_once();
         r.sleep();
     }
