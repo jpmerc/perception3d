@@ -801,7 +801,8 @@ void Object_recognition::showPointCloud(pcl::PointCloud<PointT>::Ptr p_cloud)
 pcl::PointCloud<PointT>::Ptr Object_recognition::transformAndVoxelizePointCloud(pcl::PointCloud<PointT>::Ptr in_source, pcl::PointCloud<PointT>::Ptr in_target, Eigen::Matrix4f in_transform){
 
     pcl::PointCloud<PointT>::Ptr transformed_pc(new pcl::PointCloud<PointT>());
-    pcl::transformPointCloud(*in_source,*transformed_pc,in_transform);
+    Eigen::Affine3f affine_transform(in_transform);
+    pcl::transformPointCloud(*in_source,*transformed_pc,affine_transform);
 
 
 

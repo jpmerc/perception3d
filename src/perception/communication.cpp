@@ -12,13 +12,14 @@ Communication::Communication(ObjectExtractor *p_obj_e, FileAPI *p_api, JacoCusto
     selected_object_index = -1;
     grasp_list_index = -1;
 
-    recognitionViewer.reset(new pcl::visualization::PCLVisualizer("Recognition Tests"));
-    recognitionViewer->setBackgroundColor (0, 0, 0);
-    recognitionViewer->initCameraParameters ();
-    recognitionViewer->setCameraPosition(0,0,0,0,0,1,0,-1,0);
-    vtkSmartPointer<vtkRenderWindow> renderWindow = recognitionViewer->getRenderWindow();
-    renderWindow->SetSize(800,450);
-    renderWindow->Render();
+    saveToDBWithoutArmPoseThread = boost::thread(&Communication::saveToDBWithoutArmPose,this);
+//    recognitionViewer.reset(new pcl::visualization::PCLVisualizer("Recognition Tests"));
+//    recognitionViewer->setBackgroundColor (0, 0, 0);
+//    recognitionViewer->initCameraParameters ();
+//    recognitionViewer->setCameraPosition(0,0,0,0,0,1,0,-1,0);
+//    vtkSmartPointer<vtkRenderWindow> renderWindow = recognitionViewer->getRenderWindow();
+//    renderWindow->SetSize(800,450);
+//    renderWindow->Render();
 }
 
 //-----------------------------------------------------------------------------------//
@@ -148,8 +149,6 @@ void Communication::spin_once()
         // 1) Check if object is recognized and load all appropriate data in Graphical User Interface
         // 2) Then Call the function train/repeat (depending on which button is clicked) with arguments (recognized or not, which pose is selected to grasp, etc.)
 
-
-
         train(true, false);
     }
     else if(m_grasp_received)
@@ -188,7 +187,7 @@ void Communication::train(bool saveJacoPose, bool viewTF){
     if(known_object){
         //Load object from Histogram position
         obj = m_api_ptr->retrieveObjectFromHistogram(selected_object_index);
-        object_pointcloud = m_object_ex_ptr->m_object_recognition.transformAndVoxelizePointCloud(selected_pointcloud, obj.getPointCloud(),calculated_object_transform);
+        object_pointcloud = m_object_ex_ptr->m_object_recognition.transformAndVoxelizePointCloud(m_object_ex_ptr->getObjectToGrasp(), obj.getPointCloud(),calculated_object_transform);
         object_pose_vector = obj.getObjectPose();
         relative_arm_pose_vector = obj.getArmPose();
         surface_transforms = obj.getTransforms();
@@ -456,32 +455,32 @@ void Communication::testRecognition(){
         *merged_pointcloud  = *transformed_pointcloud + *object_pointcloud;
     }
 
-    viewer_mutex.lock();
-    recognitionViewer->removeAllPointClouds();
+//    viewer_mutex.lock();
+//    recognitionViewer->removeAllPointClouds();
 
-    // Input Pointcloud
-    pcl::visualization::PointCloudColorHandlerCustom<pcl::PointXYZRGB> yellow_color(input_pointcloud, 255, 255, 102);
-    recognitionViewer->addPointCloud<pcl::PointXYZRGB>(input_pointcloud, yellow_color, "input");
-    recognitionViewer->setPointCloudRenderingProperties (pcl::visualization::PCL_VISUALIZER_POINT_SIZE, 1, "input");
+//    // Input Pointcloud
+//    pcl::visualization::PointCloudColorHandlerCustom<pcl::PointXYZRGB> yellow_color(input_pointcloud, 255, 255, 102);
+//    recognitionViewer->addPointCloud<pcl::PointXYZRGB>(input_pointcloud, yellow_color, "input");
+//    recognitionViewer->setPointCloudRenderingProperties (pcl::visualization::PCL_VISUALIZER_POINT_SIZE, 1, "input");
 
-    // Model Pointcloud
-    pcl::visualization::PointCloudColorHandlerCustom<pcl::PointXYZRGB> red_color(object_pointcloud, 255, 0, 0);
-    recognitionViewer->addPointCloud<pcl::PointXYZRGB>(object_pointcloud, red_color, "model");
-    recognitionViewer->setPointCloudRenderingProperties (pcl::visualization::PCL_VISUALIZER_POINT_SIZE, 1, "model");
+//    // Model Pointcloud
+//    pcl::visualization::PointCloudColorHandlerCustom<pcl::PointXYZRGB> red_color(object_pointcloud, 255, 0, 0);
+//    recognitionViewer->addPointCloud<pcl::PointXYZRGB>(object_pointcloud, red_color, "model");
+//    recognitionViewer->setPointCloudRenderingProperties (pcl::visualization::PCL_VISUALIZER_POINT_SIZE, 1, "model");
 
-     //Transformed Pointcloud (input -> model)
-    pcl::visualization::PointCloudColorHandlerCustom<pcl::PointXYZRGB> blue_color(transformed_pointcloud, 0, 0, 255);
-    recognitionViewer->addPointCloud<pcl::PointXYZRGB>(transformed_pointcloud, blue_color, "transformed");
-    recognitionViewer->setPointCloudRenderingProperties (pcl::visualization::PCL_VISUALIZER_POINT_SIZE, 1, "transformed");
+//     //Transformed Pointcloud (input -> model)
+//    pcl::visualization::PointCloudColorHandlerCustom<pcl::PointXYZRGB> blue_color(transformed_pointcloud, 0, 0, 255);
+//    recognitionViewer->addPointCloud<pcl::PointXYZRGB>(transformed_pointcloud, blue_color, "transformed");
+//    recognitionViewer->setPointCloudRenderingProperties (pcl::visualization::PCL_VISUALIZER_POINT_SIZE, 1, "transformed");
 
-//     Merged Pointcloud (new model)
-//     pcl::visualization::PointCloudColorHandlerCustom<pcl::PointXYZRGB> blue(transformed_pointcloud, 20, 213, 130);
-//     recognitionViewer->addPointCloud<pcl::PointXYZRGB>(transformed_pointcloud, blue, "transformed");
-//     recognitionViewer->setPointCloudRenderingProperties (pcl::visualization::PCL_VISUALIZER_POINT_SIZE, 1, "transformed");
+////     Merged Pointcloud (new model)
+////     pcl::visualization::PointCloudColorHandlerCustom<pcl::PointXYZRGB> blue(transformed_pointcloud, 20, 213, 130);
+////     recognitionViewer->addPointCloud<pcl::PointXYZRGB>(transformed_pointcloud, blue, "transformed");
+////     recognitionViewer->setPointCloudRenderingProperties (pcl::visualization::PCL_VISUALIZER_POINT_SIZE, 1, "transformed");
 
 
-   // recognitionViewer->spinOnce(100);
-    viewer_mutex.unlock();
+//   // recognitionViewer->spinOnce(100);
+//    viewer_mutex.unlock();
 
 
 }

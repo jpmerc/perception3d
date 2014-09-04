@@ -45,7 +45,7 @@ public:
 
 
     void testRecognition();
-    boost::shared_ptr<pcl::visualization::PCLVisualizer> recognitionViewer;
+    //boost::shared_ptr<pcl::visualization::PCLVisualizer> recognitionViewer;
 
 
 private:

@@ -122,7 +122,7 @@ void ObjectExtractor::keyboard_callback(const pcl::visualization::KeyboardEvent 
             }
         }
 
-        // Select an other pointcloud as the object to grasp
+        // Select another pointcloud as the object to grasp
         else if(event.getKeySym () == "s"){
             if(index_to_grasp+1 < object_vector.size()){
                 index_to_grasp++;

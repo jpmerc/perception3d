@@ -22,15 +22,15 @@ void callbackThread(){
 }
 
 void trainFunctionTestThread(Communication *communication_ptr){
-    ros::NodeHandle n;ros::Rate r(10);
+//    ros::NodeHandle n;ros::Rate r(10);
 //    while(n.ok()){
-////        communication_ptr->testTFandSurfaceTransforms();
-        communication_ptr->train(true,false);
+//        communication_ptr->testTFandSurfaceTransforms();
+//        communication_ptr->train(true,false);
 //        r.sleep();
 //    }
 
-    sleep(7);
-    communication_ptr->train();
+//    sleep(7);
+//    communication_ptr->train();
 
 
 
@@ -43,7 +43,7 @@ void trainFunctionTestThread(Communication *communication_ptr){
 //    }
 
 //    //sleep(15);
-    communication_ptr->repeat();
+//    communication_ptr->repeat();
 }
 
 void recognitionTestsThread(Communication *communication_ptr){
@@ -92,14 +92,14 @@ int main (int argc, char** argv){
 
     //Thread to test the training phase of the system
     //boost::thread trainTest(trainFunctionTestThread,communication_ptr);
-    boost::thread recognitionTest(recognitionTestsThread,communication_ptr);
+    //boost::thread recognitionTest(recognitionTestsThread,communication_ptr);
 
     // Spin threads
     ros::Rate r(5);
     while (ros::ok() && !OBJ_EXTRACTOR_PTR->pclViewer->wasStopped()) {
         ros::spinOnce();
         OBJ_EXTRACTOR_PTR->pclViewer->spinOnce (100);
-        communication_ptr->recognitionViewer->spinOnce(100);
+        //communication_ptr->recognitionViewer->spinOnce(100);
         communication_ptr->spin_once();
         r.sleep();
     }
