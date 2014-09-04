@@ -35,7 +35,7 @@ public:
     bool get_grasp_received() const;
     bool get_train_received() const;
 
-    void train();
+    void train(bool saveJacoPose, bool viewTF);
     void repeat();
 
     void testTFandSurfaceTransforms();
@@ -70,6 +70,9 @@ private:
     pcl::PointCloud<PointT>::Ptr selected_pointcloud;
     Eigen::Matrix4f calculated_object_transform;
     int grasp_list_index;
+
+    boost::thread saveToDBWithoutArmPoseThread;
+    void saveToDBWithoutArmPose();
 
 
 };

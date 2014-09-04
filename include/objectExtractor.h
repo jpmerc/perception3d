@@ -87,6 +87,8 @@ public:
     std::vector<pcl::PointCloud<PointT>::Ptr> object_vector;
     pcl::PointCloud<PointT>::Ptr m_transform_pc;
 
+    bool save_object_to_DB_FLAG;
+
 private:
     // Methods
     void printToPCLViewer();

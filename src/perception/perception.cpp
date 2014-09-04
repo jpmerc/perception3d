@@ -25,7 +25,7 @@ void trainFunctionTestThread(Communication *communication_ptr){
     ros::NodeHandle n;ros::Rate r(10);
 //    while(n.ok()){
 ////        communication_ptr->testTFandSurfaceTransforms();
-//        communication_ptr->train();
+        communication_ptr->train(true,false);
 //        r.sleep();
 //    }
 
