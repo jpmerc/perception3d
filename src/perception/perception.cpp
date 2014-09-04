@@ -78,7 +78,7 @@ int main (int argc, char** argv){
     ros::Subscriber sub_a = n.subscribe(arm);
     boost::thread spin_thread(callbackThread);
 
-    // Thread to test the training phase of the system
+    //Thread to test the training phase of the system
     //boost::thread trainTest(trainFunctionTestThread,communication_ptr);
 
     // Spin threads

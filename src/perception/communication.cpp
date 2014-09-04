@@ -217,19 +217,18 @@ void Communication::train(bool saveJacoPose, bool viewTF){
 
             // RELATIVE POSE (arm to object transform)
 
-            tf::Transform arm_rel_pose = object_tf.inverseTimes(arm_pose_before_grasp);
+            arm_rel_pose = object_tf.inverseTimes(arm_pose_before_grasp);
 
             if(known_object){
                 tf::Transform scene_to_model =  m_object_ex_ptr->m_object_recognition.tfFromEigen(calculated_object_transform);
                 arm_rel_pose.setOrigin(scene_to_model.getOrigin() + arm_rel_pose.getOrigin());
                 arm_rel_pose.setRotation(scene_to_model.getRotation()*arm_rel_pose.getRotation());
             }
-
-
             //    tf::Vector3 translation = arm_pose_before_grasp.getOrigin() - object_tf.getOrigin();
             //    arm_rel_pose = tf::Transform(object_tf.getBasis().transposeTimes(arm_pose_before_grasp.getBasis()), translation);
-            relative_arm_pose_vector.push_back(arm_rel_pose);
+
         }
+        relative_arm_pose_vector.push_back(arm_rel_pose);
 
         // TO VIEW FRAMES
         if(viewTF){
@@ -248,6 +247,7 @@ void Communication::train(bool saveJacoPose, bool viewTF){
         // SAVE
         if(known_object){
             obj.setAllAttribut(name,object_signature,object_pointcloud,relative_arm_pose_vector,object_pose_vector,surface_transforms);
+            m_api_ptr->saveObject(obj);
         }
 
         else{
