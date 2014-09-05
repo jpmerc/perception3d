@@ -29,8 +29,8 @@ void trainFunctionTestThread(Communication *communication_ptr){
 //        r.sleep();
 //    }
 
-//    sleep(7);
-//    communication_ptr->train();
+//    sleep(10);
+//    communication_ptr->train(true,false);
 
 
 
@@ -42,14 +42,21 @@ void trainFunctionTestThread(Communication *communication_ptr){
 //        if(count >= timeToWait) break;
 //    }
 
-//    //sleep(15);
+//    sleep(10);
 //    communication_ptr->repeat();
+//    cout << "The arm finished moving" << endl;
 }
 
 void recognitionTestsThread(Communication *communication_ptr){
     ros::NodeHandle n;
     ros::Rate r(5);
-    sleep(8);
+    int count = 0;
+    int timeToWait = 60;
+    while(true){
+        sleep(1);
+        cout << count++ << endl;
+        if(count >= timeToWait) break;
+    }
     while(n.ok()){
             communication_ptr->testRecognition();
            // communication_ptr->recognitionViewer->spinOnce();

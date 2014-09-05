@@ -22,7 +22,9 @@ ObjectExtractor::ObjectExtractor(bool showViewer, ros::NodeHandle p_nh){
     m_pub_android = p_nh.advertise<std_msgs::String>("/android_listener",1);
 
     NumberOfSnapshots = 0;
-    directory = "/home/robot/rosWorkspace/src/perception3d/";
+
+    ros::NodeHandle nh("~");
+    nh.param("screenshot_url", directory, std::string("~/.perception"));
 
     m_transform_pc.reset(new pcl::PointCloud<PointT>);
 
@@ -137,28 +139,7 @@ void ObjectExtractor::keyboard_callback(const pcl::visualization::KeyboardEvent 
 
         // Take a 2d snapshot of the viewer and save the 3d pointcloud of object to grasp
         else if(event.getKeySym () == "m"){
-
-            std::string base_filename = "snapshot";
-            char new_filename[250];
-            if(NumberOfSnapshots > 0){
-                sprintf(new_filename,"%s%d.pcd",base_filename.c_str(),NumberOfSnapshots+1);
-                NumberOfSnapshots++;
-            }
-            else{
-                sprintf(new_filename,"%s.pcd",base_filename.c_str());
-                NumberOfSnapshots++;
-            }
-            std::string filename = std::string(new_filename);
-            std::string path = directory + filename;
-
-            std::cout << filename << std::endl;
-
-            pcl::io::savePCDFileASCII(path,*object_to_grasp);
-            std::stringstream ss;
-            ss << directory << base_filename << NumberOfSnapshots << ".png";
-            std::string path2 = ss.str();
-            viewer->saveScreenshot("/home/robot/snapshot_jean.png");
-
+            takeSnapshotAndScreenshot();
         }
 
         // Save the selected 3D pointcloud in the database for recognition (sets a flag)
@@ -712,4 +693,27 @@ void ObjectExtractor::publishToAndroidDevice(std::string message){
     std_msgs::String message_to_send; ;
     message_to_send.data = message;
     m_pub_android.publish(message_to_send);
+}
+
+void ObjectExtractor::takeSnapshotAndScreenshot(){
+    std::string base_filename = "snapshot";
+    char new_filename[250];
+    char new_filename2[250];
+    if(NumberOfSnapshots > 0){
+        sprintf(new_filename, "%s%d.pcd",base_filename.c_str(),NumberOfSnapshots+1);
+        sprintf(new_filename2,"%s%d.png",base_filename.c_str(),NumberOfSnapshots+1);
+        NumberOfSnapshots++;
+    }
+    else{
+        sprintf(new_filename, "%s.pcd",base_filename.c_str());
+        sprintf(new_filename2,"%s.png",base_filename.c_str());
+        NumberOfSnapshots++;
+    }
+    std::string filename  = std::string(new_filename);
+    std::string filename2 = std::string(new_filename2);
+    std::string path  = directory + filename;
+    std::string path2 = directory + filename2;
+    std::cout << filename << std::endl;
+    pcl::io::savePCDFileASCII(path,*object_to_grasp);
+    pclViewer->saveScreenshot(path2);
 }

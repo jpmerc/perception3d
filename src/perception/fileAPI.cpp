@@ -157,7 +157,7 @@ string FileAPI::findDefaultName()
     parseDirectory();
     stringstream ss;
     ss << m_highest_index;
-    std::cout << ss.str() << std::endl;
+    //std::cout << ss.str() << std::endl;
 
     return ss.str();
 

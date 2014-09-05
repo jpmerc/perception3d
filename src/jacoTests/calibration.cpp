@@ -17,7 +17,7 @@ void cameraToARTagTF(){
     tf::TransformListener listener_cam_ar;
     static tf::TransformBroadcaster br;
 
-    ros::Rate r(5);
+    ros::Rate r(10);
     while(ros::ok()){
         bool arTagFound = listener_cam_ar.waitForTransform("camera_link","AR_OBJECT",ros::Time(0),ros::Duration(3.0));
         if(arTagFound){
@@ -40,7 +40,7 @@ void jacoToARTagTF(){
     tf::Transform artag_same_orientation;
     static tf::TransformBroadcaster br5;
 
-    ros::Rate r(5);
+    ros::Rate r(10);
     while(ros::ok()){
         bool arTagFound = listener.waitForTransform("arm_base","ARtag",ros::Time(0),ros::Duration(3.0));
         if(arTagFound){
@@ -73,6 +73,26 @@ void alignARTagOfBothReferentials(){
             diff = tf::Transform(ar_kinect.getRotation(), translation);
             br.sendTransform(tf::StampedTransform(diff,ros::Time::now(),"ARtag_REORIENTED","ARtag_OFFSET"));
         }
+
+
+        tf::StampedTransform base_transform;
+        listener.waitForTransform("arm_base","camera_link",ros::Time(0),ros::Duration(3.0));
+        listener.lookupTransform("arm_base","camera_link",ros::Time(0), base_transform);
+
+
+        tf::Vector3 t_base = base_transform.getOrigin();
+        tf::Vector3 t_diff = diff.getOrigin();
+
+        tf::Vector3 translation = tf::Vector3(t_base.getX()-t_diff.getX(), t_base.getY()+t_diff.getY(), t_base.getZ()-t_diff.getZ());
+        //tf::Transform final_tf = tf::Transform(diff.getRotation()*base_transform.getRotation(), translation);
+        tf::Transform final_tf = tf::Transform(diff.getBasis().transposeTimes(base_transform.getBasis()), translation);
+
+        printPose("base",base_transform);
+         printPose("difference",diff);
+        printPose("final",final_tf);
+
+        br.sendTransform(tf::StampedTransform(final_tf,ros::Time::now(),"arm_base","camera_link_calculated_2"));
+
         r.sleep();
     }
 }
@@ -85,7 +105,7 @@ void printJacoKinectTF(){
     tf::Transform add;
     static tf::TransformBroadcaster br;
 
-    ros::Rate r(10);
+    ros::Rate r(5);
 
     while(ros::ok()){
         bool arTagFound = listener.waitForTransform("AR_OBJECT_REORIENTED","camera_link",ros::Time(0),ros::Duration(3.0));
@@ -109,7 +129,7 @@ void printJacoKinectTF(){
 
 
 
-            printPose("Calculated Camera Pose Relative to Arm_base", add);
+            //printPose("Calculated Camera Pose Relative to Arm_base", add);
 
         }
         r.sleep();

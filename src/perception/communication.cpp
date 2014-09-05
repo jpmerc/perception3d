@@ -216,9 +216,10 @@ void Communication::train(bool saveJacoPose, bool viewTF){
 
         if(saveJacoPose){
             // JACO POSE (camera_rgb_frame -> jaco_tool_position)
-            //   tf::StampedTransform arm_pose_before_grasp = m_jaco_ptr->getGraspArmPosition();
+            std::cout << "Teach the grasp to the system!" << std::endl;
+            arm_pose_before_grasp = m_jaco_ptr->getGraspArmPosition();
             // For testing purposes only, comment the following line and uncomment previous one
-            arm_pose_before_grasp = m_jaco_ptr->getArmPositionFromCamera();
+            //arm_pose_before_grasp = m_jaco_ptr->getArmPositionFromCamera();
 
             // RELATIVE POSE (arm to object transform)
 
@@ -272,7 +273,11 @@ void Communication::repeat(){
     ObjectBd obj = m_api_ptr->retrieveObjectFromHistogram(selected_object_index);
 
     // Select good index of arm_relative_pose (grasp position) from the list in User Interface
-    tf::Transform arm_rel_transform = obj.getArmPose().at(grasp_list_index);
+    int graspIndex = grasp_list_index;
+    if(graspIndex < 0){
+        graspIndex = 0;
+    }
+    tf::Transform arm_rel_transform = obj.getArmPose().at(graspIndex);
     tf::Transform scene_to_model =  m_object_ex_ptr->m_object_recognition.tfFromEigen(calculated_object_transform);
     tf::Transform model_pose = obj.getObjectPose().at(0); //The reference is always the original pointcloud
 
@@ -280,18 +285,33 @@ void Communication::repeat(){
     environment_arm_pose.setOrigin(model_pose.getOrigin() - arm_rel_transform.getOrigin() - scene_to_model.getOrigin());
     environment_arm_pose.setRotation(model_pose.getRotation() + arm_rel_transform.inverse().getRotation() + scene_to_model.inverse().getRotation());
 
+    geometry_msgs::Transform g_tf;
+    tf::transformTFToMsg(environment_arm_pose,g_tf);
+
 
     // Move the arm (MoveIt instead of direct moveToPoint function)
     geometry_msgs::PoseStamped goal;
-    goal.pose.orientation.x =    environment_arm_pose.getRotation().getX();
-    goal.pose.orientation.y =    environment_arm_pose.getRotation().getY();
-    goal.pose.orientation.z =    environment_arm_pose.getRotation().getZ();
-    goal.pose.orientation.w =    environment_arm_pose.getRotation().getW();
-    goal.pose.position.x =  environment_arm_pose.getOrigin().getX();
-    goal.pose.position.y =  environment_arm_pose.getOrigin().getY();
-    goal.pose.position.z =  environment_arm_pose.getOrigin().getZ();
+    //goal.pose.orientation = g_tf.rotation;
+    //goal.pose.position = g_tf.translation;
+//    goal.pose.orientation.x =    environment_arm_pose.getRotation().getX();
+//    goal.pose.orientation.y =    environment_arm_pose.getRotation().getY();
+//    goal.pose.orientation.z =    environment_arm_pose.getRotation().getZ();
+//    goal.pose.orientation.w =    environment_arm_pose.getRotation().getW();
+//    goal.pose.position.x =  environment_arm_pose.getOrigin().getX();
+//    goal.pose.position.y =  environment_arm_pose.getOrigin().getY();
+//    goal.pose.position.z =  environment_arm_pose.getOrigin().getZ();
     //m_jaco_ptr->moveitPlugin(goal);
 
+    goal.pose.orientation.x =    0.594192679752;
+    goal.pose.orientation.y =    0.372921647105;
+    goal.pose.orientation.z =    -0.32884910386;
+    goal.pose.orientation.w =    0.632236325546;
+    goal.pose.position.x =   0.2104634;
+    goal.pose.position.y =  -0.27976;
+    goal.pose.position.z =  0.692078;
+    m_jaco_ptr->moveitPlugin(goal);
+
+   // m_jaco_ptr ->jeanMoveup(0.5);
 
 
 

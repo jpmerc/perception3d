@@ -80,6 +80,8 @@ public:
 
     void publishToAndroidDevice(std::string message);
 
+    void takeSnapshotAndScreenshot();
+
 
     // Variables
     boost::shared_ptr<pcl::visualization::PCLVisualizer> pclViewer;

@@ -9,18 +9,22 @@
 
 int main(int argc, char** argv)
 {
-    ros::init(argc, argv, "/terminal_listener");
+    ros::init(argc, argv, "terminal_listener");
     ros::NodeHandle nh;
     ros::Publisher pub = nh.advertise<std_msgs::String> ("/terminal_listener", 1);
 
     while(ros::ok())
     {
         std::string input;
+        std::cout << "Enter your command : " << std::endl;
         std::cin >> input;
+        if(input == "q" || input == "exit" || input == "quit"){
+            break;
+        }
         std_msgs::String output;
         output.data = input;
         pub.publish(output);
-        ros::spinOnce();
+       // ros::spinOnce();
     }
 
     return 0;
