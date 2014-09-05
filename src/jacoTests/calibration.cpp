@@ -66,12 +66,12 @@ void alignARTagOfBothReferentials(){
     ros::Rate r(10);
 
     while(ros::ok()){
-        bool arTagFound = listener.waitForTransform("ARtag_REORIENTED","AR_OBJECT_REORIENTED",ros::Time(0),ros::Duration(3.0));
+        bool arTagFound = listener.waitForTransform("AR_OBJECT_REORIENTED","ARtag_REORIENTED",ros::Time(0),ros::Duration(3.0));
         if(arTagFound){
             listener.lookupTransform("ARtag_REORIENTED","AR_OBJECT_REORIENTED",ros::Time(0),ar_kinect);
             tf::Vector3 translation = ar_kinect.getOrigin();
             diff = tf::Transform(ar_kinect.getRotation(), translation);
-            br.sendTransform(tf::StampedTransform(diff,ros::Time::now(),"ARtag_REORIENTED","ARtag_OFFSET"));
+            br.sendTransform(tf::StampedTransform(diff,ros::Time::now(),"AR_OBJECT_REORIENTED","ARtag_OFFSET"));
         }
 
 
@@ -83,9 +83,9 @@ void alignARTagOfBothReferentials(){
         tf::Vector3 t_base = base_transform.getOrigin();
         tf::Vector3 t_diff = diff.getOrigin();
 
-        tf::Vector3 translation = tf::Vector3(t_base.getX()-t_diff.getX(), t_base.getY()+t_diff.getY(), t_base.getZ()-t_diff.getZ());
+        tf::Vector3 translation = tf::Vector3(t_base.getX()+t_diff.getX(), t_base.getY()+t_diff.getY(), t_base.getZ()+t_diff.getZ());
         //tf::Transform final_tf = tf::Transform(diff.getRotation()*base_transform.getRotation(), translation);
-        tf::Transform final_tf = tf::Transform(diff.getBasis().transposeTimes(base_transform.getBasis()), translation);
+        tf::Transform final_tf = tf::Transform(diff.getRotation() * base_transform.getRotation(), translation);
 
         printPose("base",base_transform);
          printPose("difference",diff);
