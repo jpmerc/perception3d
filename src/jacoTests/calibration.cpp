@@ -68,7 +68,7 @@ void alignARTagOfBothReferentials(){
     while(ros::ok()){
         bool arTagFound = listener.waitForTransform("AR_OBJECT_REORIENTED","ARtag_REORIENTED",ros::Time(0),ros::Duration(3.0));
         if(arTagFound){
-            listener.lookupTransform("ARtag_REORIENTED","AR_OBJECT_REORIENTED",ros::Time(0),ar_kinect);
+            listener.lookupTransform("AR_OBJECT_REORIENTED","ARtag_REORIENTED",ros::Time(0),ar_kinect);
             tf::Vector3 translation = ar_kinect.getOrigin();
             diff = tf::Transform(ar_kinect.getRotation(), translation);
             br.sendTransform(tf::StampedTransform(diff,ros::Time::now(),"AR_OBJECT_REORIENTED","ARtag_OFFSET"));
@@ -82,13 +82,15 @@ void alignARTagOfBothReferentials(){
 
         tf::Vector3 t_base = base_transform.getOrigin();
         tf::Vector3 t_diff = diff.getOrigin();
-
         tf::Vector3 translation = tf::Vector3(t_base.getX()+t_diff.getX(), t_base.getY()+t_diff.getY(), t_base.getZ()+t_diff.getZ());
         //tf::Transform final_tf = tf::Transform(diff.getRotation()*base_transform.getRotation(), translation);
-        tf::Transform final_tf = tf::Transform(diff.getRotation() * base_transform.getRotation(), translation);
 
-        printPose("base",base_transform);
-         printPose("difference",diff);
+
+
+        tf::Transform final_tf = tf::Transform(diff.getBasis() * base_transform.getBasis(), translation);
+
+//        printPose("base",base_transform);
+//         printPose("difference",diff);
         printPose("final",final_tf);
 
         br.sendTransform(tf::StampedTransform(final_tf,ros::Time::now(),"arm_base","camera_link_calculated_2"));
@@ -123,13 +125,11 @@ void printJacoKinectTF(){
 
             //ar_kinect *= ar_jaco;
 
-            tf::Vector3 translation = ar_kinect.getOrigin() + ar_jaco2.getOrigin();
-            add = tf::Transform(ar_kinect.getRotation()*ar_jaco.getRotation(), translation);
+            tf::Vector3 translation = ar_kinect.getOrigin() + ar_jaco.getOrigin();
+            add = tf::Transform(ar_kinect.getRotation()*ar_jaco2.getRotation(), translation);
             br.sendTransform(tf::StampedTransform(add,ros::Time::now(),"arm_base","camera_link_calculated"));
 
-
-
-            //printPose("Calculated Camera Pose Relative to Arm_base", add);
+           // printPose("Calculated Camera Pose Relative to Arm_base", add);
 
         }
         r.sleep();
