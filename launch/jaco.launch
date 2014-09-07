@@ -37,11 +37,11 @@
 	<!-- Launch the arm action server to communicate with moveit -->
 	
 	<node pkg="perception3d" type="arm_action_server" name="arm_action_server" output="screen" />
+	<!-- -->
+	 <node pkg="perception3d" type="moveit_jaco_listener" name="moveit_jaco_listener" output="screen" />
 	
-	<!-- <node pkg="perception3d" type="moveit_jaco_listener" name="moveit_jaco_listener" output="screen" /> -->
-	
-	<!-- Launch MoveIt 
-	<include file="$(find my_jaco)/launch/main.launch"/> -->
+	<!-- Launch MoveIt -->
+	<include file="$(find my_jaco)/launch/main.launch"/> 
 
 	
 </launch>
