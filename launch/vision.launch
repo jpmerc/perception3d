@@ -26,14 +26,14 @@
       <param name="file_path" value="/home/robot/rgbd-scenes-v2/pc/01.ply"/>
   </node> -->
 	
-	<!-- Euclidean Object Extraction -->
+	<!-- Euclidean Object Extraction 
   <node pkg="perception3d" type="perception" name="perception" respawn="false" output="screen">
     <param name="objects_visualizer"  value="true" />
     <param name="directory_url" value="$(find perception3d)/database" />
     <param name="screenshot_url" value="$(find perception3d)/screenshots/" />
     <param name="planning_plugin" value="ompl_interface/OMPLPlanner" />
     <param name="request_adaters" value="default_planner_request_adapters" />
-  </node>
+  </node>-->
 	
   <node pkg="perception3d" type="image_transport_node" name="image_transport_node" respawn="false" output="screen"/>
 	

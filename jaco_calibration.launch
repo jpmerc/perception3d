@@ -1,0 +1,10 @@
+<launch>
+
+  
+	<include file="$(find perception3d)/main.launch"></include>  
+	<include file="$(find perception3d)/launch/ar_kinect.launch"></include>
+	
+	<node pkg="perception3d" type="jaco_calibration" name="jaco_calibration" respawn="true" output="screen"></node>
+	
+	
+</launch>

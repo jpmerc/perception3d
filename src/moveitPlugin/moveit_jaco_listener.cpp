@@ -19,12 +19,15 @@
 void callBack(geometry_msgs::PoseStampedConstPtr p_input)
 {
     moveit::planning_interface::MoveGroup group("arm");
+    group.setPoseReferenceFrame(std::string("root"));
+    group.setEndEffectorLink(std::string("jaco_link_hand"));
+
     ROS_INFO("Reference frame: %s", group.getPlanningFrame().c_str());
     ROS_INFO("End Effector frame: %s", group.getEndEffectorLink().c_str());
 
-    ros::NodeHandle node_handle;
-    ros::Publisher display_publisher = node_handle.advertise<moveit_msgs::DisplayTrajectory>("/move_group/display_planned_path", 1, true);
-    moveit_msgs::DisplayTrajectory display_trajectory;
+//    ros::NodeHandle node_handle;
+//    ros::Publisher display_publisher = node_handle.advertise<moveit_msgs::DisplayTrajectory>("/move_group/display_planned_path", 1, true);
+//    moveit_msgs::DisplayTrajectory display_trajectory;
 
     moveit::planning_interface::MoveGroup::Plan myPlan;
     group.setPoseTarget(*p_input);
@@ -32,8 +35,6 @@ void callBack(geometry_msgs::PoseStampedConstPtr p_input)
     std::cout << "IT IS NOW TIME TO PLAN!" << std::endl;
     bool success = group.plan(myPlan);
 
-    // TO REMOVE
-    sleep(5);
 
     if(success)
     {

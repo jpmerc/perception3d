@@ -42,9 +42,9 @@ void trainFunctionTestThread(Communication *communication_ptr){
 //        if(count >= timeToWait) break;
 //    }
 
-//    sleep(10);
-//    communication_ptr->repeat();
-//    cout << "The arm finished moving" << endl;
+    sleep(10);
+    communication_ptr->repeat();
+    cout << "The arm finished moving" << endl;
 }
 
 void recognitionTestsThread(Communication *communication_ptr){
@@ -62,6 +62,23 @@ void recognitionTestsThread(Communication *communication_ptr){
            // communication_ptr->recognitionViewer->spinOnce();
             r.sleep();
         }
+}
+
+void sendCommandsToJaco(JacoCustom *jaco){
+    while(ros::ok()){
+        std::string input;
+        std::cout << "Enter your command : " << std::endl;
+        std::cin >> input;
+        if(input == "q" || input == "exit" || input == "quit"){
+            break;
+        }
+        else{
+            std::string coord    = input.substr(0,1);
+            std::string distance = input.substr(1,input.size()-1);
+            double dist = atof(distance.c_str());
+            jaco->jeanMove(coord,dist);
+        }
+    }
 }
 
 
@@ -98,8 +115,9 @@ int main (int argc, char** argv){
     boost::thread spin_thread(callbackThread);
 
     //Thread to test the training phase of the system
-    //boost::thread trainTest(trainFunctionTestThread,communication_ptr);
+ //  boost::thread trainTest(trainFunctionTestThread,communication_ptr);
     //boost::thread recognitionTest(recognitionTestsThread,communication_ptr);
+    boost::thread(sendCommandsToJaco,JACO_PTR);
 
     // Spin threads
     ros::Rate r(5);

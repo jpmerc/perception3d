@@ -43,7 +43,7 @@ public:
     tf::StampedTransform getArmPositionFromCamera();
     tf::StampedTransform getGraspArmPosition();
 
-    void jeanMoveup(double distance);
+    void jeanMove(std::string coord, double distance);
     void moveitPlugin(geometry_msgs::PoseStamped p_pose);//The communication chanel to moveit
 
 private:

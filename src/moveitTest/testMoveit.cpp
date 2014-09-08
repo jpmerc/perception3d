@@ -23,7 +23,7 @@ void callBack2(std_msgs::StringConstPtr p_input, JacoCustom* p_ja)
 {
     double distance = atof(p_input->data.c_str());
     std::cout << "Received the command : " << distance << std::endl;
-    p_ja->jeanMoveup(distance);
+    p_ja->jeanMove("z",distance);
 }
 
 
