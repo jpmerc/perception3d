@@ -241,8 +241,7 @@ void Communication::train(bool saveJacoPose, bool viewTF){
             static tf::TransformBroadcaster br;
             br.sendTransform(object_tf);
             br.sendTransform(arm_pose_before_grasp);
-            //br.sendTransform(tf::StampedTransform(arm_rel_pose,ros::Time::now(),"detected_object_centroids","jaco_tool_position_over"));
-            //br.sendTransform(tf::StampedTransform(diff,ros::Time::now(),"detected_object_centroids","jaco_relative_pose"));
+            br.sendTransform(tf::StampedTransform(arm_rel_pose,ros::Time::now(),"detected_object_centroids","jaco_tool_position_over"));
 
             // PRINT POSE
             //    cout << "arm pose : [" <<   arm_pose_before_grasp.getOrigin().getX() << ", " <<
@@ -311,7 +310,7 @@ void Communication::repeat(){
 //    goal.pose.position.z =  0.692078;
 //    //m_jaco_ptr->moveitPlugin(goal);
 
-    m_jaco_ptr ->jeanMove("z", 0.1);
+    m_jaco_ptr ->moveAlongAxis("z", 0.1);
 
 
 

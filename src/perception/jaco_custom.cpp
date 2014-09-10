@@ -263,47 +263,43 @@ void JacoCustom::wait_for_fingers_stopped(){
 
 ////JeanJean
 //A simple test function to test moveit.
-void JacoCustom::jeanMove(std::string coord, double distance){
-   // actionlib::SimpleActionClient<jaco_msgs::ArmPoseAction> action_client("/jaco/arm_pose",true);
+void JacoCustom::moveAlongAxis(std::string axis, double distance){
+    // actionlib::SimpleActionClient<jaco_msgs::ArmPoseAction> action_client("/jaco/arm_pose",true);
     //action_client.waitForServer();
-    jaco_msgs::ArmPoseGoal pose_goal = jaco_msgs::ArmPoseGoal();
-    double offset_x = 0;
-    double offset_y = 0;
-    double offset_z = 0;
-    if(coord == "x") offset_x = distance;
-    else if (coord == "y") offset_y = distance;
-    else offset_z = distance;
 
-//    arm_mutex.lock();
-//    pose_goal.pose = this->arm_pose;
-//    pose_goal.pose.header.frame_id = "/jaco_tool_position";
-//    pose_goal.pose.pose.position.z += distance;
-//    arm_mutex.unlock();
+    if(axis == "x" || axis == "y" || axis == "z"){
+        jaco_msgs::ArmPoseGoal pose_goal = jaco_msgs::ArmPoseGoal();
+        double offset_x = 0;
+        double offset_y = 0;
+        double offset_z = 0;
+        if(axis == "x") offset_x = distance;
+        else if (axis == "y") offset_y = distance;
+        else offset_z = distance;
 
+        tf::TransformListener listener;
+        tf::StampedTransform tf_listened;
+        listener.waitForTransform("root","jaco_link_hand",ros::Time(0),ros::Duration(3.0));
+        listener.lookupTransform("root","jaco_link_hand",ros::Time(0),tf_listened);
 
-    tf::TransformListener listener;
-    tf::StampedTransform tf_listened;
-    listener.waitForTransform("root","jaco_link_hand",ros::Time(0),ros::Duration(3.0));
-    listener.lookupTransform("root","jaco_link_hand",ros::Time(0),tf_listened);
-
-    geometry_msgs::Transform g_tf;
-    tf::transformTFToMsg(tf_listened, g_tf);
+        geometry_msgs::Transform g_tf;
+        tf::transformTFToMsg(tf_listened, g_tf);
 
 
-    arm_mutex.lock();
-    pose_goal.pose.pose.position.x = g_tf.translation.x + offset_x;
-    pose_goal.pose.pose.position.y = g_tf.translation.y + offset_y;
-    pose_goal.pose.pose.position.z = g_tf.translation.z + offset_z;
-    pose_goal.pose.pose.orientation = g_tf.rotation;
-    pose_goal.pose.header.frame_id = "/root";
-    arm_mutex.unlock();
+        arm_mutex.lock();
+        pose_goal.pose.pose.position.x = g_tf.translation.x + offset_x;
+        pose_goal.pose.pose.position.y = g_tf.translation.y + offset_y;
+        pose_goal.pose.pose.position.z = g_tf.translation.z + offset_z;
+        pose_goal.pose.pose.orientation = g_tf.rotation;
+        pose_goal.pose.header.frame_id = "/root";
+        arm_mutex.unlock();
 
-    std::cout << "x: " << pose_goal.pose.pose.position.x << std::endl;
-    std::cout << "y: " << pose_goal.pose.pose.position.y << std::endl;
-    std::cout << "z: " << pose_goal.pose.pose.position.z << std::endl;
-    //test moveit JeanJean
+        std::cout << "x: " << pose_goal.pose.pose.position.x << std::endl;
+        std::cout << "y: " << pose_goal.pose.pose.position.y << std::endl;
+        std::cout << "z: " << pose_goal.pose.pose.position.z << std::endl;
+        //test moveit JeanJean
 
-    moveitPlugin(pose_goal.pose);
+        moveitPlugin(pose_goal.pose);
+    }
 }
 
 /*

@@ -73,10 +73,12 @@ void sendCommandsToJaco(JacoCustom *jaco){
             break;
         }
         else{
-            std::string coord    = input.substr(0,1);
+            std::string axis    = input.substr(0,1);
             std::string distance = input.substr(1,input.size()-1);
-            double dist = atof(distance.c_str());
-            jaco->jeanMove(coord,dist);
+            if(axis == "x" || axis == "y" || axis == "z"){
+                double dist = atof(distance.c_str());
+                jaco->moveAlongAxis(axis,dist);
+            }
         }
     }
 }
