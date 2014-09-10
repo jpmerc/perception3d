@@ -22,15 +22,15 @@ void callbackThread(){
 }
 
 void trainFunctionTestThread(Communication *communication_ptr){
-//    ros::NodeHandle n;ros::Rate r(10);
+    ros::NodeHandle n;ros::Rate r(10);sleep(10);
 //    while(n.ok()){
-//        communication_ptr->testTFandSurfaceTransforms();
-//        communication_ptr->train(true,false);
+//        //communication_ptr->testTFandSurfaceTransforms();
+//        communication_ptr->train(true,true);
 //        r.sleep();
 //    }
 
-//    sleep(10);
-//    communication_ptr->train(true,false);
+
+    communication_ptr->train(true,true);
 
 
 
@@ -42,7 +42,7 @@ void trainFunctionTestThread(Communication *communication_ptr){
 //        if(count >= timeToWait) break;
 //    }
 
-    sleep(10);
+//    sleep(10);
     communication_ptr->repeat();
     cout << "The arm finished moving" << endl;
 }
@@ -93,7 +93,7 @@ int main (int argc, char** argv){
     bool show_objects_in_viewer;
     string directory_url;
     nh.param("objects_visualizer",show_objects_in_viewer,true);
-    nh.param("directory_url", directory_url, string("~/.perception"));
+    nh.param("directory_url", directory_url, string("/home/jp/devel/src/perception3d/database"));
 
     // Class Instances
     JACO_PTR = new JacoCustom(n);
@@ -117,9 +117,9 @@ int main (int argc, char** argv){
     boost::thread spin_thread(callbackThread);
 
     //Thread to test the training phase of the system
- //  boost::thread trainTest(trainFunctionTestThread,communication_ptr);
+   boost::thread trainTest(trainFunctionTestThread,communication_ptr);
     //boost::thread recognitionTest(recognitionTestsThread,communication_ptr);
-    boost::thread(sendCommandsToJaco,JACO_PTR);
+  //  boost::thread(sendCommandsToJaco,JACO_PTR);
 
     // Spin threads
     ros::Rate r(5);

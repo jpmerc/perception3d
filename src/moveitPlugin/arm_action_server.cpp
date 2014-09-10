@@ -129,6 +129,8 @@ void callBackAngles(const control_msgs::FollowJointTrajectoryGoalConstPtr& p_inp
 
     std::vector<trajectory_msgs::JointTrajectoryPoint> pointVector(p_input->trajectory.points);
 
+    std::cout << "THE SIZE OF THE TRAJECTORY IS "  << pointVector.size() << " POINTS" << std::endl;
+
     for(int i = 0; i < pointVector.size(); i++)
     {
         std::vector<double> position(p_input->trajectory.points[i].positions);

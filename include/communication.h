@@ -63,7 +63,7 @@ private:
     bool m_train_received;
 
     tf::Transform m_relative_pose;
-    void publishRelativePoseTF(tf::Transform relative_pose);
+    void publishRelativePoseTF(tf::Transform arm, tf::Transform scene, tf::Transform model, tf::Transform final);
     bool m_publish_relative_pose;
 
     int selected_object_index;

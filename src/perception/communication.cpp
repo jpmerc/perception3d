@@ -230,8 +230,6 @@ void Communication::train(bool saveJacoPose, bool viewTF){
                 arm_rel_pose.setOrigin(scene_to_model.getOrigin() + arm_rel_pose.getOrigin());
                 arm_rel_pose.setRotation(scene_to_model.getRotation()*arm_rel_pose.getRotation());
             }
-            //    tf::Vector3 translation = arm_pose_before_grasp.getOrigin() - object_tf.getOrigin();
-            //    arm_rel_pose = tf::Transform(object_tf.getBasis().transposeTimes(arm_pose_before_grasp.getBasis()), translation);
 
         }
         relative_arm_pose_vector.push_back(arm_rel_pose);
@@ -242,11 +240,6 @@ void Communication::train(bool saveJacoPose, bool viewTF){
             br.sendTransform(object_tf);
             br.sendTransform(arm_pose_before_grasp);
             br.sendTransform(tf::StampedTransform(arm_rel_pose,ros::Time::now(),"detected_object_centroids","jaco_tool_position_over"));
-
-            // PRINT POSE
-            //    cout << "arm pose : [" <<   arm_pose_before_grasp.getOrigin().getX() << ", " <<
-            //            arm_pose_before_grasp.getOrigin().getY() << ", " <<
-            //            arm_pose_before_grasp.getOrigin().getZ() << "]" << endl;
         }
 
         // SAVE
@@ -260,32 +253,31 @@ void Communication::train(bool saveJacoPose, bool viewTF){
         }
 
         m_relative_pose = arm_rel_pose;
-
     }
 }
 
 void Communication::repeat(){
 
-//    selected_object_index = m_object_ex_ptr->m_object_recognition.OURCVFHRecognition(m_object_ex_ptr->getObjectToGrasp(), m_api_ptr, calculated_object_transform);
+    selected_object_index = m_object_ex_ptr->m_object_recognition.OURCVFHRecognition(m_object_ex_ptr->getObjectToGrasp(), m_api_ptr, calculated_object_transform);
 
 
-//    ObjectBd obj = m_api_ptr->retrieveObjectFromHistogram(selected_object_index);
+    ObjectBd obj = m_api_ptr->retrieveObjectFromHistogram(selected_object_index);
 
 //    // Select good index of arm_relative_pose (grasp position) from the list in User Interface
-//    int graspIndex = grasp_list_index;
-//    if(graspIndex < 0){
-//        graspIndex = 0;
-//    }
-//    tf::Transform arm_rel_transform = obj.getArmPose().at(graspIndex);
-//    tf::Transform scene_to_model =  m_object_ex_ptr->m_object_recognition.tfFromEigen(calculated_object_transform);
-//    tf::Transform model_pose = obj.getObjectPose().at(0); //The reference is always the original pointcloud
+    int graspIndex = grasp_list_index;
+    if(graspIndex < 0){
+        graspIndex = 0;
+    }
+    tf::Transform arm_rel_transform = obj.getArmPose().at(graspIndex);
+    tf::Transform scene_to_model =  m_object_ex_ptr->m_object_recognition.tfFromEigen(calculated_object_transform);
+    tf::Transform model_pose = obj.getObjectPose().at(0); //The reference is always the original pointcloud
 
-//    tf::Transform environment_arm_pose;
-//    environment_arm_pose.setOrigin(model_pose.getOrigin() - arm_rel_transform.getOrigin() - scene_to_model.getOrigin());
-//    environment_arm_pose.setRotation(model_pose.getRotation() + arm_rel_transform.inverse().getRotation() + scene_to_model.inverse().getRotation());
+    tf::Transform environment_arm_pose;
+    environment_arm_pose.setOrigin(model_pose.getOrigin() - arm_rel_transform.getOrigin() - scene_to_model.getOrigin());
+    environment_arm_pose.setRotation(model_pose.getRotation() + arm_rel_transform.inverse().getRotation() + scene_to_model.inverse().getRotation());
 
-//    geometry_msgs::Transform g_tf;
-//    tf::transformTFToMsg(environment_arm_pose,g_tf);
+    geometry_msgs::Transform g_tf;
+    tf::transformTFToMsg(environment_arm_pose,g_tf);
 
 
 //    // Move the arm (MoveIt instead of direct moveToPoint function)
@@ -310,35 +302,46 @@ void Communication::repeat(){
 //    goal.pose.position.z =  0.692078;
 //    //m_jaco_ptr->moveitPlugin(goal);
 
-    m_jaco_ptr ->moveAlongAxis("z", 0.1);
+//    m_jaco_ptr ->moveAlongAxis("z", 0.1);
 
 
 
-    /*
-    tf::StampedTransform object_tf = m_object_ex_ptr->getCentroidPositionRGBFrame();
-    tf::Vector3 translation2 = object_tf.getOrigin() + m_relative_pose.getOrigin();
-    tf::Transform tf_ = tf::Transform(object_tf.getRotation()*m_relative_pose.getRotation(), translation2);
+
+//    tf::StampedTransform object_tf = m_object_ex_ptr->getCentroidPositionRGBFrame();
+//    tf::Vector3 translation2 = object_tf.getOrigin() + m_relative_pose.getOrigin();
+//    tf::Transform tf_ = tf::Transform(object_tf.getRotation()*m_relative_pose.getRotation(), translation2);
 
     m_publish_relative_pose = true;
-    boost::thread thread(&Communication::publishRelativePoseTF,this,tf_);
-    tf::StampedTransform goal_pose;
-    tf::TransformListener listener;
-    listener.waitForTransform("jaco_api_origin","jaco_tool_relative_pose",ros::Time(0),ros::Duration(3.0));
-    listener.lookupTransform("jaco_api_origin","jaco_tool_relative_pose",ros::Time(0),goal_pose);
+    boost::thread thread(&Communication::publishRelativePoseTF,this,arm_rel_transform,scene_to_model,model_pose,environment_arm_pose);
+    //tf::StampedTransform goal_pose;
+    //tf::TransformListener listener;
+    //listener.waitForTransform("jaco_api_origin","jaco_tool_relative_pose",ros::Time(0),ros::Duration(3.0));
+    //listener.lookupTransform("jaco_api_origin","jaco_tool_relative_pose",ros::Time(0),goal_pose);
+    sleep(30);
     m_publish_relative_pose = false;
     thread.join();
 
-    m_jaco_ptr->moveToPoint(goal_pose);*/
+    //m_jaco_ptr->moveToPoint(goal_pose);
 
 
 }
 
-void Communication::publishRelativePoseTF(tf::Transform relative_pose){
+void Communication::publishRelativePoseTF(tf::Transform arm,tf::Transform scene,tf::Transform model, tf::Transform final){
     static tf::TransformBroadcaster br;
     ros::Rate r(10);
     while(m_publish_relative_pose){
-        tf::StampedTransform arm_relative = tf::StampedTransform(relative_pose,ros::Time::now(),"camera_rgb_frame","jaco_tool_relative_pose");
-        br.sendTransform(arm_relative);
+
+        tf::StampedTransform object_model = tf::StampedTransform(model,ros::Time::now(),"camera_rgb_frame","tf_Object_model");
+        tf::StampedTransform arm_rel_pose = tf::StampedTransform(arm,ros::Time::now(),"tf_Object_model","tf_arm_position");
+
+        tf::StampedTransform final_arm_pose = tf::StampedTransform(final,ros::Time::now(),"camera_rgb_frame","tf_grasp_position");
+
+        //tf::StampedTransform arm_relative = tf::StampedTransform(relative_pose,ros::Time::now(),"camera_rgb_frame","jaco_tool_relative_pose");
+//        br.sendTransform(arm_relative);
+
+        br.sendTransform(object_model);
+        br.sendTransform(arm_rel_pose);
+        br.sendTransform(final_arm_pose);
         r.sleep();
     }
 
