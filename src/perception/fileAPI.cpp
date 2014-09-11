@@ -351,9 +351,14 @@ void FileAPI::savePoseArm(ObjectBd p_obj, const std::string& p_fileName)
         {
             double roll, yaw, pitch;
             p_obj.getArmPose().at(i).getBasis().getEulerYPR(yaw, pitch, roll);
-            ofs << p_obj.getArmPose().at(i).getOrigin().getX() << ";";
-            ofs << p_obj.getArmPose().at(i).getRotation().getY() << ";";
-            ofs << p_obj.getArmPose().at(i).getRotation().getZ() << ";";
+
+            double x = p_obj.getArmPose().at(i).getOrigin().getX();
+            double y = p_obj.getArmPose().at(i).getOrigin().getY();
+            double z = p_obj.getArmPose().at(i).getOrigin().getZ();
+
+            ofs << x << ";";
+            ofs << y << ";";
+            ofs << z << ";";
             ofs << yaw << ";";
             ofs << pitch << ";";
             ofs << roll << std::endl;
@@ -382,9 +387,14 @@ void FileAPI::savePoseObject(ObjectBd p_obj, const std::string& p_fileName)
         {
             double roll, yaw, pitch;
             p_obj.getObjectPose().at(i).getBasis().getEulerYPR(yaw, pitch, roll);
-            ofs << p_obj.getObjectPose().at(i).getOrigin().getX() << ";";
-            ofs << p_obj.getObjectPose().at(i).getRotation().getY() << ";";
-            ofs << p_obj.getObjectPose().at(i).getRotation().getZ() << ";";
+
+            double x = p_obj.getObjectPose().at(i).getOrigin().getX();
+            double y = p_obj.getObjectPose().at(i).getOrigin().getY();
+            double z = p_obj.getObjectPose().at(i).getOrigin().getZ();
+
+            ofs << x << ";";
+            ofs << y << ";";
+            ofs << z << ";";
             ofs << yaw << ";";
             ofs << pitch << ";";
             ofs << roll << std::endl;
