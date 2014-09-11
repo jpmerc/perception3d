@@ -263,18 +263,34 @@ void Communication::repeat(){
 
     ObjectBd obj = m_api_ptr->retrieveObjectFromHistogram(selected_object_index);
 
-//    // Select good index of arm_relative_pose (grasp position) from the list in User Interface
+    // Select good index of arm_relative_pose (grasp position) from the list in User Interface
     int graspIndex = grasp_list_index;
     if(graspIndex < 0){
         graspIndex = 0;
     }
+
+    // Arm position -> object centroid (in training)
     tf::Transform arm_rel_transform = obj.getArmPose().at(graspIndex);
+
+    // transform to align object in scene to object in database
     tf::Transform scene_to_model =  m_object_ex_ptr->m_object_recognition.tfFromEigen(calculated_object_transform);
-    tf::Transform model_pose = obj.getObjectPose().at(0); //The reference is always the original pointcloud
+
+    // Pose of database object in scene when it was trained (The reference is always the original pointcloud)
+    tf::Transform model_pose = obj.getObjectPose().at(0);
+
+
+    tf::Transform object_tf = tf::Transform(m_object_ex_ptr->getCentroidPositionRGBFrame());
+
 
     tf::Transform environment_arm_pose;
-    environment_arm_pose.setOrigin(model_pose.getOrigin() - arm_rel_transform.getOrigin() - scene_to_model.getOrigin());
-    environment_arm_pose.setRotation(model_pose.getRotation() + arm_rel_transform.inverse().getRotation() + scene_to_model.inverse().getRotation());
+//    environment_arm_pose.setOrigin(model_pose.getOrigin() - arm_rel_transform.getOrigin() - scene_to_model.getOrigin());
+//    environment_arm_pose.setRotation(model_pose.getRotation() + arm_rel_transform.inverse().getRotation() + scene_to_model.inverse().getRotation());
+
+    environment_arm_pose.setOrigin(object_tf.getOrigin() - arm_rel_transform.getOrigin());
+    environment_arm_pose.setRotation(object_tf.getRotation());
+
+
+
 
     geometry_msgs::Transform g_tf;
     tf::transformTFToMsg(environment_arm_pose,g_tf);
@@ -312,12 +328,12 @@ void Communication::repeat(){
 //    tf::Transform tf_ = tf::Transform(object_tf.getRotation()*m_relative_pose.getRotation(), translation2);
 
     m_publish_relative_pose = true;
-    boost::thread thread(&Communication::publishRelativePoseTF,this,arm_rel_transform,scene_to_model,model_pose,environment_arm_pose);
+    boost::thread thread(&Communication::publishRelativePoseTF,this,arm_rel_transform,scene_to_model,model_pose,environment_arm_pose,object_tf);
     //tf::StampedTransform goal_pose;
     //tf::TransformListener listener;
     //listener.waitForTransform("jaco_api_origin","jaco_tool_relative_pose",ros::Time(0),ros::Duration(3.0));
     //listener.lookupTransform("jaco_api_origin","jaco_tool_relative_pose",ros::Time(0),goal_pose);
-    sleep(30);
+    sleep(60);
     m_publish_relative_pose = false;
     thread.join();
 
@@ -326,22 +342,24 @@ void Communication::repeat(){
 
 }
 
-void Communication::publishRelativePoseTF(tf::Transform arm,tf::Transform scene,tf::Transform model, tf::Transform final){
+void Communication::publishRelativePoseTF(tf::Transform arm,tf::Transform scene,tf::Transform model, tf::Transform final, tf::Transform object_centroid){
     static tf::TransformBroadcaster br;
     ros::Rate r(10);
     while(m_publish_relative_pose){
 
         tf::StampedTransform object_model = tf::StampedTransform(model,ros::Time::now(),"camera_rgb_frame","tf_Object_model");
         tf::StampedTransform arm_rel_pose = tf::StampedTransform(arm,ros::Time::now(),"tf_Object_model","tf_arm_position");
-
         tf::StampedTransform final_arm_pose = tf::StampedTransform(final,ros::Time::now(),"camera_rgb_frame","tf_grasp_position");
-
+        tf::StampedTransform object_centroid_scene = tf::StampedTransform(object_centroid,ros::Time::now(),"camera_rgb_frame","tf_object_centroid");
+        tf::StampedTransform diff = tf::StampedTransform(scene,ros::Time::now(),"tf_object_centroid","tf_Object_model_test_align");
         //tf::StampedTransform arm_relative = tf::StampedTransform(relative_pose,ros::Time::now(),"camera_rgb_frame","jaco_tool_relative_pose");
 //        br.sendTransform(arm_relative);
 
         br.sendTransform(object_model);
         br.sendTransform(arm_rel_pose);
         br.sendTransform(final_arm_pose);
+        br.sendTransform(object_centroid_scene);
+        br.sendTransform(diff);
         r.sleep();
     }
 

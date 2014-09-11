@@ -198,6 +198,7 @@ tf::StampedTransform JacoCustom::getGraspArmPosition(){
         }
     }
 
+    sleep(1);
     return getArmPositionFromCamera();
 }
 

@@ -44,6 +44,8 @@
 #include <pcl_ros/transforms.h>
 #include <angles/angles.h>
 #include <numeric>
+#include <pcl/features/normal_3d.h>
+#include <pcl/registration/icp_nl.h>
 
 typedef pcl::PointXYZRGB PointT;
 
@@ -74,6 +76,13 @@ public:
                           pcl::PointCloud<PointT>::Ptr p_cloud_target,
                           Eigen::Matrix4f &transform_guess,
                           double &executionTime);
+
+    double mergePointCVFH_PointToPlane(pcl::PointCloud<PointT>::Ptr p_cloud_src,
+                          pcl::PointCloud<PointT>::Ptr p_cloud_target,
+                          Eigen::Matrix4f &transform_guess,
+                          double &executionTime);
+
+
 
 //    pcl::PointCloud<pcl::FPFHSignature33>::Ptr calculateFPFH(pcl::PointCloud<PointT>::Ptr p_cloud,
 //                                                             pcl::PointCloud<PointT>::Ptr p_feature,

@@ -77,10 +77,11 @@ double Object_recognition::mergePointCVFH(pcl::PointCloud<PointT>::Ptr p_cloud_s
     ros::Time begin = ros::Time::now();
 
     pcl::IterativeClosestPoint<PointT, PointT> icp;
-    //float maxDistanceICP = 0.2;
+    float maxDistanceICP = 0.1;
     icp.setInputSource(p_cloud_src);
     icp.setInputTarget(p_cloud_target);
-    //icp.setMaxCorrespondenceDistance(maxDistanceICP);
+    icp.setMaxCorrespondenceDistance(maxDistanceICP);
+
     icp.setMaximumIterations(40);
     pcl::PointCloud<PointT> Final;
     icp.align(Final,transform_guess);
@@ -90,8 +91,59 @@ double Object_recognition::mergePointCVFH(pcl::PointCloud<PointT>::Ptr p_cloud_s
 
     executionTime = (end-begin).toSec();
     transform_guess = icp.getFinalTransformation();
+    std::cout << "x: " << transform_guess(0,3) << " y: " << transform_guess(1,3) << " z: " << transform_guess(2,3) << std::endl;
     return m_icp_fitness_score;
 }
+
+
+double Object_recognition::mergePointCVFH_PointToPlane(pcl::PointCloud<PointT>::Ptr p_cloud_src,
+                                          pcl::PointCloud<PointT>::Ptr p_cloud_target,
+                                          Eigen::Matrix4f &transform_guess,
+                                          double &executionTime)
+{
+    ros::Time begin = ros::Time::now();
+
+
+    // Normal estimation
+    pcl::PointCloud<pcl::PointXYZRGBNormal>::Ptr src_with_normals(new pcl::PointCloud<pcl::PointXYZRGBNormal>());
+    pcl::PointCloud<pcl::PointXYZRGBNormal>::Ptr target_with_normals(new pcl::PointCloud<pcl::PointXYZRGBNormal>());
+
+    pcl::NormalEstimation<PointT, pcl::PointXYZRGBNormal> norm_est;
+    pcl::search::KdTree<PointT>::Ptr tree (new pcl::search::KdTree<PointT> ());
+    norm_est.setSearchMethod (tree);
+    norm_est.setKSearch (20);
+
+    norm_est.setInputCloud (p_cloud_src);
+    norm_est.compute (*src_with_normals);
+    pcl::copyPointCloud (*p_cloud_src, *src_with_normals);
+
+    norm_est.setInputCloud (p_cloud_target);
+    norm_est.compute (*target_with_normals);
+    pcl::copyPointCloud (*p_cloud_target, *target_with_normals);
+
+
+    // ICP variant (point to plane)
+    pcl::IterativeClosestPointWithNormals<pcl::PointXYZRGBNormal, pcl::PointXYZRGBNormal> icp;
+    float maxDistanceICP = 0.1;
+    icp.setInputSource(src_with_normals);
+    icp.setInputTarget(target_with_normals);
+    icp.setMaxCorrespondenceDistance(maxDistanceICP);
+    icp.setMaximumIterations(100);
+    //icp.setTransformationEpsilon(1e-5);
+    //icp.setEuclideanFitnessEpsilon(1e-8);
+
+    pcl::PointCloud<pcl::PointXYZRGBNormal> Final;
+    icp.align(Final,transform_guess);
+    m_icp_fitness_score = icp.getFitnessScore();
+
+    ros::Time end = ros::Time::now();
+
+    executionTime = (end-begin).toSec();
+    transform_guess = icp.getFinalTransformation();
+    std::cout << "x: " << transform_guess(0,3) << " y: " << transform_guess(1,3) << " z: " << transform_guess(2,3) << std::endl;
+    return m_icp_fitness_score;
+}
+
 
 
 
@@ -367,6 +419,7 @@ int Object_recognition::OURCVFHRecognition(pcl::PointCloud<PointT>::Ptr in_pc, F
     std::vector<ObjectBd> object_hypotheses = fileAPI->retrieveObjectFromHistogram( NN_object_indices.at(1) );
 
     double smallestScore = 9999999999;
+    double smallestScore2 = 9999999999;
     Eigen::Matrix4f smallestScoreTransform;
     double total_time = 0;
     int return_index = -1;
@@ -397,29 +450,48 @@ int Object_recognition::OURCVFHRecognition(pcl::PointCloud<PointT>::Ptr in_pc, F
         Eigen::Matrix4f initial_guess_matrix;
         pcl_ros::transformAsMatrix(initial_guess_tf,initial_guess_matrix);
 
+        std::cout << "Transformations : Initial Guess -->";
+        std::cout << " x: " << initial_guess_matrix(0,3) << " y: " << initial_guess_matrix(1,3) << " z: " << initial_guess_matrix(2,3) << std::endl;
+
         // ICP
         double execution_time = 0;
         double icp_score = mergePointCVFH(in_pc, obj_hypothesis.getPointCloud(), initial_guess_matrix, execution_time);
+        double icp_score2 = mergePointCVFH_PointToPlane(in_pc, obj_hypothesis.getPointCloud(), initial_guess_matrix, execution_time);
+
 
         if(icp_score < smallestScore){
             return_index = NN_object_indices.at(1).at(i);
             smallestScore = icp_score;
             smallestScoreTransform = initial_guess_matrix;
         }
+
+        if(icp_score2 < smallestScore2){
+            //return_index = NN_object_indices.at(1).at(i);
+            smallestScore2 = icp_score2;
+            //smallestScoreTransform = initial_guess_matrix;
+        }
+
+
         total_time += execution_time;
     }
 
     //int numberObjects =  object_hypotheses.size();
     bool recognized = (smallestScore <= m_rmse_recognition_threshold);
+    bool recognized2 = (smallestScore2 <= m_rmse_recognition_threshold);
 
     float smallestSignatureDistance = 9999999999999999.0;
     for(int i=0; i < distances.size(); i++){
         if(distances.at(i) < smallestSignatureDistance) smallestSignatureDistance = distances.at(i);
     }
 
-    //printf("It took %.4f seconds to test %d hypotheses with ICP \n,", total_time, numberObjects);
-    std::cout << "Score : " << smallestScore << "  Recognized : " << recognized <<
+   // printf("It took %.4f seconds to test %d hypotheses with ICP \n,", total_time, int(object_hypotheses.size()));
+
+    std::cout << "ICP : -->" << "Score : " << smallestScore << "  Recognized : " << recognized <<
                  "  Distance(sig) : " << smallestSignatureDistance <<  std::endl;
+
+
+    std::cout << "Point-to-Plane ICP --> " << "Score : " << smallestScore2 << "  Recognized : " << recognized2 <<  std::endl;
+
 
     if(recognized){
         trans = smallestScoreTransform;
@@ -801,8 +873,7 @@ void Object_recognition::showPointCloud(pcl::PointCloud<PointT>::Ptr p_cloud)
 pcl::PointCloud<PointT>::Ptr Object_recognition::transformAndVoxelizePointCloud(pcl::PointCloud<PointT>::Ptr in_source, pcl::PointCloud<PointT>::Ptr in_target, Eigen::Matrix4f in_transform){
 
     pcl::PointCloud<PointT>::Ptr transformed_pc(new pcl::PointCloud<PointT>());
-    Eigen::Affine3f affine_transform(in_transform);
-    pcl::transformPointCloud(*in_source,*transformed_pc,affine_transform);
+    pcl::transformPointCloud(*in_source,*transformed_pc,in_transform);
 
 
 

@@ -134,3 +134,7 @@ target_link_libraries(data_publisher_joint_test ${catkin_LIBRARIES} ${PCL_LIBRAR
 add_executable(redoPose src/moveitTest/redoPose.cpp)
 target_link_libraries(redoPose ${catkin_LIBRARIES} ${PCL_LIBRARIES} lperception )
 
+add_executable(icp_test src/tests/icp_test.cpp)
+target_link_libraries(icp_test ${catkin_LIBRARIES} ${PCL_LIBRARIES} lperception)
+add_dependencies(icp_test perception3d_gencpp)
+

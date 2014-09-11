@@ -24,7 +24,7 @@ ObjectExtractor::ObjectExtractor(bool showViewer, ros::NodeHandle p_nh){
     NumberOfSnapshots = 0;
 
     ros::NodeHandle nh("~");
-    nh.param("screenshot_url", directory, std::string("~/.perception"));
+    nh.param("screenshot_url", directory, std::string("/home/jp/devel/src/perception3d/screenshots/"));
 
     m_transform_pc.reset(new pcl::PointCloud<PointT>);
 
@@ -713,7 +713,7 @@ void ObjectExtractor::takeSnapshotAndScreenshot(){
     std::string filename2 = std::string(new_filename2);
     std::string path  = directory + filename;
     std::string path2 = directory + filename2;
-    std::cout << filename << std::endl;
+    std::cout << path << std::endl;
     pcl::io::savePCDFileASCII(path,*object_to_grasp);
     pclViewer->saveScreenshot(path2);
 }

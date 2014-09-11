@@ -30,7 +30,7 @@ void trainFunctionTestThread(Communication *communication_ptr){
 //    }
 
 
-    communication_ptr->train(true,true);
+//    communication_ptr->train(true,true);
 
 
 
