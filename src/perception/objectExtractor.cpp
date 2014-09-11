@@ -115,7 +115,7 @@ void ObjectExtractor::keyboard_callback(const pcl::visualization::KeyboardEvent 
     l_count = l_count + 1;
     if(l_count < 2){
         boost::shared_ptr<pcl::visualization::PCLVisualizer> viewer = *static_cast<boost::shared_ptr<pcl::visualization::PCLVisualizer> *> (viewer_void);
-        if (event.getKeySym () == "p"){
+        if (event.getKeySym () == "p" || event.getKeySym () == "P"){
             if(showUI){
                 showUI=false;
             }
@@ -125,7 +125,7 @@ void ObjectExtractor::keyboard_callback(const pcl::visualization::KeyboardEvent 
         }
 
         // Select another pointcloud as the object to grasp
-        else if(event.getKeySym () == "s"){
+        else if(event.getKeySym () == "s" || event.getKeySym () == "S"){
             if(index_to_grasp+1 < object_vector.size()){
                 index_to_grasp++;
             }
@@ -138,12 +138,12 @@ void ObjectExtractor::keyboard_callback(const pcl::visualization::KeyboardEvent 
         }
 
         // Take a 2d snapshot of the viewer and save the 3d pointcloud of object to grasp
-        else if(event.getKeySym () == "m"){
+        else if(event.getKeySym () == "m" || event.getKeySym () == "M"){
             takeSnapshotAndScreenshot();
         }
 
         // Save the selected 3D pointcloud in the database for recognition (sets a flag)
-        else if(event.getKeySym () == "x"){
+        else if(event.getKeySym () == "x" || event.getKeySym () == "X"){
             if(!save_object_to_DB_FLAG){
                 save_object_to_DB_FLAG = true;
             }
