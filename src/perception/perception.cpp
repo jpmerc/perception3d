@@ -43,7 +43,7 @@ void trainFunctionTestThread(Communication *communication_ptr){
 //    }
 
 //    sleep(10);
-    communication_ptr->repeat();
+//    communication_ptr->repeat();
     cout << "The arm finished moving" << endl;
 }
 

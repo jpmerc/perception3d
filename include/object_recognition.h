@@ -164,7 +164,7 @@ public:
 
     int OURCVFHRecognition(pcl::PointCloud<PointT>::Ptr in_pc, FileAPI *fileAPI, Eigen::Matrix4f &trans);
     std::vector<double> OURCVFHRecognition(pcl::PointCloud<PointT>::Ptr in_pc, std::vector<pcl::PointCloud<PointT>::Ptr> hypotheses);
-
+    int OURCVFHRecognition(pcl::PointCloud<PointT>::Ptr in_pc, FileAPI *fileAPI, Eigen::Matrix4f &trans, std::vector<tf::Transform> &tf_vector);
 
     std::vector<std::vector<int> > getNNSurfaces(pcl::PointCloud<pcl::VFHSignature308>::Ptr p_cloud,
                                                  pcl::PointCloud<pcl::VFHSignature308>::Ptr p_bd_cloud,

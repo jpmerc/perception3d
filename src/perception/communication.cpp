@@ -174,8 +174,8 @@ void Communication::train(bool saveJacoPose, bool viewTF){
         known_object = false;
     }
 
-    pcl::PointCloud<pcl::PointXYZRGB>::Ptr object_pointcloud;
-    pcl::PointCloud<pcl::VFHSignature308>::Ptr object_signature;
+    pcl::PointCloud<pcl::PointXYZRGB>::Ptr object_pointcloud(new pcl::PointCloud<pcl::PointXYZRGB>());
+    pcl::PointCloud<pcl::VFHSignature308>::Ptr object_signature(new pcl::PointCloud<pcl::VFHSignature308>());
     std::vector<tf::Transform> object_pose_vector;
     std::vector<tf::Transform> relative_arm_pose_vector;
     std::vector<Eigen::Matrix4f,Eigen::aligned_allocator<Eigen::Matrix4f> > surface_transforms;
@@ -200,8 +200,13 @@ void Communication::train(bool saveJacoPose, bool viewTF){
 
     if(object_pointcloud && object_pointcloud->size() > 0){
 
+
         // Calculate surface signatures and transforms (coordinate systems)
-        object_signature = m_object_ex_ptr->m_object_recognition.makeCVFH(object_pointcloud,surface_transforms);
+        std::vector<Eigen::Vector3f> centroidVec;
+        object_signature = m_object_ex_ptr->m_object_recognition.makeCVFH(object_pointcloud,surface_transforms,centroidVec);
+
+
+
 
         // **************  OBJECT POSE (Change later for position of the object in the map)  ********************** camera_rgb_frame -> detected_object_centroids
         tf::StampedTransform object_tf = m_object_ex_ptr->getCentroidPositionRGBFrame();
@@ -269,11 +274,19 @@ void Communication::repeat(){
         graspIndex = 0;
     }
 
+
+
+
+
     // Arm position -> object centroid (in training)
     tf::Transform arm_rel_transform = obj.getArmPose().at(graspIndex);
 
     // transform to align object in scene to object in database
     tf::Transform scene_to_model =  m_object_ex_ptr->m_object_recognition.tfFromEigen(calculated_object_transform);
+//    tf::Matrix3x3 rot = scene_to_model.getBasis();
+//    double yaw,pitch,roll;
+//    rot.getEulerYPR(yaw,pitch,roll);
+//    std::cout << "Angles : [ " << angles::to_degrees(yaw) << " " << angles::to_degrees(pitch) << " " << angles::to_degrees(roll) << " ]" << std::endl;
 
     // Pose of database object in scene when it was trained (The reference is always the original pointcloud)
     tf::Transform model_pose = obj.getObjectPose().at(0);
@@ -286,8 +299,8 @@ void Communication::repeat(){
 //    environment_arm_pose.setOrigin(model_pose.getOrigin() - arm_rel_transform.getOrigin() - scene_to_model.getOrigin());
 //    environment_arm_pose.setRotation(model_pose.getRotation() + arm_rel_transform.inverse().getRotation() + scene_to_model.inverse().getRotation());
 
-    environment_arm_pose.setOrigin(object_tf.getOrigin() - arm_rel_transform.getOrigin());
-    environment_arm_pose.setRotation(object_tf.getRotation());
+    environment_arm_pose.setOrigin(model_pose.getOrigin() + scene_to_model.getOrigin() + arm_rel_transform.getOrigin());
+    environment_arm_pose.setRotation(model_pose.getRotation()*scene_to_model.getRotation()*arm_rel_transform.getRotation());
 
 
 
