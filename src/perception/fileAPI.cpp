@@ -417,17 +417,15 @@ void FileAPI::saveTranform(ObjectBd p_obj, const string &p_fileName)
     std::vector<Eigen::Matrix4f,Eigen::aligned_allocator<Eigen::Matrix4f> > tfV = p_obj.getTransforms();
     if(ofs.is_open())
     {
-        for(int i = 0; i < tfV.size(); i ++)
-        {
+        for(int i = 0; i < tfV.size(); i ++){
             Eigen::Matrix4f matrix = tfV.at(i);
-            float* array;
-            array = matrix.data();
-            for(int i = 0; i < 16; i++)
-            {
-                if(i == 15)
-                    ofs << *(array + i);
-                else
-                    ofs << *(array + i) << ";";
+            for(int i = 0; i < 4; i++){
+                for(int j = 0; j < 4; j++){
+                    ofs << matrix(i,j);
+                    if(i != 3 || j !=3){
+                        ofs << ";";
+                    }
+                }
             }
             ofs << std::endl;
         }
