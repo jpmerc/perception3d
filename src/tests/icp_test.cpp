@@ -35,10 +35,15 @@ bool mData = true;
 pcl::PointCloud<pcl::PointXYZRGB>::Ptr input_cloud(new pcl::PointCloud<pcl::PointXYZRGB>);
 pcl::PointCloud<pcl::PointXYZRGB>::Ptr model_cloud(new pcl::PointCloud<pcl::PointXYZRGB>);
 pcl::PointCloud<pcl::PointXYZRGB>::Ptr transformed_cloud(new pcl::PointCloud<pcl::PointXYZRGB>);
+pcl::PointCloud<pcl::PointXYZ>::Ptr centroid_pointcloud(new pcl::PointCloud<pcl::PointXYZ>);
 
 vector<tf::Transform> transforms;
 
 boost::shared_ptr<pcl::visualization::PCLVisualizer> pclViewer (new pcl::visualization::PCLVisualizer ("3D Viewer"));
+
+std::vector<Eigen::Matrix4f,Eigen::aligned_allocator<Eigen::Matrix4f> > sgurf_tf;
+std::vector<Eigen::Vector3f> centroids;
+std::vector<pcl::PointCloud<pcl::PointXYZRGB>::Ptr> surfaces_pc;
 
 
 void printToPCLViewer(){
@@ -115,6 +120,62 @@ void keyboardEventOccurred (const pcl::visualization::KeyboardEvent &event, void
 }
 
 
+void printToPCLViewer2(){
+    pclViewer->removeAllPointClouds();
+    pcl::visualization::PointCloudColorHandlerCustom<PointT> in(input_cloud,255,0,0);
+    pclViewer->addPointCloud<pcl::PointXYZRGB>(input_cloud,in,"source");
+    pclViewer->setPointCloudRenderingProperties (pcl::visualization::PCL_VISUALIZER_POINT_SIZE, 1, "source");
+    Eigen::Vector4f c;
+    pcl::compute3DCentroid<PointT>(*input_cloud,c);
+    cout << "Source : [" << c[0] << " " << c[1] << " " << c[2] << "]" << endl;
+
+    for(int i=0; i < surfaces_pc.size(); i++){
+        pcl::PointCloud<PointT>::Ptr pc = surfaces_pc[i];
+        pcl::visualization::PointCloudColorHandlerRandom<PointT> randColor(pc);
+        std::stringstream ss;
+        ss << i;
+        std::string ind = ss.str();
+        std::string pc_name = "surface_" + ind;
+        pclViewer->addPointCloud<PointT>(pc,randColor,pc_name);
+        pclViewer->setPointCloudRenderingProperties (pcl::visualization::PCL_VISUALIZER_POINT_SIZE, 1, pc_name);
+    }
+
+
+//    pcl::visualization::PointCloudColorHandlerCustom<pcl::PointXYZ> centroid_color (centroid_pointcloud, 255, 0, 255);
+//    pclViewer->addPointCloud<pcl::PointXYZ> (centroid_pointcloud, centroid_color, "centroids");
+//    pclViewer->setPointCloudRenderingProperties (pcl::visualization::PCL_VISUALIZER_POINT_SIZE, 12, "centroids");
+
+}
+
+void keyboardEventOccurred2 (const pcl::visualization::KeyboardEvent &event, void* viewer_void)
+{
+    l_count = l_count + 1;
+    if(l_count < 2){
+        boost::shared_ptr<pcl::visualization::PCLVisualizer> viewer = *static_cast<boost::shared_ptr<pcl::visualization::PCLVisualizer> *> (viewer_void);
+
+
+        if(event.getKeySym () == "s" && sData){
+            viewer->removePointCloud("source");
+            sData = false;
+        }
+        else if(event.getKeySym () == "s" && !sData){
+            viewer->removePointCloud("source");
+            pcl::visualization::PointCloudColorHandlerCustom<PointT> in(input_cloud,255,0,0);
+            viewer->addPointCloud<pcl::PointXYZRGB>(input_cloud,in,"source");
+            viewer->setPointCloudRenderingProperties (pcl::visualization::PCL_VISUALIZER_POINT_SIZE, 1, "source");
+            sData = true;
+        }
+
+
+    }
+    else{
+        l_count = 0;
+    }
+
+}
+
+
+
 
 int main (int argc, char** argv)
 {
@@ -123,7 +184,7 @@ int main (int argc, char** argv)
     ros::NodeHandle nh;
     ros::NodeHandle n("~");
 
-    pcl::io::loadPCDFile("/home/jp/devel/src/perception3d/screenshots/test.pcd", *input_cloud);
+    pcl::io::loadPCDFile("/home/jp/devel/src/perception3d/screenshots/test_kleenex_translation.pcd", *input_cloud);
 
 
     FileAPI *fileAPI = new FileAPI(string("/home/jp/devel/src/perception3d/database"));
@@ -138,15 +199,27 @@ int main (int argc, char** argv)
 
     //Eigen::Matrix4f transformMatrix;ss
 
-    int selected_object_index = Recogn->OURCVFHRecognition(input_cloud, fileAPI, transformMatrix, transforms);
+//    int selected_object_index = Recogn->OURCVFHRecognition(input_cloud, fileAPI, transformMatrix, transforms);
 
-    ObjectBd obj = fileAPI->retrieveObjectFromHistogram(selected_object_index);
-    model_cloud = obj.getPointCloud();
 
-    pcl::transformPointCloud(*input_cloud,*transformed_cloud,transformMatrix);
+    Recogn->makeCVFH(input_cloud, sgurf_tf, centroids, surfaces_pc);
+    for(int i=0; i < centroids.size(); i++){
+        pcl::PointXYZ pt;
+        pt.x = centroids.at(i)[0];
+        pt.y = centroids.at(i)[1];
+        pt.z = centroids.at(i)[2];
+        centroid_pointcloud->push_back(pt);
+    }
+
+
+
+//    ObjectBd obj = fileAPI->retrieveObjectFromHistogram(selected_object_index);
+//    model_cloud = obj.getPointCloud();
+
+//    pcl::transformPointCloud(*input_cloud,*transformed_cloud,transformMatrix);
 
     //PCL Viewer
-    pclViewer->registerKeyboardCallback (keyboardEventOccurred, (void*)&pclViewer);
+    pclViewer->registerKeyboardCallback (keyboardEventOccurred2, (void*)&pclViewer);
     pclViewer->setBackgroundColor (0, 0, 0);
     pclViewer->initCameraParameters ();
     pclViewer->setCameraPosition(0,0,0,0,0,1,0,-1,0);
@@ -154,7 +227,7 @@ int main (int argc, char** argv)
     renderWindow->SetSize(800,450);
     renderWindow->Render();
 
-    printToPCLViewer();
+    printToPCLViewer2();
 
 
 
@@ -168,9 +241,9 @@ int main (int argc, char** argv)
         ros::spinOnce();
         r.sleep();
 
-        br.sendTransform(tf::StampedTransform(transforms.at(0),ros::Time::now(),"camera_rgb_frame","object_source_tf"));
-        br.sendTransform(tf::StampedTransform(transforms.at(1),ros::Time::now(),"camera_rgb_frame","object_model_tf"));
-        br.sendTransform(tf::StampedTransform(transforms.at(2),ros::Time::now(),"object_model_tf","object_transform_tf"));
+//        br.sendTransform(tf::StampedTransform(transforms.at(0),ros::Time::now(),"camera_rgb_frame","object_source_tf"));
+//        br.sendTransform(tf::StampedTransform(transforms.at(1),ros::Time::now(),"camera_rgb_frame","object_model_tf"));
+//        br.sendTransform(tf::StampedTransform(transforms.at(2),ros::Time::now(),"object_source_tf","object_transform_tf"));
 
     }
     return 0;

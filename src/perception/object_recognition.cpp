@@ -255,16 +255,16 @@ pcl::PointCloud<pcl::VFHSignature308>::Ptr Object_recognition::calculateCVFH(pcl
     ourCVFH.getCentroidNormalClusters(normal_centroids);
     ourCVFH.getClusterIndices(p_indice);
 
-
-    for(int i=0; i<temp_tf.size(); i++){
-        Eigen::Matrix4f matrix = temp_tf.at(i);
-        tf::Transform tf_ = tfFromEigen(matrix);
-        tf::Vector3 vec(p_centroid[i](2,0), -(p_centroid[i](0,0)), -(p_centroid[i](1,0)));
-        tf_.setOrigin(vec);
-        Eigen::Matrix4f corrected_matrix;
-        pcl_ros::transformAsMatrix(tf_,corrected_matrix);
-        tf.push_back(corrected_matrix);
-    }
+// TO UNCOMMENT AT SOME POINT
+//    for(int i=0; i<temp_tf.size(); i++){
+//        Eigen::Matrix4f matrix = temp_tf.at(i);
+//        tf::Transform tf_ = tfFromEigen(matrix);
+//        tf::Vector3 vec(p_centroid[i](2,0), -(p_centroid[i](0,0)), -(p_centroid[i](1,0)));
+//        tf_.setOrigin(vec);
+//        Eigen::Matrix4f corrected_matrix;
+//        pcl_ros::transformAsMatrix(tf_,corrected_matrix);
+//        tf.push_back(corrected_matrix);
+//    }
 
 
 //    // Input Cloud Centroid
