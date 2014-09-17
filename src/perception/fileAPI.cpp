@@ -473,7 +473,7 @@ ObjectBd FileAPI::retrieveObjectFromHistogram(int p_positionHisto) const
     {
         sommeCVFH += m_bdObjectVector.at(i).getSize();
 
-        if(sommeCVFH >= p_positionHisto)
+        if(p_positionHisto < sommeCVFH)
         {
             ObjectBd obj = m_bdObjectVector.at(i);
             return obj;
