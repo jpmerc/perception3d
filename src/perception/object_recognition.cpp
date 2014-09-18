@@ -17,6 +17,12 @@ Object_recognition::Object_recognition()
     m_normal_sphere_radius = 0.03;
 
     m_rmse_recognition_threshold = 0.00025;
+
+
+    toRoboticsCoordinatesTF.setIdentity();
+    tf::Quaternion coordChange;
+    coordChange.setEulerZYX(angles::from_degrees(90),angles::from_degrees(0),angles::from_degrees(90));
+    toRoboticsCoordinatesTF.setRotation(tf::Quaternion);
 }
 
 void Object_recognition::compute_normal(pcl::PointCloud<PointT>::Ptr p_cloud, pcl::PointCloud<pcl::Normal>::Ptr p_normal)
@@ -91,7 +97,7 @@ double Object_recognition::mergePointCVFH(pcl::PointCloud<PointT>::Ptr p_cloud_s
 
     executionTime = (end-begin).toSec();
     transform_guess = icp.getFinalTransformation();
-    std::cout << "x: " << transform_guess(0,3) << " y: " << transform_guess(1,3) << " z: " << transform_guess(2,3) << std::endl;
+    std::cout << "ICP Final Transform --> x: " << transform_guess(0,3) << " y: " << transform_guess(1,3) << " z: " << transform_guess(2,3) << std::endl;
     return m_icp_fitness_score;
 }
 
@@ -237,9 +243,9 @@ pcl::PointCloud<pcl::VFHSignature308>::Ptr Object_recognition::calculateCVFH(pcl
     ourCVFH.setSearchMethod(kdtree);
     ourCVFH.setKSearch(10);
     ourCVFH.setRadiusSearch(0);
-    //ourCVFH.setEPSAngleThreshold(5.0 / 180.0 * M_PI); // 5 degrees.
-    //ourCVFH.setCurvatureThreshold(1.0);
-    // ourcvfh.setClusterTolerance (0.015f); //1.5cm, three times the leaf size
+    ourCVFH.setEPSAngleThreshold(angles::from_degrees(40)); // 5 degrees.
+    //ourCVFH.setCurvatureThreshold(65.0);
+    //ourCVFH.setClusterTolerance (0.1); //1.5cm, three times the leaf size
     ourCVFH.setNormalizeBins(false);
     ourCVFH.setAxisRatio(0.98);
 
@@ -255,17 +261,20 @@ pcl::PointCloud<pcl::VFHSignature308>::Ptr Object_recognition::calculateCVFH(pcl
     ourCVFH.getCentroidNormalClusters(normal_centroids);
     ourCVFH.getClusterIndices(p_indice);
 
-// TO UNCOMMENT AT SOME POINT
-//    for(int i=0; i<temp_tf.size(); i++){
-//        Eigen::Matrix4f matrix = temp_tf.at(i);
-//        tf::Transform tf_ = tfFromEigen(matrix);
-//        tf::Vector3 vec(p_centroid[i](2,0), -(p_centroid[i](0,0)), -(p_centroid[i](1,0)));
-//        tf_.setOrigin(vec);
-//        Eigen::Matrix4f corrected_matrix;
-//        pcl_ros::transformAsMatrix(tf_,corrected_matrix);
-//        tf.push_back(corrected_matrix);
-//    }
+    // TO UNCOMMENT AT SOME POINT
+    for(int i=0; i<temp_tf.size(); i++){
+        Eigen::Matrix4f matrix = temp_tf.at(i);
+        tf::Transform tf_ = tfFromEigen(matrix);
+        //        tf::Vector3 vec(p_centroid[i](2,0), -(p_centroid[i](0,0)), -(p_centroid[i](1,0)));
+        //        tf_.setOrigin(vec);
+        tf::Vector3 vec(p_centroid[i](0,0), p_centroid[i](1,0), p_centroid[i](2,0));
+        tf_.setOrigin(vec);
+        Eigen::Matrix4f corrected_matrix;
+        pcl_ros::transformAsMatrix(tf_,corrected_matrix);
+        tf.push_back(corrected_matrix);
+    }
 
+    //tf = temp_tf;
 
 //    // Input Cloud Centroid
 //    Eigen::Vector4f c;
@@ -420,15 +429,15 @@ int Object_recognition::OURCVFHRecognition(pcl::PointCloud<PointT>::Ptr in_pc, F
 
     // Get a certain number of the NN surface hypotheses from the object database
     pcl::PointCloud<pcl::VFHSignature308>::Ptr signature_database = fileAPI->getAllHistograms();
-    int database_size = signature_database->size();
+    int totalNumberOfSurfaces = signature_database->size();
     int numberOfHypothesesPerSurface = 5;
 
     // Condition on the database size
-    if(database_size < 1){
+    if(totalNumberOfSurfaces < 1){
         return -1;
     }
-    else if(database_size < numberOfHypothesesPerSurface){
-        numberOfHypothesesPerSurface = database_size;
+    else if(totalNumberOfSurfaces < numberOfHypothesesPerSurface){
+        numberOfHypothesesPerSurface = totalNumberOfSurfaces;
     }
 
     std::vector<float> distances;
@@ -466,40 +475,39 @@ int Object_recognition::OURCVFHRecognition(pcl::PointCloud<PointT>::Ptr in_pc, F
         tf::Transform hypothesis_tf = tfFromEigen(hypothesis_matrix);
 
         // Initial guess (input -> hypothesis)
-        tf::Transform initial_guess_tf = input_tf.inverseTimes(hypothesis_tf);
+       tf::Transform initial_guess_tf = input_tf.inverse() * hypothesis_tf;
+       // tf::Vector3 vec = hypothesis_tf.getOrigin() - input_tf.getOrigin();
+       //tf::Transform initial_guess_tf = tf::Transform(input_tf.getBasis().transposeTimes(hypothesis_tf.getBasis()),vec);
         Eigen::Matrix4f initial_guess_matrix;
         pcl_ros::transformAsMatrix(initial_guess_tf,initial_guess_matrix);
-        Eigen::Matrix4f initial_guess_matrix2 = initial_guess_matrix;
-        trans = initial_guess_matrix;
+        //Eigen::Matrix4f initial_guess_matrix2 = initial_guess_matrix;
 
-        tf_vector.push_back(input_tf);
-        tf_vector.push_back(hypothesis_tf);
-        tf_vector.push_back(initial_guess_tf);
 
         std::cout << "Transformation Initial Guess -->";
         std::cout << " x: " << initial_guess_matrix(0,3) << " y: " << initial_guess_matrix(1,3) << " z: " << initial_guess_matrix(2,3) << std::endl;
 
 
-        std::cout << "PointCloud Size (before) : " <<  obj_hypothesis.getPointCloud()->size() << std::endl;
         // ICP
         double execution_time = 0;
         double icp_score = mergePointCVFH(in_pc, obj_hypothesis.getPointCloud(), initial_guess_matrix, execution_time);
         //double icp_score2 = mergePointCVFH_PointToPlane(in_pc, obj_hypothesis.getPointCloud(), initial_guess_matrix2, execution_time);
 
-        std::cout << "PointCloud Size (after) : " <<  obj_hypothesis.getPointCloud()->size() << std::endl;
-
         if(icp_score < smallestScore){
             return_index = NN_object_indices.at(1).at(i);
             smallestScore = icp_score;
-          //  trans = initial_guess_matrix;
+            trans = initial_guess_matrix;
         }
+
+
+        tf_vector.push_back(input_tf);
+        tf_vector.push_back(hypothesis_tf);
+        tf_vector.push_back(initial_guess_tf);
 
 //        if(icp_score2 < smallestScore2){
 //            //return_index = NN_object_indices.at(1).at(i);
 //            smallestScore2 = icp_score2;
 //            //smallestScoreTransform = initial_guess_matrix;
 //        }
-
 
         total_time += execution_time;
     }

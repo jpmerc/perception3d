@@ -138,3 +138,7 @@ add_executable(icp_test src/tests/icp_test.cpp)
 target_link_libraries(icp_test ${catkin_LIBRARIES} ${PCL_LIBRARIES} lperception)
 add_dependencies(icp_test perception3d_gencpp)
 
+add_executable(view_surfaces src/tests/view_surfaces.cpp)
+target_link_libraries(view_surfaces ${catkin_LIBRARIES} ${PCL_LIBRARIES} lperception)
+add_dependencies(view_surfaces perception3d_gencpp)
+

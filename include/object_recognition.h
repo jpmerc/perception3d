@@ -177,6 +177,8 @@ public:
 
     double m_rmse_recognition_threshold;
 
+    tf::Transform toRoboticsCoordinatesTF;
+
 private:
 
     double m_sac_ia_maximum_distance;
