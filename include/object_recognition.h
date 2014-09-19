@@ -175,9 +175,13 @@ public:
 
     tf::Transform tfFromEigen(Eigen::Matrix4f trans);
 
+    tf::Transform transformKinectFrameToWorldFrame(tf::Transform kinect_tf);
+    tf::Transform transformWorldFrameToKinectFrame(tf::Transform world_tf);
+
+
     double m_rmse_recognition_threshold;
 
-    tf::Transform toRoboticsCoordinatesTF;
+
 
 private:
 

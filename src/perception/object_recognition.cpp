@@ -18,11 +18,6 @@ Object_recognition::Object_recognition()
 
     m_rmse_recognition_threshold = 0.00025;
 
-
-    toRoboticsCoordinatesTF.setIdentity();
-    tf::Quaternion coordChange;
-    coordChange.setEulerZYX(angles::from_degrees(90),angles::from_degrees(0),angles::from_degrees(90));
-    toRoboticsCoordinatesTF.setRotation(tf::Quaternion);
 }
 
 void Object_recognition::compute_normal(pcl::PointCloud<PointT>::Ptr p_cloud, pcl::PointCloud<pcl::Normal>::Ptr p_normal)
@@ -83,12 +78,12 @@ double Object_recognition::mergePointCVFH(pcl::PointCloud<PointT>::Ptr p_cloud_s
     ros::Time begin = ros::Time::now();
 
     pcl::IterativeClosestPoint<PointT, PointT> icp;
-    float maxDistanceICP = 0.1;
+    //float maxDistanceICP = 0.2;
     icp.setInputSource(p_cloud_src);
     icp.setInputTarget(p_cloud_target);
-    icp.setMaxCorrespondenceDistance(maxDistanceICP);
+    //icp.setMaxCorrespondenceDistance(maxDistanceICP);
 
-    icp.setMaximumIterations(100);
+    icp.setMaximumIterations(30);
     pcl::PointCloud<PointT> Final;
     icp.align(Final,transform_guess);
     m_icp_fitness_score = icp.getFitnessScore();
@@ -97,7 +92,8 @@ double Object_recognition::mergePointCVFH(pcl::PointCloud<PointT>::Ptr p_cloud_s
 
     executionTime = (end-begin).toSec();
     transform_guess = icp.getFinalTransformation();
-    std::cout << "ICP Final Transform --> x: " << transform_guess(0,3) << " y: " << transform_guess(1,3) << " z: " << transform_guess(2,3) << std::endl;
+    std::cout << "ICP Final Transform --> x: " << transform_guess(0,3) << " y: " << transform_guess(1,3) << " z: " << transform_guess(2,3)
+              << " Score: " <<  m_icp_fitness_score << std::endl;
     return m_icp_fitness_score;
 }
 
@@ -448,8 +444,9 @@ int Object_recognition::OURCVFHRecognition(pcl::PointCloud<PointT>::Ptr in_pc, F
 
     double smallestScore = 9999999999;
     double smallestScore2 = 9999999999;
-    Eigen::Matrix4f smallestScoreTransform;
-    Eigen::Matrix4f smallestScoreTransform2;
+    tf::Transform smallest_input_tf;
+    tf::Transform smallest_hypothesis_tf;
+    tf::Transform smallest_final_tf;
     double total_time = 0;
     int return_index = -1;
 
@@ -496,12 +493,10 @@ int Object_recognition::OURCVFHRecognition(pcl::PointCloud<PointT>::Ptr in_pc, F
             return_index = NN_object_indices.at(1).at(i);
             smallestScore = icp_score;
             trans = initial_guess_matrix;
+            smallest_input_tf = input_tf;
+            smallest_hypothesis_tf = hypothesis_tf;
+            smallest_final_tf = initial_guess_tf;
         }
-
-
-        tf_vector.push_back(input_tf);
-        tf_vector.push_back(hypothesis_tf);
-        tf_vector.push_back(initial_guess_tf);
 
 //        if(icp_score2 < smallestScore2){
 //            //return_index = NN_object_indices.at(1).at(i);
@@ -528,6 +523,12 @@ int Object_recognition::OURCVFHRecognition(pcl::PointCloud<PointT>::Ptr in_pc, F
 
 
 //    std::cout << "Point-to-Plane ICP --> " << "Score : " << smallestScore2 << "  Recognized : " << recognized2 <<  std::endl;
+
+
+
+    tf_vector.push_back(smallest_input_tf);
+    tf_vector.push_back(smallest_hypothesis_tf);
+    tf_vector.push_back(smallest_final_tf);
 
 
     if(recognized){
@@ -904,12 +905,16 @@ void Object_recognition::showPointCloud(pcl::PointCloud<PointT>::Ptr p_cloud)
 }
 
 
+/*
+  Aligns the input pointcloud (via transformation entered in parameter) with target pointcloud. Returns the merged pointcloud.
+  param[in] in_source The pointcloud is transformed via in_transform
+  param[in] in_target The Reference pointcloud. in_source is transformed in its frame to be merged.
+  param[in] in_transform The transformation to align in_source to in_target.
+  */
 pcl::PointCloud<PointT>::Ptr Object_recognition::transformAndVoxelizePointCloud(pcl::PointCloud<PointT>::Ptr in_source, pcl::PointCloud<PointT>::Ptr in_target, Eigen::Matrix4f in_transform){
 
     pcl::PointCloud<PointT>::Ptr transformed_pc(new pcl::PointCloud<PointT>());
     pcl::transformPointCloud(*in_source,*transformed_pc,in_transform);
-
-
 
     pcl::PointCloud<PointT>::Ptr merged_pc(new pcl::PointCloud<PointT>());
     *merged_pc  = *transformed_pc + *in_target;
@@ -934,6 +939,32 @@ tf::Transform Object_recognition::tfFromEigen(Eigen::Matrix4f trans){
     transform_.setRotation(test);
     return transform_;
 }
+
+tf::Transform Object_recognition::transformKinectFrameToWorldFrame(tf::Transform kinect_tf){
+    tf::Vector3 vec = kinect_tf.getOrigin();
+    double yaw,pitch,roll;
+    kinect_tf.getBasis().getEulerYPR(yaw,pitch,roll);
+
+    tf::Vector3 modified_vec = tf::Vector3(vec.getZ(), -vec.getX(), -vec.getY());
+    tf::Quaternion modified_rot;
+    modified_rot.setEuler(-pitch, -roll, yaw);
+
+    return tf::Transform(modified_rot,modified_vec);
+}
+
+
+tf::Transform Object_recognition::transformWorldFrameToKinectFrame(tf::Transform world_tf){
+    tf::Vector3 vec = world_tf.getOrigin();
+    double yaw,pitch,roll;
+    world_tf.getBasis().getEulerYPR(yaw,pitch,roll);
+
+    tf::Vector3 modified_vec = tf::Vector3(-vec.getY(), -vec.getZ(), vec.getX());
+    tf::Quaternion modified_rot;
+    modified_rot.setEuler(roll, -yaw, -pitch);
+
+    return tf::Transform(modified_rot,modified_vec);
+}
+
 
 //Eigen::Matrix4f Object_recognition::mergePointClouds(   pcl::PointCloud<pcl::FPFHSignature33>::Ptr f_src,
 //                                                        pcl::PointCloud<pcl::FPFHSignature33>::Ptr f_target,

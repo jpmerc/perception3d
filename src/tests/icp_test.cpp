@@ -32,9 +32,11 @@ int l_count = 0;
 bool sData = true;
 bool tData = true;
 bool mData = true;
+bool vData = true;
 pcl::PointCloud<pcl::PointXYZRGB>::Ptr input_cloud(new pcl::PointCloud<pcl::PointXYZRGB>);
 pcl::PointCloud<pcl::PointXYZRGB>::Ptr model_cloud(new pcl::PointCloud<pcl::PointXYZRGB>);
 pcl::PointCloud<pcl::PointXYZRGB>::Ptr transformed_cloud(new pcl::PointCloud<pcl::PointXYZRGB>);
+pcl::PointCloud<pcl::PointXYZRGB>::Ptr voxelized_cloud(new pcl::PointCloud<pcl::PointXYZRGB>);
 
 vector<tf::Transform> transforms;
 
@@ -65,6 +67,14 @@ void printToPCLViewer(){
     Eigen::Vector4f c3;
     pcl::compute3DCentroid<PointT>(*transformed_cloud,c3);
     cout << "Transform : [" << c3[0] << " " << c3[1] << " " << c3[2] << "]" << endl;
+
+
+    pcl::visualization::PointCloudColorHandlerCustom<PointT> vox(voxelized_cloud,110,70,175);
+    pclViewer->addPointCloud<pcl::PointXYZRGB>(voxelized_cloud,vox,"voxel");
+    pclViewer->setPointCloudRenderingProperties(pcl::visualization::PCL_VISUALIZER_POINT_SIZE, 1, "voxel");
+    Eigen::Vector4f c4;
+    pcl::compute3DCentroid<PointT>(*transformed_cloud,c4);
+    cout << "Voxelized : [" << c4[0] << " " << c4[1] << " " << c4[2] << "]" << endl;
 }
 
 void keyboardEventOccurred (const pcl::visualization::KeyboardEvent &event, void* viewer_void)
@@ -106,6 +116,18 @@ void keyboardEventOccurred (const pcl::visualization::KeyboardEvent &event, void
             mData = true;
         }
 
+        else if(event.getKeySym () == "v" && vData){
+            viewer->removePointCloud("voxel");
+            vData = false;
+        }
+        else if(event.getKeySym () == "v" && !vData){
+            viewer->removePointCloud("voxel");
+            pcl::visualization::PointCloudColorHandlerCustom<PointT> vox(voxelized_cloud,110,70,175);
+            pclViewer->addPointCloud<pcl::PointXYZRGB>(voxelized_cloud,vox,"voxel");
+            pclViewer->setPointCloudRenderingProperties(pcl::visualization::PCL_VISUALIZER_POINT_SIZE, 1, "voxel");
+            vData = true;
+        }
+
     }
     else{
         l_count = 0;
@@ -120,7 +142,7 @@ int main (int argc, char** argv){
     ros::NodeHandle nh;
     ros::NodeHandle n("~");
 
-    pcl::io::loadPCDFile("/home/jp/devel/src/perception3d/screenshots/test_kleenex_samepose.pcd", *input_cloud);
+    pcl::io::loadPCDFile("/home/jp/devel/src/perception3d/screenshots/test_kleenex_translation.pcd", *input_cloud);
 
 
     FileAPI *fileAPI = new FileAPI(string("/home/jp/devel/src/perception3d/database"));
@@ -142,6 +164,8 @@ int main (int argc, char** argv){
 
     pcl::transformPointCloud(*input_cloud,*transformed_cloud,transformMatrix);
 
+    voxelized_cloud = Recogn->transformAndVoxelizePointCloud(input_cloud,model_cloud,transformMatrix);
+
     //PCL Viewer
     pclViewer->registerKeyboardCallback (keyboardEventOccurred, (void*)&pclViewer);
     pclViewer->setBackgroundColor (0, 0, 0);
@@ -161,9 +185,13 @@ int main (int argc, char** argv){
         ros::spinOnce();
         r.sleep();
         if(transforms.size() >= 3){
-            br.sendTransform(tf::StampedTransform(transforms.at(0),ros::Time::now(),"camera_rgb_frame","object_source_tf"));
-            br.sendTransform(tf::StampedTransform(transforms.at(1),ros::Time::now(),"camera_rgb_frame","object_model_tf"));
-            br.sendTransform(tf::StampedTransform(transforms.at(2),ros::Time::now(),"object_source_tf","object_transform_tf"));
+            br.sendTransform(tf::StampedTransform(Recogn->transformKinectFrameToWorldFrame(transforms.at(0)),ros::Time::now(),"camera_rgb_frame","object_source_tf"));
+            br.sendTransform(tf::StampedTransform(Recogn->transformKinectFrameToWorldFrame(transforms.at(1)),ros::Time::now(),"camera_rgb_frame","object_model_tf"));
+            br.sendTransform(tf::StampedTransform(Recogn->transformKinectFrameToWorldFrame(transforms.at(2)),ros::Time::now(),"object_source_tf","object_transform_tf"));
+       //     br.sendTransform(tf::StampedTransform(transforms.at(0),ros::Time::now(),"camera_rgb_frame","object_source_tf"));
+       //     br.sendTransform(tf::StampedTransform(transforms.at(1),ros::Time::now(),"camera_rgb_frame","object_model_tf"));
+        //    br.sendTransform(tf::StampedTransform(transforms.at(2),ros::Time::now(),"object_source_tf","object_transform_tf"));
+
         }
     }
     return 0;

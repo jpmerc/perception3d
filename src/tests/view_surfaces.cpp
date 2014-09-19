@@ -114,7 +114,7 @@ int main (int argc, char** argv){
     ros::NodeHandle nh;
     ros::NodeHandle n("~");
 
-    pcl::io::loadPCDFile("/home/jp/devel/src/perception3d/database/pointCloud/2.pcd", *input_cloud);
+    pcl::io::loadPCDFile("/home/jp/devel/src/perception3d/database/pointCloud/1.pcd", *input_cloud);
 
 
     FileAPI *fileAPI = new FileAPI(string("/home/jp/devel/src/perception3d/database"));
@@ -159,6 +159,7 @@ int main (int argc, char** argv){
         ros::spinOnce();
         for(int i=0; i < sgurf_tf.size(); i++){
             tf::Transform tf_ =  Recogn->tfFromEigen(sgurf_tf.at(i));
+            tf_ = Recogn->transformKinectFrameToWorldFrame(tf_);
             stringstream ss;
             ss << i;
             string frame = "SGURF_" + ss.str();
