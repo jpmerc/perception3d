@@ -74,6 +74,8 @@ private:
     boost::thread saveToDBWithoutArmPoseThread;
     void saveToDBWithoutArmPose();
 
+    std::vector<tf::Transform> transforms_vector;
+
 
 };
 

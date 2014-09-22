@@ -13,6 +13,7 @@ Communication::Communication(ObjectExtractor *p_obj_e, FileAPI *p_api, JacoCusto
     grasp_list_index = -1;
 
     saveToDBWithoutArmPoseThread = boost::thread(&Communication::saveToDBWithoutArmPose,this);
+    transforms_vector.clear();
 //    recognitionViewer.reset(new pcl::visualization::PCLVisualizer("Recognition Tests"));
 //    recognitionViewer->setBackgroundColor (0, 0, 0);
 //    recognitionViewer->initCameraParameters ();
@@ -125,7 +126,7 @@ void Communication::spin_once()
 
         if(selected_pointcloud->size() > 0){
             // An object was clicked on
-            selected_object_index = m_object_ex_ptr->m_object_recognition.OURCVFHRecognition(selected_pointcloud, m_api_ptr, calculated_object_transform);
+            selected_object_index = m_object_ex_ptr->m_object_recognition.OURCVFHRecognition(selected_pointcloud, m_api_ptr, calculated_object_transform, transforms_vector);
 
             // Refresh image and pointcloud
             m_object_ex_ptr->spin_once();
@@ -167,7 +168,7 @@ void Communication::spin_once()
 //-----------------------------------------------------------------------------------------------//
 void Communication::train(bool saveJacoPose, bool viewTF){
 
-    selected_object_index = m_object_ex_ptr->m_object_recognition.OURCVFHRecognition(m_object_ex_ptr->getObjectToGrasp(), m_api_ptr, calculated_object_transform);
+    selected_object_index = m_object_ex_ptr->m_object_recognition.OURCVFHRecognition(m_object_ex_ptr->getObjectToGrasp(), m_api_ptr, calculated_object_transform, transforms_vector);
 
     bool known_object = true;
     if(selected_object_index < 0){
@@ -190,7 +191,7 @@ void Communication::train(bool saveJacoPose, bool viewTF){
         object_pointcloud = m_object_ex_ptr->m_object_recognition.transformAndVoxelizePointCloud(m_object_ex_ptr->getObjectToGrasp(), obj.getPointCloud(),calculated_object_transform);
         object_pose_vector = obj.getObjectPose();
         relative_arm_pose_vector = obj.getArmPose();
-        surface_transforms = obj.getTransforms();
+        //surface_transforms = obj.getTransforms(); //not needed, transforms will be calculated on the new and merged pointcloud
         name = obj.getName();
     }
 
@@ -200,12 +201,8 @@ void Communication::train(bool saveJacoPose, bool viewTF){
 
     if(object_pointcloud && object_pointcloud->size() > 0){
 
-
         // Calculate surface signatures and transforms (coordinate systems)
-        std::vector<Eigen::Vector3f> centroidVec;
-        object_signature = m_object_ex_ptr->m_object_recognition.makeCVFH(object_pointcloud,surface_transforms,centroidVec);
-
-
+        object_signature = m_object_ex_ptr->m_object_recognition.makeCVFH(object_pointcloud,surface_transforms);
 
 
         // **************  OBJECT POSE (Change later for position of the object in the map)  ********************** camera_rgb_frame -> detected_object_centroids
@@ -231,7 +228,10 @@ void Communication::train(bool saveJacoPose, bool viewTF){
             arm_rel_pose = object_tf.inverseTimes(arm_pose_before_grasp);
 
             if(known_object){
-                tf::Transform scene_to_model =  m_object_ex_ptr->m_object_recognition.tfFromEigen(calculated_object_transform);
+                tf::Transform kinect_src  = m_object_ex_ptr->m_object_recognition.transformKinectFrameToWorldFrame(transforms_vector.at(0));
+                tf::Transform kinect_model= m_object_ex_ptr->m_object_recognition.transformKinectFrameToWorldFrame(transforms_vector.at(1));
+
+                tf::Transform scene_to_model =  kinect_src.inverse() * kinect_model;
                 arm_rel_pose.setOrigin(scene_to_model.getOrigin() + arm_rel_pose.getOrigin());
                 arm_rel_pose.setRotation(scene_to_model.getRotation()*arm_rel_pose.getRotation());
             }
@@ -263,7 +263,7 @@ void Communication::train(bool saveJacoPose, bool viewTF){
 
 void Communication::repeat(){
 
-    selected_object_index = m_object_ex_ptr->m_object_recognition.OURCVFHRecognition(m_object_ex_ptr->getObjectToGrasp(), m_api_ptr, calculated_object_transform);
+    selected_object_index = m_object_ex_ptr->m_object_recognition.OURCVFHRecognition(m_object_ex_ptr->getObjectToGrasp(), m_api_ptr, calculated_object_transform, transforms_vector);
 
 
     ObjectBd obj = m_api_ptr->retrieveObjectFromHistogram(selected_object_index);
@@ -275,14 +275,15 @@ void Communication::repeat(){
     }
 
 
-
-
-
     // Arm position -> object centroid (in training)
     tf::Transform arm_rel_transform = obj.getArmPose().at(graspIndex);
 
     // transform to align object in scene to object in database
-    tf::Transform scene_to_model =  m_object_ex_ptr->m_object_recognition.tfFromEigen(calculated_object_transform);
+    tf::Transform kinect_src  = m_object_ex_ptr->m_object_recognition.transformKinectFrameToWorldFrame(transforms_vector.at(0));
+    tf::Transform kinect_model= m_object_ex_ptr->m_object_recognition.transformKinectFrameToWorldFrame(transforms_vector.at(1));
+    tf::Transform kinect_tf= m_object_ex_ptr->m_object_recognition.transformKinectFrameToWorldFrame(transforms_vector.at(2));
+    tf::Transform scene_to_model =  kinect_tf;
+
 //    tf::Matrix3x3 rot = scene_to_model.getBasis();
 //    double yaw,pitch,roll;
 //    rot.getEulerYPR(yaw,pitch,roll);
@@ -290,51 +291,12 @@ void Communication::repeat(){
 
     // Pose of database object in scene when it was trained (The reference is always the original pointcloud)
     tf::Transform model_pose = obj.getObjectPose().at(0);
-
-
     tf::Transform object_tf = tf::Transform(m_object_ex_ptr->getCentroidPositionRGBFrame());
-
-
     tf::Transform environment_arm_pose;
-//    environment_arm_pose.setOrigin(model_pose.getOrigin() - arm_rel_transform.getOrigin() - scene_to_model.getOrigin());
-//    environment_arm_pose.setRotation(model_pose.getRotation() + arm_rel_transform.inverse().getRotation() + scene_to_model.inverse().getRotation());
-
     environment_arm_pose.setOrigin(model_pose.getOrigin() + scene_to_model.getOrigin() + arm_rel_transform.getOrigin());
     environment_arm_pose.setRotation(model_pose.getRotation()*scene_to_model.getRotation()*arm_rel_transform.getRotation());
-
-
-
-
     geometry_msgs::Transform g_tf;
     tf::transformTFToMsg(environment_arm_pose,g_tf);
-
-
-//    // Move the arm (MoveIt instead of direct moveToPoint function)
-//    geometry_msgs::PoseStamped goal;
-//    //goal.pose.orientation = g_tf.rotation;
-//    //goal.pose.position = g_tf.translation;
-////    goal.pose.orientation.x =    environment_arm_pose.getRotation().getX();
-////    goal.pose.orientation.y =    environment_arm_pose.getRotation().getY();
-////    goal.pose.orientation.z =    environment_arm_pose.getRotation().getZ();
-////    goal.pose.orientation.w =    environment_arm_pose.getRotation().getW();
-////    goal.pose.position.x =  environment_arm_pose.getOrigin().getX();
-////    goal.pose.position.y =  environment_arm_pose.getOrigin().getY();
-////    goal.pose.position.z =  environment_arm_pose.getOrigin().getZ();
-//    //m_jaco_ptr->moveitPlugin(goal);
-
-//    goal.pose.orientation.x =    0.594192679752;
-//    goal.pose.orientation.y =    0.372921647105;
-//    goal.pose.orientation.z =    -0.32884910386;
-//    goal.pose.orientation.w =    0.632236325546;
-//    goal.pose.position.x =   0.2104634;
-//    goal.pose.position.y =  -0.27976;
-//    goal.pose.position.z =  0.692078;
-//    //m_jaco_ptr->moveitPlugin(goal);
-
-//    m_jaco_ptr ->moveAlongAxis("z", 0.1);
-
-
-
 
 //    tf::StampedTransform object_tf = m_object_ex_ptr->getCentroidPositionRGBFrame();
 //    tf::Vector3 translation2 = object_tf.getOrigin() + m_relative_pose.getOrigin();

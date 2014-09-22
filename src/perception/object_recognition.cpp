@@ -495,7 +495,7 @@ int Object_recognition::OURCVFHRecognition(pcl::PointCloud<PointT>::Ptr in_pc, F
             trans = initial_guess_matrix;
             smallest_input_tf = input_tf;
             smallest_hypothesis_tf = hypothesis_tf;
-            smallest_final_tf = initial_guess_tf;
+            smallest_final_tf = tfFromEigen(initial_guess_matrix);
         }
 
 //        if(icp_score2 < smallestScore2){
@@ -521,10 +521,13 @@ int Object_recognition::OURCVFHRecognition(pcl::PointCloud<PointT>::Ptr in_pc, F
     std::cout << "ICP : -->" << "Score : " << smallestScore << "  Recognized : " << recognized <<
                  "  Distance(sig) : " << smallestSignatureDistance <<  std::endl;
 
+    std::cout << " Overall Final Transform : " << std::endl << trans  << std::endl;
 
 //    std::cout << "Point-to-Plane ICP --> " << "Score : " << smallestScore2 << "  Recognized : " << recognized2 <<  std::endl;
 
 
+    // clear the tf vector to be sure it is empty before filling it
+    tf_vector.clear();
 
     tf_vector.push_back(smallest_input_tf);
     tf_vector.push_back(smallest_hypothesis_tf);
