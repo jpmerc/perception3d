@@ -7,11 +7,14 @@
 	<!--<node pkg="tf" type="static_transform_publisher" name="jaco_kinect" args="-0.60 0.385 0.54 0 0.30 0  arm_base camera_link 100" /> 
 	<node pkg="tf" type="static_transform_publisher" name="jaco_kinect" args="-0.507 0.386 0.533 0 0.30 0  arm_base camera_link 100" /> -->
 	<!--<node pkg="tf" type="static_transform_publisher" name="jaco_kinect" args="-0.61 0.40 0.52 -0.02 0.299 0.01178  arm_base camera_link 100" /> -->
-<node pkg= "tf" type="static_transform_publisher" name="jaco_kinect" args=" -0.4817 0.3782 0.5175 0.0269 0.3529 0.0546 arm_base camera_link 100" /> 
+  <node pkg= "tf" type="static_transform_publisher" name="jaco_kinect" args=" -0.4817 0.3782 0.5175 0.0269 0.3529 0.0546 arm_base camera_link 100" /> 
 	
 	<!-- Link AR_TAG to joint_6 (useful when calibrating) -->
 	<!-- Disable for moveit implementation  Will put it back later on -->
 	<node pkg="tf" type="static_transform_publisher" name="ARtag" args="0 0.045 -0.052 0 0 0 jaco_link_hand ARtag 100" /> 
+	
+	<arg name="pi/2" value="1.5707963267948966" />
+	<node pkg="tf" type="static_transform_publisher" name="camera_intern_frame" args="0 0 0 $(arg pi/2) 0 $(arg pi/2) camera_rgb_frame camera_intern_frame 100" /> 
 	
 	<!-- Plane Segmentation -->
   <node pkg="perception3d" type="segmentation" name="segmentation" respawn="false" output="screen">
