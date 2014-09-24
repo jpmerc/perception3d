@@ -249,7 +249,9 @@ tf::StampedTransform ObjectExtractor::getCentroidPositionRGBFrame(){
     //cout << "object pose : [" <<  object_pose[2] << ", " << -object_pose[0] << ", " << -object_pose[1] << "]" << endl;
     tf::Pose tf_pose;
     tf_pose.setIdentity();
-    tf_pose.setOrigin(tf::Vector3(object_pose[2],-object_pose[0],-object_pose[1]));
+    //tf_pose.setOrigin(tf::Vector3(object_pose[2],-object_pose[0],-object_pose[1]));
+    tf_pose.setOrigin(tf::Vector3(object_pose[0], object_pose[1], object_pose[2]));
+
 /* Comment to debug the corner padding
     cout << "---Detected Object Centroid---" << endl;
     cout << "x: " <<  object_pose[2] << endl;

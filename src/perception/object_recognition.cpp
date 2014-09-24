@@ -91,8 +91,7 @@ double Object_recognition::mergePointCVFH(pcl::PointCloud<PointT>::Ptr p_cloud_s
     ros::Time end = ros::Time::now();
 
     executionTime = (end-begin).toSec();
-    bool testConvergence = icp.hasConverged();
-    transform_guess = icp.getFinalTransformation();
+    transform_guess = icp.getFinalTransformation().inverse();
     std::cout << "ICP Final Transform --> x: " << transform_guess(0,3) << " y: " << transform_guess(1,3) << " z: " << transform_guess(2,3)
               << " Score: " <<  m_icp_fitness_score << std::endl;
     return m_icp_fitness_score;
