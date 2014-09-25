@@ -168,7 +168,9 @@ void Communication::spin_once()
 //-----------------------------------------------------------------------------------------------//
 void Communication::train(bool saveJacoPose, bool viewTF){
 
-    selected_object_index = m_object_ex_ptr->m_object_recognition.OURCVFHRecognition(m_object_ex_ptr->getObjectToGrasp(), m_api_ptr, calculated_object_transform, transforms_vector);
+    pcl::PointCloud<PointT>::Ptr scan_pc = m_object_ex_ptr->getObjectToGrasp();
+
+    selected_object_index = m_object_ex_ptr->m_object_recognition.OURCVFHRecognition(scan_pc, m_api_ptr, calculated_object_transform, transforms_vector);
 
     bool known_object = true;
     if(selected_object_index < 0){
@@ -188,7 +190,7 @@ void Communication::train(bool saveJacoPose, bool viewTF){
     if(known_object){
         //Load object from Histogram position
         obj = m_api_ptr->retrieveObjectFromHistogram(selected_object_index);
-        object_pointcloud = m_object_ex_ptr->m_object_recognition.transformAndVoxelizePointCloud(m_object_ex_ptr->getObjectToGrasp(), obj.getPointCloud(),calculated_object_transform.inverse());
+        object_pointcloud = m_object_ex_ptr->m_object_recognition.transformAndVoxelizePointCloud(scan_pc, obj.getPointCloud(),calculated_object_transform.inverse());
         object_pose_vector = obj.getObjectPose();
         relative_arm_pose_vector = obj.getArmPose();
         //surface_transforms = obj.getTransforms(); //not needed, transforms will be calculated on the new and merged pointcloud

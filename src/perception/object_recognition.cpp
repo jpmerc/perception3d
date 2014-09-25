@@ -260,14 +260,10 @@ pcl::PointCloud<pcl::VFHSignature308>::Ptr Object_recognition::calculateCVFH(pcl
     // TO UNCOMMENT AT SOME POINT
     for(int i=0; i<temp_tf.size(); i++){
         Eigen::Matrix4f matrix = temp_tf.at(i);
-        tf::Transform tf_ = tfFromEigen(matrix);
-        //        tf::Vector3 vec(p_centroid[i](2,0), -(p_centroid[i](0,0)), -(p_centroid[i](1,0)));
-        //        tf_.setOrigin(vec);
-        tf::Vector3 vec(p_centroid[i](0,0), p_centroid[i](1,0), p_centroid[i](2,0));
-        tf_.setOrigin(vec);
-        Eigen::Matrix4f corrected_matrix;
-        pcl_ros::transformAsMatrix(tf_,corrected_matrix);
-        tf.push_back(corrected_matrix);
+        matrix(0,3) = p_centroid[i](0);
+        matrix(1,3) = p_centroid[i](1);
+        matrix(2,3) = p_centroid[i](2);
+        tf.push_back(matrix);
     }
 
     //tf = temp_tf;
@@ -417,6 +413,7 @@ int Object_recognition::OURCVFHRecognition(pcl::PointCloud<PointT>::Ptr in_pc, F
     return returnValue;
 }
 
+// Trans is the transformation from the database pointcloud to the input pointcloud
 int Object_recognition::OURCVFHRecognition(pcl::PointCloud<PointT>::Ptr in_pc, FileAPI *fileAPI, Eigen::Matrix4f &trans, std::vector<tf::Transform> &tf_vector){
 
     // Calculate the surface histograms for the input pointcloud

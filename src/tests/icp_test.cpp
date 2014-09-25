@@ -83,7 +83,7 @@ void printToPCLViewer(){
     tf_transformed.setIdentity();
     tf_transformed.setOrigin(v3);
 
-//    pcl::visualization::PointCloudColorHandlerCustom<PointT> vox(voxelized_cloud,110,70,175);
+//    pcl::visualization::PointCloudColorHandlerCustom<PointT> vox(voxelized_cloud,255,215,45);
 //    pclViewer->addPointCloud<pcl::PointXYZRGB>(voxelized_cloud,vox,"voxel");
 //    pclViewer->setPointCloudRenderingProperties(pcl::visualization::PCL_VISUALIZER_POINT_SIZE, 1, "voxel");
 //    Eigen::Vector4f c4;
@@ -135,17 +135,17 @@ void keyboardEventOccurred (const pcl::visualization::KeyboardEvent &event, void
             mData = true;
         }
 
-//        else if(event.getKeySym () == "v" && vData){
-//            viewer->removePointCloud("voxel");
-//            vData = false;
-//        }
-//        else if(event.getKeySym () == "v" && !vData){
-//            viewer->removePointCloud("voxel");
-//            pcl::visualization::PointCloudColorHandlerCustom<PointT> vox(voxelized_cloud,110,70,175);
-//            pclViewer->addPointCloud<pcl::PointXYZRGB>(voxelized_cloud,vox,"voxel");
-//            pclViewer->setPointCloudRenderingProperties(pcl::visualization::PCL_VISUALIZER_POINT_SIZE, 1, "voxel");
-//            vData = true;
-//        }
+        else if(event.getKeySym () == "v" && vData){
+            viewer->removePointCloud("voxel");
+            vData = false;
+        }
+        else if(event.getKeySym () == "v" && !vData){
+            viewer->removePointCloud("voxel");
+            pcl::visualization::PointCloudColorHandlerCustom<PointT> vox(voxelized_cloud,255,215,45);
+            pclViewer->addPointCloud<pcl::PointXYZRGB>(voxelized_cloud,vox,"voxel");
+            pclViewer->setPointCloudRenderingProperties(pcl::visualization::PCL_VISUALIZER_POINT_SIZE, 1, "voxel");
+            vData = true;
+        }
 
     }
     else{
@@ -161,7 +161,7 @@ int main (int argc, char** argv){
     ros::NodeHandle nh;
     ros::NodeHandle n("~");
 
-    pcl::io::loadPCDFile("/home/jp/devel/src/perception3d/screenshots/test_kleenex_translation3.pcd", *input_cloud);
+    pcl::io::loadPCDFile("/home/jp/devel/src/perception3d/screenshots/test_kleenex_translation.pcd", *input_cloud);
 
 
     FileAPI *fileAPI = new FileAPI(string("/home/jp/devel/src/perception3d/database"));
@@ -206,11 +206,7 @@ int main (int argc, char** argv){
     cout << "After TF (both) : " << endl  << vec4 << endl;
 
 
-
-
-
-
-    //voxelized_cloud = Recogn->transformAndVoxelizePointCloud(input_cloud,model_cloud,transformMatrix);
+    voxelized_cloud = Recogn->transformAndVoxelizePointCloud(input_cloud,model_cloud,transformMatrix.inverse());
 
     //PCL Viewer
     pclViewer->registerKeyboardCallback (keyboardEventOccurred, (void*)&pclViewer);
