@@ -37,6 +37,7 @@ pcl::PointCloud<pcl::PointXYZRGB>::Ptr input_cloud(new pcl::PointCloud<pcl::Poin
 pcl::PointCloud<pcl::PointXYZRGB>::Ptr model_cloud(new pcl::PointCloud<pcl::PointXYZRGB>);
 pcl::PointCloud<pcl::PointXYZRGB>::Ptr transformed_cloud(new pcl::PointCloud<pcl::PointXYZRGB>);
 pcl::PointCloud<pcl::PointXYZRGB>::Ptr voxelized_cloud(new pcl::PointCloud<pcl::PointXYZRGB>);
+pcl::PointCloud<pcl::PointXYZ>::Ptr armPose_cloud(new pcl::PointCloud<pcl::PointXYZ>);
 
 vector<tf::Transform> transforms;
 tf::Transform tf_transformed;
@@ -88,6 +89,11 @@ void printToPCLViewer(){
 //    Eigen::Vector4f c4;
 //    pcl::compute3DCentroid<PointT>(*transformed_cloud,c4);
 //    cout << "Voxelized : [" << c4[0] << " " << c4[1] << " " << c4[2] << "]" << endl;
+
+
+    pcl::visualization::PointCloudColorHandlerCustom<pcl::PointXYZ> arm_color (armPose_cloud, 255, 255, 0);
+    pclViewer->addPointCloud<pcl::PointXYZ> (armPose_cloud, arm_color, "arm");
+    pclViewer->setPointCloudRenderingProperties (pcl::visualization::PCL_VISUALIZER_POINT_SIZE, 6, "arm");
 }
 
 void keyboardEventOccurred (const pcl::visualization::KeyboardEvent &event, void* viewer_void)
@@ -155,27 +161,54 @@ int main (int argc, char** argv){
     ros::NodeHandle nh;
     ros::NodeHandle n("~");
 
-    pcl::io::loadPCDFile("/home/jp/devel/src/perception3d/screenshots/test_kleenex_translation2.pcd", *input_cloud);
+    pcl::io::loadPCDFile("/home/jp/devel/src/perception3d/screenshots/test_kleenex_translation3.pcd", *input_cloud);
 
 
     FileAPI *fileAPI = new FileAPI(string("/home/jp/devel/src/perception3d/database"));
     Object_recognition *Recogn = new Object_recognition();
 
-   // tf::Transform noMovement;
-   // noMovement.setIdentity();
-    //noMovement.setOrigin(tf::Vector3(0.02,-0.04,0.03));
-    //noMovement.setRotation(tf::Quaternion(angles::from_degrees(8),angles::from_degrees(-8),angles::from_degrees(12)));
+
     Eigen::Matrix4f transformMatrix;
-   // pcl_ros::transformAsMatrix(noMovement,transformMatrix);
-
-    //Eigen::Matrix4f transformMatrix;
-
     int selected_object_index = Recogn->OURCVFHRecognition(input_cloud, fileAPI, transformMatrix, transforms);
 
     ObjectBd obj = fileAPI->retrieveObjectFromHistogram(selected_object_index);
     model_cloud = obj.getPointCloud();
-
     pcl::transformPointCloud(*model_cloud,*transformed_cloud,transformMatrix);
+
+    vector<tf::Transform> tfVector = obj.getArmPose();
+    tf::Transform arm = tfVector.at(0);
+    pcl::PointXYZ pt(arm.getOrigin().getX(), arm.getOrigin().getY(), arm.getOrigin().getZ());
+    Eigen::Vector4f vec3(pt.x, pt.y, pt.z, 1);
+    armPose_cloud->push_back(pt);
+
+    Eigen::Vector4f vec(pt.x, pt.y, pt.z, 1);
+    Eigen::Vector4f v = transformMatrix * vec;
+    pcl::PointXYZ pt2(v(0),v(1),v(2));
+    armPose_cloud->push_back(pt2);
+
+    arm = transforms.at(2) * arm;
+    pcl::PointXYZ pt3(arm.getOrigin().getX(), arm.getOrigin().getY(), arm.getOrigin().getZ());
+    Eigen::Vector4f vec2(pt3.x, pt3.y, pt3.z, 1);
+    armPose_cloud->push_back(pt3);
+
+
+    tf::Transform world_arm = Recogn->transformKinectFrameToWorldFrame(arm);
+    tf::Transform kinect_arm = Recogn->transformWorldFrameToKinectFrame(world_arm);
+    pcl::PointXYZ pt4(kinect_arm.getOrigin().getX(), kinect_arm.getOrigin().getY(), kinect_arm.getOrigin().getZ());
+    Eigen::Vector4f vec4(pt4.x, pt4.y, pt4.z, 1);
+    armPose_cloud->push_back(pt4);
+
+
+
+    cout << "Before TF      : "  << endl  << vec3 << endl;
+    cout << "After TF (tf)  : "  << endl  << v    << endl;
+    cout << "After TF (mat) : "  << endl  << vec2 << endl;
+    cout << "After TF (both) : " << endl  << vec4 << endl;
+
+
+
+
+
 
     //voxelized_cloud = Recogn->transformAndVoxelizePointCloud(input_cloud,model_cloud,transformMatrix);
 
@@ -206,72 +239,39 @@ int main (int argc, char** argv){
         r.sleep();
         if(transforms.size() >= 3){
 
-            Eigen::Matrix4f src,target,transform;
-            pcl_ros::transformAsMatrix(transforms.at(0), src);
-            pcl_ros::transformAsMatrix(transforms.at(1), target);
-            pcl_ros::transformAsMatrix(transforms.at(2), transform);
+//            Eigen::Matrix4f src,target,transform;
+//            pcl_ros::transformAsMatrix(transforms.at(0), src);
+//            pcl_ros::transformAsMatrix(transforms.at(1), target);
+//            pcl_ros::transformAsMatrix(transforms.at(2), transform);
 
-            tf::Transform lol = transforms.at(2);
-            tf::Vector3 v = lol.getOrigin();
-            //lol.getOrigin().setValue(v.getX()/10,v.getY()/10,v.getZ()/10);
-
-
-            tf::Transform kinect_src = Recogn->transformKinectFrameToWorldFrame(transforms.at(0));
-            tf::Transform kinect_model= Recogn->transformKinectFrameToWorldFrame(transforms.at(1));
-            tf::Transform kinect_transform = Recogn->transformKinectFrameToWorldFrame(transforms.at(1) * transforms.at(2).inverse());
-
-            Eigen::Matrix4f src2,target2,transform2;
-            pcl_ros::transformAsMatrix(kinect_src, src2);
-            pcl_ros::transformAsMatrix(kinect_model, target2);
-            pcl_ros::transformAsMatrix(kinect_transform, transform2);
+//            tf::Transform lol = transforms.at(2);
+//            tf::Vector3 v = lol.getOrigin();
+//            //lol.getOrigin().setValue(v.getX()/10,v.getY()/10,v.getZ()/10);
 
 
-//            cout << "Source_RGB : "     << endl <<  src         << endl;
-//            cout << "Model_RGB : "      << endl <<  target      << endl;
-//            cout << "Transform_RGB : "  << endl <<  transform   << endl;
+//            tf::Transform kinect_src = Recogn->transformKinectFrameToWorldFrame(transforms.at(0));
+//            tf::Transform kinect_model= Recogn->transformKinectFrameToWorldFrame(transforms.at(1));
+//            tf::Transform kinect_transform = Recogn->transformKinectFrameToWorldFrame(transforms.at(1) * transforms.at(2).inverse());
 
-//            cout << "Source_WORLD : "     << endl <<  src2         << endl;
-//            cout << "Model_WORLD : "      << endl <<  target2      << endl;
-//            cout << "Transform_WORLD : "  << endl <<  transform2   << endl;
-
-
-//            tf::Transform good_tf = kinect_src.inverse() * kinect_model;
-//            Eigen::Matrix4f good_matrix;
-//            pcl_ros::transformAsMatrix(good_tf, good_matrix);
-//       //     cout << "Transform_WORLD_GOOD : "  << endl <<  good_matrix   << endl;
-
-//            Eigen::Matrix4f t; t.setZero(); t(0,2)=1; t(1,0)=-1; t(2,1)=-1; t(3,3)=1;
-//            Eigen::Vector4f vec1(src(0,3), src(1,3), src(2,3), 1);
-//            Eigen::Vector4f vec2 = vec1 + Eigen::Vector4f(transform(0,3), transform(1,3), transform(2,3), 0);
-
-//            Eigen::Vector4f res1 = t * vec1;
-//            Eigen::Vector4f res2 = t * vec2;
-//            Eigen::Vector4f transl = res2 - res1;
-
-//            tf::Vector3 vec_tf(transl(0),transl(1),transl(2));
-
-//            tf::Transform test_tf;
-//            test_tf.setIdentity();
-//            test_tf.setOrigin(vec_tf);
-
-
-
-
+//            Eigen::Matrix4f src2,target2,transform2;
+//            pcl_ros::transformAsMatrix(kinect_src, src2);
+//            pcl_ros::transformAsMatrix(kinect_model, target2);
+//            pcl_ros::transformAsMatrix(kinect_transform, transform2);
 
 
 //            br.sendTransform(tf::StampedTransform(transforms.at(0),ros::Time::now(),"camera_intern_frame","object_source_tf"));
 //            br.sendTransform(tf::StampedTransform(transforms.at(1),ros::Time::now(),"camera_intern_frame","object_model_tf"));
 //            br.sendTransform(tf::StampedTransform(transforms.at(1) * transforms.at(2),ros::Time::now(),"camera_intern_frame","object_transform_tf"));
-            br.sendTransform(tf::StampedTransform(tf_transformed,ros::Time::now(),"camera_rgb_frame","object_transform"));
-            br.sendTransform(tf::StampedTransform(tf_scan,ros::Time::now(), "camera_rgb_frame","object_scan"));
-            br.sendTransform(tf::StampedTransform(tf_model,ros::Time::now(),"camera_rgb_frame","object_model"));
+//            br.sendTransform(tf::StampedTransform(tf_transformed,ros::Time::now(),"camera_rgb_frame","object_transform"));
+//            br.sendTransform(tf::StampedTransform(tf_scan,ros::Time::now(), "camera_rgb_frame","object_scan"));
+//            br.sendTransform(tf::StampedTransform(tf_model,ros::Time::now(),"camera_rgb_frame","object_model"));
 
 
-            br.sendTransform(tf::StampedTransform(kinect_src,ros::Time::now(),"camera_rgb_frame","object_source_tf"));
-            br.sendTransform(tf::StampedTransform(kinect_model,ros::Time::now(),"camera_rgb_frame","object_model_tf"));
-            br.sendTransform(tf::StampedTransform(kinect_transform,ros::Time::now(),"camera_rgb_frame","object_transform_tf"));
+//            br.sendTransform(tf::StampedTransform(kinect_src,ros::Time::now(),"camera_rgb_frame","object_source_tf"));
+//            br.sendTransform(tf::StampedTransform(kinect_model,ros::Time::now(),"camera_rgb_frame","object_model_tf"));
+//            br.sendTransform(tf::StampedTransform(kinect_transform,ros::Time::now(),"camera_rgb_frame","object_transform_tf"));
 
-             br.sendTransform(tf::StampedTransform(tf_lol,ros::Time::now(),"camera_rgb_frame","object_transform_TEST"));
+             br.sendTransform(tf::StampedTransform(world_arm,ros::Time::now(),"camera_rgb_frame","object_arm_pose"));
         }
     }
     return 0;

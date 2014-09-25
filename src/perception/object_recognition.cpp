@@ -944,28 +944,36 @@ tf::Transform Object_recognition::tfFromEigen(Eigen::Matrix4f trans){
 }
 
 tf::Transform Object_recognition::transformKinectFrameToWorldFrame(tf::Transform kinect_tf){
-    tf::Vector3 vec = kinect_tf.getOrigin();
-    double yaw,pitch,roll;
-    kinect_tf.getBasis().getEulerYPR(yaw,pitch,roll);
+    Eigen::Matrix4f rotMatrix;
+    rotMatrix.setZero();
+    rotMatrix(0,2) = 1;
+    rotMatrix(1,0) = -1;
+    rotMatrix(2,1) = -1;
+    rotMatrix(3,3) = 1;
 
-    tf::Vector3 modified_vec = tf::Vector3(vec.getZ(), -vec.getX(), -vec.getY());
-    tf::Quaternion modified_rot;
-    modified_rot.setEuler(-pitch, -roll, yaw);
+    Eigen::Matrix4f kinect_matrix;
+    pcl_ros::transformAsMatrix(kinect_tf, kinect_matrix);
 
-    return tf::Transform(modified_rot,modified_vec);
+    Eigen::Matrix4f result_matrix = rotMatrix * kinect_matrix;
+
+    return tfFromEigen(result_matrix);
 }
 
 
 tf::Transform Object_recognition::transformWorldFrameToKinectFrame(tf::Transform world_tf){
-    tf::Vector3 vec = world_tf.getOrigin();
-    double yaw,pitch,roll;
-    world_tf.getBasis().getEulerYPR(yaw,pitch,roll);
+    Eigen::Matrix4f rotMatrix;
+    rotMatrix.setZero();
+    rotMatrix(0,1) = -1;
+    rotMatrix(1,2) = -1;
+    rotMatrix(2,0) = 1;
+    rotMatrix(3,3) = 1;
 
-    tf::Vector3 modified_vec = tf::Vector3(-vec.getY(), -vec.getZ(), vec.getX());
-    tf::Quaternion modified_rot;
-    modified_rot.setEuler(roll, -yaw, -pitch);
+    Eigen::Matrix4f world_matrix;
+    pcl_ros::transformAsMatrix(world_tf, world_matrix);
 
-    return tf::Transform(modified_rot,modified_vec);
+    Eigen::Matrix4f result_matrix = rotMatrix * world_matrix;
+
+    return tfFromEigen(result_matrix);
 }
 
 
