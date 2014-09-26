@@ -161,7 +161,7 @@ int main (int argc, char** argv){
     ros::NodeHandle nh;
     ros::NodeHandle n("~");
 
-    pcl::io::loadPCDFile("/home/jp/devel/src/perception3d/screenshots/test_kleenex_translation.pcd", *input_cloud);
+    pcl::io::loadPCDFile("/home/jp/devel/src/perception3d/screenshots/test_kleenex_translation4.pcd", *input_cloud);
 
 
     FileAPI *fileAPI = new FileAPI(string("/home/jp/devel/src/perception3d/database"));

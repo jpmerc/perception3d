@@ -75,6 +75,11 @@ void printToPCLViewer2(){
     pcl::visualization::PointCloudColorHandlerCustom<pcl::PointXYZ> sgurf_color (sgurf_pointcloud, 200, 110, 125);
     pclViewer->addPointCloud<pcl::PointXYZ> (sgurf_pointcloud, sgurf_color, "sgurfs");
     pclViewer->setPointCloudRenderingProperties (pcl::visualization::PCL_VISUALIZER_POINT_SIZE, 8, "sgurfs");
+
+    pcl::visualization::PointCloudColorHandlerCustom<PointT> tf(transformed_cloud,0,0,255);
+    pclViewer->addPointCloud<pcl::PointXYZRGB>(transformed_cloud,tf,"tf");
+    pclViewer->setPointCloudRenderingProperties(pcl::visualization::PCL_VISUALIZER_POINT_SIZE, 1, "tf");
+
 }
 
 void keyboardEventOccurred2 (const pcl::visualization::KeyboardEvent &event, void* viewer_void)
@@ -114,7 +119,7 @@ int main (int argc, char** argv){
     ros::NodeHandle nh;
     ros::NodeHandle n("~");
 
-    pcl::io::loadPCDFile("/home/jp/devel/src/perception3d/database/pointCloud/1.pcd", *input_cloud);
+    pcl::io::loadPCDFile("/home/jp/devel/src/perception3d/screenshots/test_kleenex_translation4.pcd", *input_cloud);
 
 
     FileAPI *fileAPI = new FileAPI(string("/home/jp/devel/src/perception3d/database"));
@@ -122,23 +127,33 @@ int main (int argc, char** argv){
 
 
     Recogn->makeCVFH(input_cloud, sgurf_tf, centroids, surfaces_pc);
+
+    Eigen::Vector4f c;
+    pcl::compute3DCentroid<PointT>(*input_cloud,c);
+
+
     for(int i=0; i < centroids.size(); i++){
         pcl::PointXYZ pt;
-        pt.x = centroids.at(i)[0];
-        pt.y = centroids.at(i)[1];
-        pt.z = centroids.at(i)[2];
+        Eigen::Vector3f cent = centroids.at(i);
+        pt.x = cent(0);
+        pt.y = cent(1);
+        pt.z = cent(2);
         centroid_pointcloud->push_back(pt);
 
         Eigen::Matrix4f tf_matrix = sgurf_tf.at(i);
-        pt.x = tf_matrix(0,3);
-        pt.y = tf_matrix(1,3);
-        pt.z = tf_matrix(2,3);
+        Eigen::Vector4f c4f(c(0), c(1), c(1), 1);
+        Eigen::Vector4f v = tf_matrix * c4f;
+        pt.x = v(0);
+        pt.y = v(1);
+        pt.z = v(2);
         sgurf_pointcloud->push_back(pt);
 
 
         cout << "Centroid_" << i << " : " << pt << endl;
         cout << "Sgurf_" << i << " : " << endl << tf_matrix << endl;
     }
+
+    pcl::transformPointCloud(*input_cloud,*transformed_cloud,sgurf_tf.at(0));
 
     //PCL Viewer
     pclViewer->registerKeyboardCallback (keyboardEventOccurred2, (void*)&pclViewer);
@@ -163,7 +178,7 @@ int main (int argc, char** argv){
             stringstream ss;
             ss << i;
             string frame = "SGURF_" + ss.str();
-            cout << "Sending " << frame << endl;
+            //cout << "Sending " << frame << endl;
             br.sendTransform(tf::StampedTransform(tf_, ros::Time::now(), "camera_rgb_frame", frame));
         }
         r.sleep();

@@ -113,6 +113,14 @@ public:
                                                                std::vector<Eigen::Vector3f> &p_centroid,
                                                                std::vector<pcl::PointIndices>& p_indices);
 
+
+    pcl::PointCloud<pcl::VFHSignature308>::Ptr calculateCVFH(pcl::PointCloud<PointT>::Ptr p_cloud,
+                                                               pcl::PointCloud<pcl::Normal>::Ptr p_normal,
+                                                               std::vector<Eigen::Matrix4f,Eigen::aligned_allocator<Eigen::Matrix4f> > &tf,
+                                                               std::vector<Eigen::Vector3f> &p_centroid,
+                                                               std::vector<pcl::PointIndices>& p_indices,
+                                                               std::vector<Eigen::Vector3f> &normal_centroids);
+
     void compute_normal(pcl::PointCloud<PointT>::Ptr p_cloud, pcl::PointCloud<pcl::Normal>::Ptr p_normal);
 
     int object_recon(pcl::PointCloud<PointT>::Ptr p_cloud,
