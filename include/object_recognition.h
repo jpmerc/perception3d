@@ -166,6 +166,12 @@ public:
                                                         std::vector<Eigen::Vector3f>& p_centroid,
                                                         std::vector<pcl::PointCloud<pcl::PointXYZRGB>::Ptr>& p_surface);
 
+    pcl::PointCloud<pcl::VFHSignature308>::Ptr makeCVFH(pcl::PointCloud<PointT>::Ptr p_ptr_cloud,
+                                                        std::vector<Eigen::Matrix4f,Eigen::aligned_allocator<Eigen::Matrix4f> > &tf_,
+                                                        std::vector<Eigen::Vector3f>& p_centroid,
+                                                        std::vector<pcl::PointCloud<pcl::PointXYZRGB>::Ptr>& p_surface,
+                                                        std::vector<Eigen::Vector3f>& p_normals);
+
     void pointCloudExtractor(pcl::PointCloud<pcl::PointXYZRGB>::Ptr p_cloud,
                              pcl::PointIndices p_indices,
                              pcl::PointCloud<pcl::PointXYZRGB>::Ptr p_cloudOut);

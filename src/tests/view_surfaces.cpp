@@ -44,6 +44,7 @@ boost::shared_ptr<pcl::visualization::PCLVisualizer> pclViewer (new pcl::visuali
 
 std::vector<Eigen::Matrix4f,Eigen::aligned_allocator<Eigen::Matrix4f> > sgurf_tf;
 std::vector<Eigen::Vector3f> centroids;
+std::vector<Eigen::Vector3f> normals;
 std::vector<pcl::PointCloud<pcl::PointXYZRGB>::Ptr> surfaces_pc;
 
 void printToPCLViewer2(){
@@ -126,7 +127,7 @@ int main (int argc, char** argv){
     Object_recognition *Recogn = new Object_recognition();
 
 
-    Recogn->makeCVFH(input_cloud, sgurf_tf, centroids, surfaces_pc);
+    Recogn->makeCVFH(input_cloud, sgurf_tf, centroids, surfaces_pc, normals);
 
     Eigen::Vector4f c;
     pcl::compute3DCentroid<PointT>(*input_cloud,c);
@@ -140,20 +141,33 @@ int main (int argc, char** argv){
         pt.z = cent(2);
         centroid_pointcloud->push_back(pt);
 
+
+//        Eigen::Vector3f norm = normals.at(i);
+//        pt.x = norm(0);
+//        pt.y = norm(1);
+//        pt.z = norm(2);
+//        centroid_pointcloud->push_back(pt);
+
+        pt.x = 0;
+        pt.y = 0;
+        pt.z = 0;
+        centroid_pointcloud->push_back(pt);
+
+
         Eigen::Matrix4f tf_matrix = sgurf_tf.at(i);
-        Eigen::Vector4f c4f(c(0), c(1), c(1), 1);
-        Eigen::Vector4f v = tf_matrix * c4f;
+        Eigen::Vector4f c4f(0,0,0,1);
+        Eigen::Vector4f v = tf_matrix.inverse() * c4f;
         pt.x = v(0);
         pt.y = v(1);
         pt.z = v(2);
         sgurf_pointcloud->push_back(pt);
 
 
-        cout << "Centroid_" << i << " : " << pt << endl;
-        cout << "Sgurf_" << i << " : " << endl << tf_matrix << endl;
+        cout << "Centroid_" << i << " : " << cent << endl;
+        cout << "Sgurf_" << i << " : " << endl << tf_matrix.inverse() << endl;
     }
 
-    pcl::transformPointCloud(*input_cloud,*transformed_cloud,sgurf_tf.at(0));
+    //pcl::transformPointCloud(*input_cloud,*transformed_cloud,sgurf_tf.at(0));
 
     //PCL Viewer
     pclViewer->registerKeyboardCallback (keyboardEventOccurred2, (void*)&pclViewer);

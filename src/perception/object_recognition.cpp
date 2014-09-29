@@ -823,14 +823,13 @@ std::vector<float> Object_recognition::histogramComparisonVector(pcl::PointCloud
 
 pcl::PointCloud<pcl::VFHSignature308>::Ptr Object_recognition::makeCVFH(pcl::PointCloud<PointT>::Ptr p_ptr_cloud)
 {
-    pcl::PointCloud<PointT>::Ptr cloud_us_ptr(new pcl::PointCloud<PointT>);
-    //computeUniformSampling(p_ptr_cloud, cloud_us_ptr);
-    pcl::PointCloud<pcl::Normal>::Ptr cloud_us_normal_ptr (new pcl::PointCloud<pcl::Normal>);
-    compute_normal(p_ptr_cloud, cloud_us_normal_ptr);
+    std::vector<Eigen::Matrix4f,Eigen::aligned_allocator<Eigen::Matrix4f> > tf_;
+    std::vector<Eigen::Vector3f> centroidVec;
+    std::vector<pcl::PointCloud<pcl::PointXYZRGB>::Ptr> indicesVec;
+    std::vector<Eigen::Vector3f> normals;
 
     pcl::PointCloud<pcl::VFHSignature308>::Ptr cloud_vfh_ptr (new pcl::PointCloud<pcl::VFHSignature308>);
-    std::vector<Eigen::Matrix4f,Eigen::aligned_allocator<Eigen::Matrix4f> > tf_;
-    cloud_vfh_ptr = calculateCVFH(p_ptr_cloud, cloud_us_normal_ptr,tf_);
+    cloud_vfh_ptr = makeCVFH(p_ptr_cloud, tf_, centroidVec, indicesVec, normals);
 
     return cloud_vfh_ptr;
 
@@ -845,12 +844,10 @@ pcl::PointCloud<pcl::VFHSignature308>::Ptr Object_recognition::makeCVFH(pcl::Poi
 {
     std::vector<Eigen::Vector3f> centroidVec;
     std::vector<pcl::PointCloud<pcl::PointXYZRGB>::Ptr> indicesVec;
+    std::vector<Eigen::Vector3f> normals;
 
     pcl::PointCloud<pcl::VFHSignature308>::Ptr cloud_vfh_ptr (new pcl::PointCloud<pcl::VFHSignature308>);
-    cloud_vfh_ptr = makeCVFH(p_ptr_cloud,
-                             tf_,
-                             centroidVec,
-                             indicesVec);
+    cloud_vfh_ptr = makeCVFH(p_ptr_cloud, tf_, centroidVec, indicesVec, normals);
 
     return cloud_vfh_ptr;
 
@@ -865,8 +862,22 @@ pcl::PointCloud<pcl::VFHSignature308>::Ptr Object_recognition::makeCVFH(pcl::Poi
                                                                         std::vector<Eigen::Vector3f>& p_centroid)
 {
     std::vector<pcl::PointCloud<pcl::PointXYZRGB>::Ptr> indicesVec;
+    std::vector<Eigen::Vector3f> normals;
     pcl::PointCloud<pcl::VFHSignature308>::Ptr cloud_vfh_ptr(new pcl::PointCloud<pcl::VFHSignature308>);
-    cloud_vfh_ptr = makeCVFH(p_ptr_cloud, tf_, p_centroid, indicesVec);
+    cloud_vfh_ptr = makeCVFH(p_ptr_cloud, tf_, p_centroid, indicesVec, normals);
+
+    return cloud_vfh_ptr;
+}
+
+
+pcl::PointCloud<pcl::VFHSignature308>::Ptr Object_recognition::makeCVFH(pcl::PointCloud<PointT>::Ptr p_ptr_cloud,
+                                                                        std::vector<Eigen::Matrix4f,Eigen::aligned_allocator<Eigen::Matrix4f> > &tf_,
+                                                                        std::vector<Eigen::Vector3f>& p_centroid,
+                                                                        std::vector<pcl::PointCloud<pcl::PointXYZRGB>::Ptr>& p_surface)
+{
+    std::vector<Eigen::Vector3f> normals;
+    pcl::PointCloud<pcl::VFHSignature308>::Ptr cloud_vfh_ptr(new pcl::PointCloud<pcl::VFHSignature308>);
+    cloud_vfh_ptr = makeCVFH(p_ptr_cloud, tf_, p_centroid, p_surface,normals);
 
     return cloud_vfh_ptr;
 }
@@ -882,7 +893,8 @@ pcl::PointCloud<pcl::VFHSignature308>::Ptr Object_recognition::makeCVFH(pcl::Poi
 pcl::PointCloud<pcl::VFHSignature308>::Ptr Object_recognition::makeCVFH(pcl::PointCloud<PointT>::Ptr p_ptr_cloud,
                                                                         std::vector<Eigen::Matrix4f,Eigen::aligned_allocator<Eigen::Matrix4f> > &tf_,
                                                                         std::vector<Eigen::Vector3f>& p_centroid,
-                                                                        std::vector<pcl::PointCloud<pcl::PointXYZRGB>::Ptr>& p_surface)
+                                                                        std::vector<pcl::PointCloud<pcl::PointXYZRGB>::Ptr>& p_surface,
+                                                                        std::vector<Eigen::Vector3f>& p_normals)
 {
     pcl::PointCloud<PointT>::Ptr cloud_us_ptr(new pcl::PointCloud<PointT>);
     //computeUniformSampling(p_ptr_cloud, cloud_us_ptr);
@@ -891,7 +903,7 @@ pcl::PointCloud<pcl::VFHSignature308>::Ptr Object_recognition::makeCVFH(pcl::Poi
 
     pcl::PointCloud<pcl::VFHSignature308>::Ptr cloud_vfh_ptr (new pcl::PointCloud<pcl::VFHSignature308>);
     std::vector<pcl::PointIndices> pointIndice_vec;
-    cloud_vfh_ptr = calculateCVFH(p_ptr_cloud, cloud_us_normal_ptr,tf_, p_centroid, pointIndice_vec);
+    cloud_vfh_ptr = calculateCVFH(p_ptr_cloud, cloud_us_normal_ptr,tf_, p_centroid, pointIndice_vec, p_normals);
 
     for(int i = 0; i < pointIndice_vec.size(); i++)
     {
