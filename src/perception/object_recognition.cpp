@@ -266,61 +266,10 @@ pcl::PointCloud<pcl::VFHSignature308>::Ptr Object_recognition::calculateCVFH(pcl
     std::vector<Eigen::Matrix4f,Eigen::aligned_allocator<Eigen::Matrix4f> > temp_tf;
 
 
-    ourCVFH.getTransforms(temp_tf);
+    ourCVFH.getTransforms(tf);
     ourCVFH.getCentroidClusters(p_centroid);
     ourCVFH.getCentroidNormalClusters(normal_centroids);
     ourCVFH.getClusterIndices(p_indice);
-
-    // TO UNCOMMENT AT SOME POINT
-//    for(int i=0; i<temp_tf.size(); i++){
-//        Eigen::Matrix4f matrix = temp_tf.at(i);
-//        matrix(0,3) = p_centroid[i](0);
-//        matrix(1,3) = p_centroid[i](1);
-//        matrix(2,3) = p_centroid[i](2);
-//        tf.push_back(matrix);
-//    }
-
-    tf = temp_tf;
-
-//    // Input Cloud Centroid
-//    Eigen::Vector4f c;
-//    pcl::compute3DCentroid<PointT>(*p_cloud,c);
-//    cout << "---PointCloud Centroid---" << endl;
-//    cout << "x: " <<  c[2] << endl;
-//    cout << "y: " << -c[0] << endl;
-//    cout << "z: " << -c[1] << endl;
-
-//    cout << "---Surface Centroids---" << endl;
-//    for(int i=0; i < p_centroid.size() ; i++){
-//        Eigen::Vector3f vec = p_centroid.at(i);
-//        cout << "x: " <<  vec[2] << endl;
-//        cout << "y: " << -vec[0] << endl;
-//        cout << "z: " << -vec[1] << endl;
-//        cout << endl;
-//    }
-
-//    cout << "---Normal Centroids---" << endl;
-//    for(int i=0; i < normal_centroids.size() ; i++){
-//        Eigen::Vector3f vec = normal_centroids.at(i);
-//        cout << "x: " <<  vec[2] << endl;
-//        cout << "y: " << -vec[0] << endl;
-//        cout << "z: " << -vec[1] << endl;
-//        cout << endl;
-//    }
-
-//    cout << "---Transforms---" << endl;
-//    for(int i=0; i < tf.size() ; i++){
-//        Eigen::Matrix4d md(tf.at(i).cast<double>());
-//        Eigen::Affine3d affine(md);
-//        tf::Transform transform_;
-//        tf::transformEigenToTF(affine,transform_);
-//        tf::Vector3 vec = transform_.getOrigin();
-//        cout << "x: " <<  vec.getZ() << endl;
-//        cout << "y: " << -vec.getX() << endl;
-//        cout << "z: " << -vec.getY() << endl;
-//        cout << endl;
-//    }
-//    std::cout << "CVFH size = " << returnCloud->size() << std::endl;
 
     return returnCloud;
 

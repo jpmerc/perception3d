@@ -33,6 +33,7 @@ bool sData = true;
 bool tData = true;
 bool mData = true;
 pcl::PointCloud<pcl::PointXYZRGB>::Ptr input_cloud(new pcl::PointCloud<pcl::PointXYZRGB>);
+pcl::PointCloud<pcl::PointXYZRGB>::Ptr input_cloud2(new pcl::PointCloud<pcl::PointXYZRGB>);
 pcl::PointCloud<pcl::PointXYZRGB>::Ptr model_cloud(new pcl::PointCloud<pcl::PointXYZRGB>);
 pcl::PointCloud<pcl::PointXYZRGB>::Ptr transformed_cloud(new pcl::PointCloud<pcl::PointXYZRGB>);
 pcl::PointCloud<pcl::PointXYZ>::Ptr centroid_pointcloud(new pcl::PointCloud<pcl::PointXYZ>);
@@ -46,6 +47,12 @@ std::vector<Eigen::Matrix4f,Eigen::aligned_allocator<Eigen::Matrix4f> > sgurf_tf
 std::vector<Eigen::Vector3f> centroids;
 std::vector<Eigen::Vector3f> normals;
 std::vector<pcl::PointCloud<pcl::PointXYZRGB>::Ptr> surfaces_pc;
+
+std::vector<Eigen::Matrix4f,Eigen::aligned_allocator<Eigen::Matrix4f> > sgurf_tf2;
+std::vector<Eigen::Vector3f> centroids2;
+std::vector<Eigen::Vector3f> normals2;
+std::vector<pcl::PointCloud<pcl::PointXYZRGB>::Ptr> surfaces_pc2;
+
 
 void printToPCLViewer2(){
     pclViewer->removeAllPointClouds();
@@ -122,12 +129,28 @@ int main (int argc, char** argv){
 
     pcl::io::loadPCDFile("/home/jp/devel/src/perception3d/screenshots/test_kleenex_translation4.pcd", *input_cloud);
 
+    Eigen::Matrix4f t; t.setZero(); t(0,0)=1; t(1,1)=1; t(2,2)=1; t(3,3)=1;
+    t(0,3)=0.2; // X translation of 20 cm
+    pcl::transformPointCloud(*input_cloud,*input_cloud2,t);
+
+
 
     FileAPI *fileAPI = new FileAPI(string("/home/jp/devel/src/perception3d/database"));
     Object_recognition *Recogn = new Object_recognition();
 
 
-    Recogn->makeCVFH(input_cloud, sgurf_tf, centroids, surfaces_pc, normals);
+    Recogn->makeCVFH(input_cloud,  sgurf_tf,  centroids,  surfaces_pc,  normals );
+    Recogn->makeCVFH(input_cloud2, sgurf_tf2, centroids2, surfaces_pc2, normals2);
+
+
+
+    Eigen::Matrix4f translationMatrix = sgurf_tf.at(0).inverse() * sgurf_tf2.at(0);
+    cout << endl << translationMatrix.inverse() << endl;
+
+
+
+
+
 
     Eigen::Vector4f c;
     pcl::compute3DCentroid<PointT>(*input_cloud,c);
@@ -141,19 +164,6 @@ int main (int argc, char** argv){
         pt.z = cent(2);
         centroid_pointcloud->push_back(pt);
 
-
-//        Eigen::Vector3f norm = normals.at(i);
-//        pt.x = norm(0);
-//        pt.y = norm(1);
-//        pt.z = norm(2);
-//        centroid_pointcloud->push_back(pt);
-
-        pt.x = 0;
-        pt.y = 0;
-        pt.z = 0;
-        centroid_pointcloud->push_back(pt);
-
-
         Eigen::Matrix4f tf_matrix = sgurf_tf.at(i);
         Eigen::Vector4f c4f(0,0,0,1);
         Eigen::Vector4f v = tf_matrix.inverse() * c4f;
@@ -161,10 +171,6 @@ int main (int argc, char** argv){
         pt.y = v(1);
         pt.z = v(2);
         sgurf_pointcloud->push_back(pt);
-
-
-        cout << "Centroid_" << i << " : " << cent << endl;
-        cout << "Sgurf_" << i << " : " << endl << tf_matrix.inverse() << endl;
     }
 
     //pcl::transformPointCloud(*input_cloud,*transformed_cloud,sgurf_tf.at(0));
