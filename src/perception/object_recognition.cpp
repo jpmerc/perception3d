@@ -70,6 +70,15 @@ double Object_recognition::mergePointCVFH(pcl::PointCloud<PointT>::Ptr p_cloud_s
     return mergePointCVFH(p_cloud_src,p_cloud_target,transform_guess,time);
 }
 
+
+
+/*
+  Registration of 2 clouds with ICP. Returns the fitness score (sum of squared distances from the source to the target)
+  param[in]     p_cloud_src     The source pointcloud.
+  param[in]     p_cloud_target  The target pointcloud.
+  param[in/out] transform_guess Transform used as a guess in ICP. The final transformation (inverse : target to source) of ICP is saved in this variable.
+  param[out]    executionTime   Time spent executing this function
+  */
 double Object_recognition::mergePointCVFH(pcl::PointCloud<PointT>::Ptr p_cloud_src,
                                           pcl::PointCloud<PointT>::Ptr p_cloud_target,
                                           Eigen::Matrix4f &transform_guess,
@@ -88,12 +97,12 @@ double Object_recognition::mergePointCVFH(pcl::PointCloud<PointT>::Ptr p_cloud_s
     icp.align(*Final,transform_guess);
     m_icp_fitness_score = icp.getFitnessScore();
 
-    ros::Time end = ros::Time::now();
-
-    executionTime = (end-begin).toSec();
     transform_guess = icp.getFinalTransformation().inverse();
     std::cout << "ICP Final Transform --> x: " << transform_guess(0,3) << " y: " << transform_guess(1,3) << " z: " << transform_guess(2,3)
               << " Score: " <<  m_icp_fitness_score << std::endl;
+
+    ros::Time end = ros::Time::now();
+    executionTime = (end-begin).toSec();
     return m_icp_fitness_score;
 }
 
@@ -418,6 +427,7 @@ int Object_recognition::OURCVFHRecognition(pcl::PointCloud<PointT>::Ptr in_pc, F
 
         // Get object hypothesis
         ObjectBd obj_hypothesis = object_hypotheses.at(i);
+        std::vector<Eigen::Matrix4f,Eigen::aligned_allocator<Eigen::Matrix4f> > hypotheses_surface_transform = obj_hypothesis.getTransforms();
 
         // Get hypothesis surface number
         pcl::PointCloud<pcl::VFHSignature308>::Ptr hypothesis_sig(new pcl::PointCloud<pcl::VFHSignature308>);
@@ -426,23 +436,16 @@ int Object_recognition::OURCVFHRecognition(pcl::PointCloud<PointT>::Ptr in_pc, F
 
         // Get initial transformation for ICP from the transforms of the 2 surfaces
         Eigen::Matrix4f input_matrix       = input_surface_transforms.at(input_surface_number);
-        Eigen::Matrix4f hypothesis_matrix  = obj_hypothesis.getTransforms().at(hypothesis_surface_number);
+        Eigen::Matrix4f hypothesis_matrix  = hypotheses_surface_transform.at(hypothesis_surface_number);
 
         tf::Transform input_tf = tfFromEigen(input_matrix);
         tf::Transform hypothesis_tf = tfFromEigen(hypothesis_matrix);
 
         // Initial guess (input -> hypothesis)
-       tf::Transform initial_guess_tf = input_tf.inverse() * hypothesis_tf;
-       // tf::Vector3 vec = hypothesis_tf.getOrigin() - input_tf.getOrigin();
-       //tf::Transform initial_guess_tf = tf::Transform(input_tf.getBasis().transposeTimes(hypothesis_tf.getBasis()),vec);
-        Eigen::Matrix4f initial_guess_matrix;
-        pcl_ros::transformAsMatrix(initial_guess_tf,initial_guess_matrix);
-        //Eigen::Matrix4f initial_guess_matrix2 = initial_guess_matrix;
+        Eigen::Matrix4f initial_guess_matrix = input_matrix.inverse() * hypothesis_matrix;
 
-
-        std::cout << "Transformation Initial Guess -->";
-        std::cout << " x: " << initial_guess_matrix(0,3) << " y: " << initial_guess_matrix(1,3) << " z: " << initial_guess_matrix(2,3) << std::endl;
-
+       // std::cout << "Transformation Initial Guess -->";
+       // std::cout << " x: " << initial_guess_matrix(0,3) << " y: " << initial_guess_matrix(1,3) << " z: " << initial_guess_matrix(2,3) << std::endl;
 
         // ICP
         double execution_time = 0;
@@ -931,6 +934,19 @@ tf::Transform Object_recognition::transformKinectFrameToWorldFrame(tf::Transform
     return tfFromEigen(result_matrix);
 }
 
+tf::Transform Object_recognition::transformKinectFrameToWorldFrame(Eigen::Matrix4f kinect_matrix){
+    Eigen::Matrix4f rotMatrix;
+    rotMatrix.setZero();
+    rotMatrix(0,2) = 1;
+    rotMatrix(1,0) = -1;
+    rotMatrix(2,1) = -1;
+    rotMatrix(3,3) = 1;
+
+    Eigen::Matrix4f result_matrix = rotMatrix * kinect_matrix;
+
+    return tfFromEigen(result_matrix);
+}
+
 
 tf::Transform Object_recognition::transformWorldFrameToKinectFrame(tf::Transform world_tf){
     Eigen::Matrix4f rotMatrix;
@@ -947,6 +963,20 @@ tf::Transform Object_recognition::transformWorldFrameToKinectFrame(tf::Transform
 
     return tfFromEigen(result_matrix);
 }
+
+tf::Transform Object_recognition::transformWorldFrameToKinectFrame(Eigen::Matrix4f world_matrix){
+    Eigen::Matrix4f rotMatrix;
+    rotMatrix.setZero();
+    rotMatrix(0,1) = -1;
+    rotMatrix(1,2) = -1;
+    rotMatrix(2,0) = 1;
+    rotMatrix(3,3) = 1;
+
+    Eigen::Matrix4f result_matrix = rotMatrix * world_matrix;
+
+    return tfFromEigen(result_matrix);
+}
+
 
 
 //Eigen::Matrix4f Object_recognition::mergePointClouds(   pcl::PointCloud<pcl::FPFHSignature33>::Ptr f_src,

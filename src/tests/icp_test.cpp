@@ -155,6 +155,37 @@ void keyboardEventOccurred (const pcl::visualization::KeyboardEvent &event, void
 }
 
 
+void testArm(ObjectBd obj,Eigen::Matrix4f transformMatrix,Object_recognition *Recogn){
+        vector<tf::Transform> tfVector = obj.getArmPose();
+        tf::Transform arm = tfVector.at(0);
+        pcl::PointXYZ pt(arm.getOrigin().getX(), arm.getOrigin().getY(), arm.getOrigin().getZ());
+        Eigen::Vector4f vec3(pt.x, pt.y, pt.z, 1);
+        armPose_cloud->push_back(pt);
+
+        Eigen::Vector4f vec(pt.x, pt.y, pt.z, 1);
+        Eigen::Vector4f v = transformMatrix * vec;
+        pcl::PointXYZ pt2(v(0),v(1),v(2));
+        armPose_cloud->push_back(pt2);
+
+        arm = transforms.at(2) * arm;
+        pcl::PointXYZ pt3(arm.getOrigin().getX(), arm.getOrigin().getY(), arm.getOrigin().getZ());
+        Eigen::Vector4f vec2(pt3.x, pt3.y, pt3.z, 1);
+        armPose_cloud->push_back(pt3);
+
+
+        tf::Transform world_arm = Recogn->transformKinectFrameToWorldFrame(arm);
+        tf::Transform kinect_arm = Recogn->transformWorldFrameToKinectFrame(world_arm);
+        pcl::PointXYZ pt4(kinect_arm.getOrigin().getX(), kinect_arm.getOrigin().getY(), kinect_arm.getOrigin().getZ());
+        Eigen::Vector4f vec4(pt4.x, pt4.y, pt4.z, 1);
+        armPose_cloud->push_back(pt4);
+
+        cout << "Before TF      : "  << endl  << vec3 << endl;
+        cout << "After TF (tf)  : "  << endl  << v    << endl;
+        cout << "After TF (mat) : "  << endl  << vec2 << endl;
+        cout << "After TF (both) : " << endl  << vec4 << endl;
+
+}
+
 int main (int argc, char** argv){
     // Initialize ROS
     ros::init (argc, argv, "snapshot");
@@ -175,36 +206,7 @@ int main (int argc, char** argv){
     model_cloud = obj.getPointCloud();
     pcl::transformPointCloud(*model_cloud,*transformed_cloud,transformMatrix);
 
-    vector<tf::Transform> tfVector = obj.getArmPose();
-    tf::Transform arm = tfVector.at(0);
-    pcl::PointXYZ pt(arm.getOrigin().getX(), arm.getOrigin().getY(), arm.getOrigin().getZ());
-    Eigen::Vector4f vec3(pt.x, pt.y, pt.z, 1);
-    armPose_cloud->push_back(pt);
-
-    Eigen::Vector4f vec(pt.x, pt.y, pt.z, 1);
-    Eigen::Vector4f v = transformMatrix * vec;
-    pcl::PointXYZ pt2(v(0),v(1),v(2));
-    armPose_cloud->push_back(pt2);
-
-    arm = transforms.at(2) * arm;
-    pcl::PointXYZ pt3(arm.getOrigin().getX(), arm.getOrigin().getY(), arm.getOrigin().getZ());
-    Eigen::Vector4f vec2(pt3.x, pt3.y, pt3.z, 1);
-    armPose_cloud->push_back(pt3);
-
-
-    tf::Transform world_arm = Recogn->transformKinectFrameToWorldFrame(arm);
-    tf::Transform kinect_arm = Recogn->transformWorldFrameToKinectFrame(world_arm);
-    pcl::PointXYZ pt4(kinect_arm.getOrigin().getX(), kinect_arm.getOrigin().getY(), kinect_arm.getOrigin().getZ());
-    Eigen::Vector4f vec4(pt4.x, pt4.y, pt4.z, 1);
-    armPose_cloud->push_back(pt4);
-
-
-
-    cout << "Before TF      : "  << endl  << vec3 << endl;
-    cout << "After TF (tf)  : "  << endl  << v    << endl;
-    cout << "After TF (mat) : "  << endl  << vec2 << endl;
-    cout << "After TF (both) : " << endl  << vec4 << endl;
-
+    // testArm(obj,transformMatrix,Recogn);
 
     voxelized_cloud = Recogn->transformAndVoxelizePointCloud(input_cloud,model_cloud,transformMatrix.inverse());
 
@@ -218,13 +220,6 @@ int main (int argc, char** argv){
     renderWindow->Render();
 
     printToPCLViewer();
-
-    model_centroid(3)=1;
-    Eigen::Vector4f model_centroid2 =  transformMatrix * model_centroid;
-    tf::Vector3 v8(model_centroid2[2],-model_centroid2[0],-model_centroid2[1]);
-    tf::Transform tf_lol;
-    tf_lol.setIdentity();
-    tf_lol.setOrigin(v8);
 
     tf::TransformBroadcaster br;
 
@@ -267,7 +262,7 @@ int main (int argc, char** argv){
 //            br.sendTransform(tf::StampedTransform(kinect_model,ros::Time::now(),"camera_rgb_frame","object_model_tf"));
 //            br.sendTransform(tf::StampedTransform(kinect_transform,ros::Time::now(),"camera_rgb_frame","object_transform_tf"));
 
-             br.sendTransform(tf::StampedTransform(world_arm,ros::Time::now(),"camera_rgb_frame","object_arm_pose"));
+             //br.sendTransform(tf::StampedTransform(world_arm,ros::Time::now(),"camera_rgb_frame","object_arm_pose"));
         }
     }
     return 0;

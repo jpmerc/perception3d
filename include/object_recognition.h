@@ -190,8 +190,9 @@ public:
     tf::Transform tfFromEigen(Eigen::Matrix4f trans);
 
     tf::Transform transformKinectFrameToWorldFrame(tf::Transform kinect_tf);
+    tf::Transform transformKinectFrameToWorldFrame(Eigen::Matrix4f kinect_matrix);
     tf::Transform transformWorldFrameToKinectFrame(tf::Transform world_tf);
-
+    tf::Transform transformWorldFrameToKinectFrame(Eigen::Matrix4f world_matrix);
 
     double m_rmse_recognition_threshold;
 

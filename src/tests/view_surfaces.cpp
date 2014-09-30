@@ -63,6 +63,13 @@ void printToPCLViewer2(){
     pcl::compute3DCentroid<PointT>(*input_cloud,c);
     cout << "Source Centroid : [" << c[0] << " " << c[1] << " " << c[2] << "]" << endl;
 
+
+    // Transformed input cloud to test transformation between reference frames
+    pcl::visualization::PointCloudColorHandlerCustom<PointT> in2(input_cloud2,255,0,0);
+    pclViewer->addPointCloud<pcl::PointXYZRGB>(input_cloud2,in2,"source_tf");
+    pclViewer->setPointCloudRenderingProperties (pcl::visualization::PCL_VISUALIZER_POINT_SIZE, 1, "source_tf");
+
+
     for(int i=0; i < surfaces_pc.size(); i++){
         pcl::PointCloud<PointT>::Ptr pc = surfaces_pc[i];
         pcl::visualization::PointCloudColorHandlerRandom<PointT> randColor(pc);
@@ -130,7 +137,10 @@ int main (int argc, char** argv){
     pcl::io::loadPCDFile("/home/jp/devel/src/perception3d/screenshots/test_kleenex_translation4.pcd", *input_cloud);
 
     Eigen::Matrix4f t; t.setZero(); t(0,0)=1; t(1,1)=1; t(2,2)=1; t(3,3)=1;
-    t(0,3)=0.2; // X translation of 20 cm
+    t(0,3)= 0.2; // X translation of 20 cm
+    t(1,3)= 0.5;
+
+
     pcl::transformPointCloud(*input_cloud,*input_cloud2,t);
 
 
@@ -143,13 +153,15 @@ int main (int argc, char** argv){
     Recogn->makeCVFH(input_cloud2, sgurf_tf2, centroids2, surfaces_pc2, normals2);
 
 
+    for(int i=0; i < sgurf_tf.size(); i++){
+        stringstream ss;
+        ss << i;
+        string frame = "SGURF_" + ss.str() + " : ";
+        cout << frame << endl << sgurf_tf.at(i) << endl;
+    }
 
     Eigen::Matrix4f translationMatrix = sgurf_tf.at(0).inverse() * sgurf_tf2.at(0);
     cout << endl << translationMatrix.inverse() << endl;
-
-
-
-
 
 
     Eigen::Vector4f c;
@@ -170,7 +182,16 @@ int main (int argc, char** argv){
         pt.x = v(0);
         pt.y = v(1);
         pt.z = v(2);
-        sgurf_pointcloud->push_back(pt);
+        centroid_pointcloud->push_back(pt);
+
+        v = translationMatrix.inverse() * v;
+        pt.x = v(0);
+        pt.y = v(1);
+        pt.z = v(2);
+        centroid_pointcloud->push_back(pt);
+
+
+
     }
 
     //pcl::transformPointCloud(*input_cloud,*transformed_cloud,sgurf_tf.at(0));
@@ -193,8 +214,7 @@ int main (int argc, char** argv){
         pclViewer->spinOnce (100);
         ros::spinOnce();
         for(int i=0; i < sgurf_tf.size(); i++){
-            tf::Transform tf_ =  Recogn->tfFromEigen(sgurf_tf.at(i));
-            tf_ = Recogn->transformKinectFrameToWorldFrame(tf_);
+            tf::Transform tf_ = Recogn->transformKinectFrameToWorldFrame(sgurf_tf.at(i).inverse());
             stringstream ss;
             ss << i;
             string frame = "SGURF_" + ss.str();
