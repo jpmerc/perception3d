@@ -46,6 +46,7 @@
 #include <numeric>
 #include <pcl/features/normal_3d.h>
 #include <pcl/registration/icp_nl.h>
+#include <pcl/surface/mls.h>
 
 typedef pcl::PointXYZRGB PointT;
 
@@ -193,6 +194,8 @@ public:
     tf::Transform transformKinectFrameToWorldFrame(Eigen::Matrix4f kinect_matrix);
     tf::Transform transformWorldFrameToKinectFrame(tf::Transform world_tf);
     tf::Transform transformWorldFrameToKinectFrame(Eigen::Matrix4f world_matrix);
+
+    pcl::PointCloud<PointT>::Ptr smoothSurfaces(pcl::PointCloud<PointT>::Ptr cloud_to_smooth);
 
     double m_rmse_recognition_threshold;
 

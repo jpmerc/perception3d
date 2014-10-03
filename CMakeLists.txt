@@ -142,3 +142,7 @@ add_executable(view_surfaces src/tests/view_surfaces.cpp)
 target_link_libraries(view_surfaces ${catkin_LIBRARIES} ${PCL_LIBRARIES} lperception)
 add_dependencies(view_surfaces perception3d_gencpp)
 
+add_executable(upsampling src/tests/upsampling.cpp)
+target_link_libraries(upsampling ${catkin_LIBRARIES} ${PCL_LIBRARIES} lperception)
+add_dependencies(upsampling perception3d_gencpp)
+

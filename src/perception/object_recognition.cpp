@@ -978,6 +978,45 @@ tf::Transform Object_recognition::transformWorldFrameToKinectFrame(Eigen::Matrix
 }
 
 
+/*
+  Approximates the surface of an object pointcloud and fill holes
+  param[in] cloud_to_smooth The pointcloud to smooth and upsample
+  */
+pcl::PointCloud<PointT>::Ptr Object_recognition::smoothSurfaces(pcl::PointCloud<PointT>::Ptr cloud_to_smooth){
+
+    // Surface Approximation
+    pcl::MovingLeastSquares<PointT, PointT> mls;
+    pcl::PointCloud<PointT>::Ptr cloud_with_approximated_surface(new pcl::PointCloud<PointT>);
+    mls.setInputCloud (cloud_to_smooth);
+    mls.setSearchRadius (0.04);
+    mls.setPolynomialFit (true);
+    mls.setPolynomialOrder (2);
+    mls.process (*cloud_with_approximated_surface);
+
+
+    // Upsampling
+    pcl::PointCloud<PointT>::Ptr cloud_upsampled(new pcl::PointCloud<PointT>);
+    pcl::MovingLeastSquares<PointT, PointT> mls2;
+    mls2.setInputCloud (cloud_with_approximated_surface);
+    mls2.setSearchRadius (0.02);
+    mls2.setPolynomialFit (true);
+    mls2.setPolynomialOrder (2);
+    mls2.setUpsamplingMethod (pcl::MovingLeastSquares<PointT, PointT>::SAMPLE_LOCAL_PLANE);
+    mls2.setUpsamplingRadius (0.01);
+    mls2.setUpsamplingStepSize (0.005);
+    mls2.process (*cloud_upsampled);
+
+    // filter the upsampled pointcloud to get the same point density as all other pointclouds
+    pcl::VoxelGrid<PointT> vx_grid;
+    vx_grid.setInputCloud (cloud_upsampled);
+    double leaf_size = 0.005;
+    vx_grid.setLeafSize (leaf_size, leaf_size, leaf_size);
+    pcl::PointCloud<PointT>::Ptr cloud_filtered(new pcl::PointCloud<PointT>);
+    vx_grid.filter (*cloud_filtered);
+
+    return cloud_filtered;
+}
+
 
 //Eigen::Matrix4f Object_recognition::mergePointClouds(   pcl::PointCloud<pcl::FPFHSignature33>::Ptr f_src,
 //                                                        pcl::PointCloud<pcl::FPFHSignature33>::Ptr f_target,

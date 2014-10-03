@@ -200,6 +200,8 @@ int main (int argc, char** argv){
 
 
     Eigen::Matrix4f transformMatrix;
+
+    input_cloud = Recogn->smoothSurfaces(input_cloud);
     int selected_object_index = Recogn->OURCVFHRecognition(input_cloud, fileAPI, transformMatrix, transforms);
 
     ObjectBd obj = fileAPI->retrieveObjectFromHistogram(selected_object_index);

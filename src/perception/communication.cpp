@@ -169,6 +169,7 @@ void Communication::spin_once()
 void Communication::train(bool saveJacoPose, bool viewTF){
 
     pcl::PointCloud<PointT>::Ptr scan_pc = m_object_ex_ptr->getObjectToGrasp();
+    scan_pc = m_object_ex_ptr->m_object_recognition.smoothSurfaces(scan_pc);
 
     selected_object_index = m_object_ex_ptr->m_object_recognition.OURCVFHRecognition(scan_pc, m_api_ptr, calculated_object_transform, transforms_vector);
 
@@ -260,7 +261,10 @@ void Communication::train(bool saveJacoPose, bool viewTF){
 
 void Communication::repeat(){
 
-    selected_object_index = m_object_ex_ptr->m_object_recognition.OURCVFHRecognition(m_object_ex_ptr->getObjectToGrasp(), m_api_ptr, calculated_object_transform, transforms_vector);
+    pcl::PointCloud<PointT>::Ptr scan_pc = m_object_ex_ptr->getObjectToGrasp();
+    scan_pc = m_object_ex_ptr->m_object_recognition.smoothSurfaces(scan_pc);
+
+    selected_object_index = m_object_ex_ptr->m_object_recognition.OURCVFHRecognition(scan_pc, m_api_ptr, calculated_object_transform, transforms_vector);
 
 
     ObjectBd obj = m_api_ptr->retrieveObjectFromHistogram(selected_object_index);
@@ -272,8 +276,10 @@ void Communication::repeat(){
     }
 
     // Arm position -> object centroid (in training)
-    tf::Transform arm_pose_kinect_frame = obj.getArmPose().at(graspIndex);
-    tf::Transform arm_pose_world_frame = m_object_ex_ptr->m_object_recognition.transformKinectFrameToWorldFrame(arm_pose_kinect_frame);
+    Eigen::Matrix4f arm_pose_kinect_matrix;
+    pcl_ros::transformAsMatrix(obj.getArmPose().at(graspIndex),arm_pose_kinect_matrix);
+    Eigen::Matrix4f transformation = calculated_object_transform * arm_pose_kinect_matrix;
+    tf::Transform arm_pose_world_frame = m_object_ex_ptr->m_object_recognition.transformKinectFrameToWorldFrame(transformation);
 
 
     // Pose of database object in scene when it was trained (The reference is always the original pointcloud)
