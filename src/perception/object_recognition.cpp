@@ -66,7 +66,7 @@ double Object_recognition::mergePointCVFH(pcl::PointCloud<PointT>::Ptr p_cloud_s
                                           pcl::PointCloud<PointT>::Ptr p_cloud_target,
                                           Eigen::Matrix4f &transform_guess)
 {
-    double time;
+    double time = 0;
     return mergePointCVFH(p_cloud_src,p_cloud_target,transform_guess,time);
 }
 
@@ -97,12 +97,15 @@ double Object_recognition::mergePointCVFH(pcl::PointCloud<PointT>::Ptr p_cloud_s
     icp.align(*Final,transform_guess);
     m_icp_fitness_score = icp.getFitnessScore();
 
-    transform_guess = icp.getFinalTransformation().inverse();
-    std::cout << "ICP Final Transform --> x: " << transform_guess(0,3) << " y: " << transform_guess(1,3) << " z: " << transform_guess(2,3)
-              << " Score: " <<  m_icp_fitness_score << std::endl;
+    transform_guess = icp.getFinalTransformation().inverse();  
 
     ros::Time end = ros::Time::now();
     executionTime = (end-begin).toSec();
+
+    std::cout << "ICP Final Transform --> x: " << transform_guess(0,3) << " y: " << transform_guess(1,3) << " z: " << transform_guess(2,3)
+              << " Score: " <<  m_icp_fitness_score << " Time: " << executionTime << " seconds" << std::endl;
+
+
     return m_icp_fitness_score;
 }
 
@@ -449,6 +452,8 @@ int Object_recognition::OURCVFHRecognition(pcl::PointCloud<PointT>::Ptr in_pc, F
 
         // ICP
         double execution_time = 0;
+
+        std::cout << "Signature Distance = " << distances.at(i) << std::endl;
         double icp_score = mergePointCVFH(in_pc, obj_hypothesis.getPointCloud(), initial_guess_matrix, execution_time);
         //double icp_score2 = mergePointCVFH_PointToPlane(in_pc, obj_hypothesis.getPointCloud(), initial_guess_matrix2, execution_time);
 
@@ -479,7 +484,7 @@ int Object_recognition::OURCVFHRecognition(pcl::PointCloud<PointT>::Ptr in_pc, F
         if(distances.at(i) < smallestSignatureDistance) smallestSignatureDistance = distances.at(i);
     }
 
-   // printf("It took %.4f seconds to test %d hypotheses with ICP \n,", total_time, int(object_hypotheses.size()));
+    std::cout << "It took " << total_time << " seconds to test " << object_hypotheses.size() << " hypotheses with ICP " << std::endl;
 
     std::cout << "ICP : -->" << "Score : " << smallestScore << "  Recognized : " << recognized <<
                  "  Distance(sig) : " << smallestSignatureDistance <<  std::endl;
@@ -683,7 +688,7 @@ std::vector<std::vector<int> > Object_recognition::getNNSurfaces(pcl::PointCloud
     for(int i = 0; i < p_cloud->size(); i++)
     {
         kdtree->nearestKSearch(p_cloud->at(i), NNnumber, index, sqrDistance);
-        for(int j=0; j<index.size(); j++){
+        for(int j=0; j < index.size(); j++){
             input_surface_index.push_back(i);
             output_histogram_index.push_back(index.at(j));
             distances.push_back(sqrDistance.at(j));

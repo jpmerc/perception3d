@@ -199,7 +199,7 @@ void Communication::train(bool saveJacoPose, bool viewTF){
     }
 
     else{
-        object_pointcloud = m_object_ex_ptr->getObjectToGrasp();
+        object_pointcloud = scan_pc;
 
         // **************  OBJECT POSE (Change later for position of the object in the map)  ********************** camera_rgb_frame -> detected_object_centroids
         tf::StampedTransform object_tf = m_object_ex_ptr->getCentroidPositionRGBFrame();
