@@ -311,8 +311,23 @@ void JacoCustom::moveAlongAxis(std::string axis, double distance){
   We need this publisher because the move command need to be in a separate queue.
   */
 
-void JacoCustom::moveitPlugin(geometry_msgs::PoseStamped p_pose)
-{
-
+void JacoCustom::moveitPlugin(geometry_msgs::PoseStamped p_pose){
     moveitPublisher.publish(p_pose);
+}
+
+
+void JacoCustom::moveitPlugin(tf::StampedTransform tf_pose){
+
+    geometry_msgs::Transform g_tf;
+    tf::transformTFToMsg(tf_pose, g_tf);
+
+    geometry_msgs::PoseStamped pose;
+    pose.pose.position.x = g_tf.translation.x;
+    pose.pose.position.y = g_tf.translation.y;
+    pose.pose.position.z = g_tf.translation.z;
+    pose.pose.orientation = g_tf.rotation;
+    pose.header.frame_id = "/root";
+
+
+    moveitPublisher.publish(pose);
 }

@@ -282,58 +282,33 @@ void Communication::repeat(){
     tf::Transform arm_pose_world_frame = m_object_ex_ptr->m_object_recognition.transformKinectFrameToWorldFrame(transformation);
 
 
-    // Pose of database object in scene when it was trained (The reference is always the original pointcloud)
-//    tf::Transform model_pose = obj.getObjectPose().at(0);
-//    tf::Transform object_tf = tf::Transform(m_object_ex_ptr->getCentroidPositionRGBFrame());
-//    tf::Transform environment_arm_pose;
-//    environment_arm_pose.setOrigin(model_pose.getOrigin() + scene_to_model.getOrigin() + arm_pose_kinect_frame.getOrigin());
-//    environment_arm_pose.setRotation(model_pose.getRotation()*scene_to_model.getRotation()*arm_pose_kinect_frame.getRotation());
-//    geometry_msgs::Transform g_tf;
-//    tf::transformTFToMsg(environment_arm_pose,g_tf);
-
-//    tf::StampedTransform object_tf = m_object_ex_ptr->getCentroidPositionRGBFrame();
-//    tf::Vector3 translation2 = object_tf.getOrigin() + m_relative_pose.getOrigin();
-//    tf::Transform tf_ = tf::Transform(object_tf.getRotation()*m_relative_pose.getRotation(), translation2);
-
+    // Find TF in jaco coordinate system and send command to MoveIt
     m_publish_relative_pose = true;
-    boost::thread thread(&Communication::publishRelativePoseTF,this,arm_pose_world_frame,arm_pose_world_frame,arm_pose_world_frame,arm_pose_world_frame,arm_pose_world_frame);
-    //tf::StampedTransform goal_pose;
-    //tf::TransformListener listener;
-    //listener.waitForTransform("jaco_api_origin","jaco_tool_relative_pose",ros::Time(0),ros::Duration(3.0));
-    //listener.lookupTransform("jaco_api_origin","jaco_tool_relative_pose",ros::Time(0),goal_pose);
-    sleep(60);
+    boost::thread thread(&Communication::publishGraspTF,this,arm_pose_world_frame);
+    tf::StampedTransform goal_pose;
+    tf::TransformListener listener;
+    listener.waitForTransform("jaco_api_origin","tf_grasp_position",ros::Time(0),ros::Duration(5.0));
+    listener.lookupTransform("jaco_api_origin","tf_grasp_position",ros::Time(0),goal_pose);
+    std::cout << "The arm will start moving in 5 seconds..." << std::endl;
+    sleep(5);
     m_publish_relative_pose = false;
     thread.join();
 
-    //m_jaco_ptr->moveToPoint(goal_pose);
+    std::cout << "now!" << std::endl;
+
+    m_jaco_ptr->moveitPlugin(goal_pose);
 
 
 }
 
-void Communication::publishRelativePoseTF(tf::Transform arm,tf::Transform scene,tf::Transform model, tf::Transform final, tf::Transform object_centroid){
+void Communication::publishGraspTF(tf::Transform arm){
     static tf::TransformBroadcaster br;
     ros::Rate r(10);
     while(m_publish_relative_pose){
-
-//        tf::StampedTransform object_model = tf::StampedTransform(model,ros::Time::now(),"camera_rgb_frame","tf_Object_model");
-//        tf::StampedTransform arm_rel_pose = tf::StampedTransform(arm,ros::Time::now(),"tf_Object_model","tf_arm_position");
-//        tf::StampedTransform final_arm_pose = tf::StampedTransform(final,ros::Time::now(),"camera_rgb_frame","tf_grasp_position");
-//        tf::StampedTransform object_centroid_scene = tf::StampedTransform(object_centroid,ros::Time::now(),"camera_rgb_frame","tf_object_centroid");
-//        tf::StampedTransform diff = tf::StampedTransform(scene,ros::Time::now(),"tf_object_centroid","tf_Object_model_test_align");
-        //tf::StampedTransform arm_relative = tf::StampedTransform(relative_pose,ros::Time::now(),"camera_rgb_frame","jaco_tool_relative_pose");
-//        br.sendTransform(arm_relative);
-
         tf::StampedTransform arm_pose_world = tf::StampedTransform(arm,ros::Time::now(),"camera_rgb_frame","tf_grasp_position");
         br.sendTransform(arm_pose_world);
-
-
-//        br.sendTransform(arm_rel_pose);
-//        br.sendTransform(final_arm_pose);
-//        br.sendTransform(object_centroid_scene);
-//        br.sendTransform(diff);
         r.sleep();
     }
-
 }
 
 

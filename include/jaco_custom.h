@@ -45,6 +45,7 @@ public:
 
     void moveAlongAxis(std::string axis, double distance);
     void moveitPlugin(geometry_msgs::PoseStamped p_pose);//The communication chanel to moveit
+    void moveitPlugin(tf::StampedTransform tf_pose);
 
 private:
 
