@@ -1,48 +1,25 @@
 #include <ros/ros.h>
+#include <geometry_msgs/PoseStamped.h>
 #include <stdlib.h>
 #include <sstream>
 #include <stdio.h>
-#include <fileAPI.h>
-#include <object_recognition.h>
+#include <objectExtractor.h>
+#include <communication.h>
 #include <jaco_custom.h>
+#include "std_msgs/String.h"
 
 using namespace std;
-
-
-JacoCustom* JACO_PTR;
-ros::CallbackQueue jaco_callbacks;
-
-
-
-void callbackThread(){
-    ros::NodeHandle n;ros::Rate r(5);
-    while(n.ok()){
-        jaco_callbacks.callAvailable(ros::WallDuration(0));
-        r.sleep();
-    }
-}
-
-
 
 
 int main (int argc, char** argv){
 
     // Initialize ROS
-    ros::init (argc, argv, "snapshot");
-    ros::NodeHandle nh;
-    ros::NodeHandle n("~");
+    ros::init (argc, argv, "moveJaco");
+    ros::NodeHandle n;
+    ros::NodeHandle nh("~");
+    ros::Rate r(1);
 
-    JACO_PTR = new JacoCustom(n);
-
-
-    // Different Callback Queue for Jaco Callbacks (position)
-    const std::string arm_topic = "/jaco_arm_driver/out/tool_position";
-    const std::string fingers_topic = "/jaco_arm_driver/out/finger_position";
-    ros::SubscribeOptions fingers = ros::SubscribeOptions::create<jaco_msgs::FingerPosition>(fingers_topic,1,boost::bind(&JacoCustom::fingers_position_callback,JACO_PTR,_1),ros::VoidPtr(),&jaco_callbacks);
-    ros::Subscriber sub_f = n.subscribe(fingers);
-    ros::SubscribeOptions arm = ros::SubscribeOptions::create<geometry_msgs::PoseStamped>(arm_topic,1,boost::bind(&JacoCustom::arm_position_callback,JACO_PTR,_1),ros::VoidPtr(),&jaco_callbacks);
-    ros::Subscriber sub_a = n.subscribe(arm);
-    boost::thread spin_thread(callbackThread);
+    ros::Publisher moveitPublisher = n.advertise<geometry_msgs::PoseStamped>("jaco_command",1);
 
     geometry_msgs::PoseStamped pose;
     pose.pose.position.x = 0.22209;
@@ -54,7 +31,9 @@ int main (int argc, char** argv){
     pose.pose.orientation.w = -0.28206;
     pose.header.frame_id = "/root";
 
-    JACO_PTR->moveitPlugin(pose);
+    r.sleep();
+    moveitPublisher.publish(pose);
+    r.sleep();
 
     return 0;
 }
