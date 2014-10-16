@@ -1,0 +1,23 @@
+<launch>
+  
+  <include file="$(find jaco_description)/launch/jaco_description.launch"></include> 
+  
+  <node name="jaco_arm_trajectory_node" pkg="wpi_jaco_wrapper" type="jaco_arm_trajectory_node" output="screen">
+    <remap from="jaco_arm/fingers_controller" to="/jaco_arm/fingers_controller/gripper"/>
+    <remap from="jaco_arm/arm_controller" to="/jaco_arm/arm_controller/trajectory"/>
+    <remap from="jaco_arm/smooth_arm_controller" to="/jaco_arm/smooth_arm_controller/trajectory"/>
+    <remap from="jaco_arm/joint_velocity_controller" to="/jaco_arm/joint_velocity_controller/trajectory"/>
+  </node>
+  
+  <node name="jaco_manipulation" pkg="wpi_jaco_wrapper" type="jaco_manipulation" output="screen" />
+  
+  <node name="jaco_conversions" pkg="wpi_jaco_wrapper" type="jaco_conversions" />
+  <node name="jaco_kinematics" pkg="wpi_jaco_wrapper" type="jaco_kinematics" />
+  
+  <!-- Custom Transforms -->
+  <arg name="PI" value="3.1415926535897931" />
+  <arg name="PI2" value="1.570796327" />
+  <node pkg="tf" type="static_transform_publisher" name="jaco_joints_and_links" args="0 0 0 $(arg PI2) 0 0 arm_base root 100" />
+	<node pkg="tf" type="static_transform_publisher" name="root_to_api" args="0 0 0 0 0 0 root jaco_api_origin 100" /> 
+  
+</launch>

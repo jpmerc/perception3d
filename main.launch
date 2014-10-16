@@ -1,4 +1,6 @@
 <launch>  
 	<include file="$(find perception3d)/launch/vision.launch"></include> 
-	<include file="$(find perception3d)/launch/jaco.launch"></include> 	
+	<!-- <include file="$(find perception3d)/launch/jaco.launch"></include> -->
+	<include file="$(find perception3d)/launch/wpi_jaco_arm.launch"></include> 
+		
 </launch>

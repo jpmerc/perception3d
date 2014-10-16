@@ -13,9 +13,6 @@
 	<!-- Disable for moveit implementation  Will put it back later on -->
 	<node pkg="tf" type="static_transform_publisher" name="ARtag" args="0 0.045 -0.052 0 0 0 jaco_link_hand ARtag 100" /> 
 	
-	<arg name="pi/2" value="1.5707963267948966" />
-	<node pkg="tf" type="static_transform_publisher" name="camera_intern_frame" args="0 0 0 $(arg pi/2) 0 $(arg pi/2) camera_rgb_frame camera_intern_frame 100" /> 
-	
 	<!-- Plane Segmentation -->
   <node pkg="perception3d" type="segmentation" name="segmentation" respawn="false" output="screen">
     <param name="pcl_visualizer"  value="true" />

@@ -64,24 +64,24 @@ void callBack(geometry_msgs::PoseStampedConstPtr p_input)
 
 //    std::cout << "IT IS NOW TIME TO PLAN!" << std::endl;
 
-    geometry_msgs::Pose pose_target = group.getCurrentPose("jaco_link_hand").pose;
-    geometry_msgs::Pose pose_target2 = p_input->pose;
-    std::vector<geometry_msgs::Pose> waypoints;
-    waypoints.push_back(pose_target);
-    waypoints.push_back(pose_target2);
-    moveit_msgs::RobotTrajectory trajectory_msg;
-    double fraction = group.computeCartesianPath(waypoints, 0.01, 0, trajectory_msg, true);
-    robot_trajectory::RobotTrajectory robot_trajectory(group.getCurrentState()->getRobotModel(),"arm");
-    robot_trajectory.setRobotTrajectoryMsg(*group.getCurrentState(), trajectory_msg);
+//    geometry_msgs::Pose pose_target = group.getCurrentPose("jaco_link_hand").pose;
+//    geometry_msgs::Pose pose_target2 = p_input->pose;
+//    std::vector<geometry_msgs::Pose> waypoints;
+//    waypoints.push_back(pose_target);
+//    waypoints.push_back(pose_target2);
+//    moveit_msgs::RobotTrajectory trajectory_msg;
+//    double fraction = group.computeCartesianPath(waypoints, 0.01, 0, trajectory_msg, true);
+//    robot_trajectory::RobotTrajectory robot_trajectory(group.getCurrentState()->getRobotModel(),"arm");
+//    robot_trajectory.setRobotTrajectoryMsg(*group.getCurrentState(), trajectory_msg);
 
 
-    trajectory_processing::IterativeParabolicTimeParameterization iptp;
-    bool success = iptp.computeTimeStamps(robot_trajectory);
-    robot_trajectory.getRobotTrajectoryMsg(trajectory_msg);
+//    trajectory_processing::IterativeParabolicTimeParameterization iptp;
+//    bool success = iptp.computeTimeStamps(robot_trajectory);
+//    robot_trajectory.getRobotTrajectoryMsg(trajectory_msg);
 
-    myPlan.trajectory_ = trajectory_msg;
+//    myPlan.trajectory_ = trajectory_msg;
 
-   // bool success = group.plan(myPlan);
+    bool success = group.plan(myPlan);
 
     cout << "Size of plan : " << myPlan.trajectory_.joint_trajectory.points.size() << endl;
     cout << "Plan :" << endl << myPlan.trajectory_.joint_trajectory << endl;
@@ -103,7 +103,7 @@ void callBack(geometry_msgs::PoseStampedConstPtr p_input)
         std::cout << "The plan failed!" << std::endl;
     }
 
-    cout << "The fraction score was : " << fraction << endl;
+    //cout << "The fraction score was : " << fraction << endl;
 
 }
 
