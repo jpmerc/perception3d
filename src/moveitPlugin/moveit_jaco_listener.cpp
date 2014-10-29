@@ -7,6 +7,12 @@
 #include <moveit_msgs/PlanningScene.h>
 #include <moveit/robot_trajectory/robot_trajectory.h>
 #include <moveit/trajectory_processing/iterative_time_parameterization.h>
+#include <pcl/point_cloud.h>
+#include <pcl/point_types.h>
+#include <pcl_conversions/pcl_conversions.h>
+#include <pcl_ros/point_cloud.h>
+#include <shape_msgs/SolidPrimitive.h>
+#include <geometry_msgs/Pose.h>
 
 /*
   This is the plugin to communicate with the move_group node.
@@ -19,6 +25,8 @@
 using namespace std;
 
 
+
+
 void callBack(geometry_msgs::PoseStampedConstPtr p_input)
 {
     moveit::planning_interface::MoveGroup group("arm");
@@ -27,7 +35,7 @@ void callBack(geometry_msgs::PoseStampedConstPtr p_input)
     group.setNumPlanningAttempts(5);
 
 
-   //     group.setPlannerId("RRTstarkConfigDefault");
+    //     group.setPlannerId("RRTstarkConfigDefault");
 
     /*  Planner similar to EST but expands two trees from the start and goal nodes.
         For this reason, the solutions found by the planner follow two diﬀerent trajectories.
@@ -43,7 +51,7 @@ void callBack(geometry_msgs::PoseStampedConstPtr p_input)
         nodes in every expansion. So the diﬀerence with the KPIECE planner is that in
         KPIECE the veriﬁcation of the feasibility it’s made before the expansion of the whole
         tree. It’s good for scenes where there are narrow paths to achieve the goal node.       */
-//     group.setPlannerId("ESTkConfigDefault");
+    //     group.setPlannerId("ESTkConfigDefault");
 
     /*  planner totally random. For this reason, if there is one solution or it isn’t easy
         to ﬁnd a solution */
@@ -62,24 +70,24 @@ void callBack(geometry_msgs::PoseStampedConstPtr p_input)
     group.setPoseTarget(*p_input);
     group.setPlanningTime(10.0);
 
-//    std::cout << "IT IS NOW TIME TO PLAN!" << std::endl;
+    //    std::cout << "IT IS NOW TIME TO PLAN!" << std::endl;
 
-//    geometry_msgs::Pose pose_target = group.getCurrentPose("jaco_link_hand").pose;
-//    geometry_msgs::Pose pose_target2 = p_input->pose;
-//    std::vector<geometry_msgs::Pose> waypoints;
-//    waypoints.push_back(pose_target);
-//    waypoints.push_back(pose_target2);
-//    moveit_msgs::RobotTrajectory trajectory_msg;
-//    double fraction = group.computeCartesianPath(waypoints, 0.01, 0, trajectory_msg, true);
-//    robot_trajectory::RobotTrajectory robot_trajectory(group.getCurrentState()->getRobotModel(),"arm");
-//    robot_trajectory.setRobotTrajectoryMsg(*group.getCurrentState(), trajectory_msg);
+    //    geometry_msgs::Pose pose_target = group.getCurrentPose("jaco_link_hand").pose;
+    //    geometry_msgs::Pose pose_target2 = p_input->pose;
+    //    std::vector<geometry_msgs::Pose> waypoints;
+    //    waypoints.push_back(pose_target);
+    //    waypoints.push_back(pose_target2);
+    //    moveit_msgs::RobotTrajectory trajectory_msg;
+    //    double fraction = group.computeCartesianPath(waypoints, 0.01, 0, trajectory_msg, true);
+    //    robot_trajectory::RobotTrajectory robot_trajectory(group.getCurrentState()->getRobotModel(),"arm");
+    //    robot_trajectory.setRobotTrajectoryMsg(*group.getCurrentState(), trajectory_msg);
 
 
-//    trajectory_processing::IterativeParabolicTimeParameterization iptp;
-//    bool success = iptp.computeTimeStamps(robot_trajectory);
-//    robot_trajectory.getRobotTrajectoryMsg(trajectory_msg);
+    //    trajectory_processing::IterativeParabolicTimeParameterization iptp;
+    //    bool success = iptp.computeTimeStamps(robot_trajectory);
+    //    robot_trajectory.getRobotTrajectoryMsg(trajectory_msg);
 
-//    myPlan.trajectory_ = trajectory_msg;
+    //    myPlan.trajectory_ = trajectory_msg;
 
     bool success = group.plan(myPlan);
 
@@ -149,6 +157,70 @@ void addObstacleBehindJaco(){
 }
 
 
+// Find a bounding box around the object to grasp
+// Inspired from https://github.com/unboundedrobotics/ubr1_preview/blob/master/ubr1_grasping/src/shape_extraction.cpp
+void object_callback(const pcl::PointCloud<pcl::PointXYZRGB>::ConstPtr& pc){
+    ros::NodeHandle nh;
+    ros::Rate r(3);
+    shape_msgs::SolidPrimitive shape;
+    geometry_msgs::Pose pose;
+
+    double x_min =  9999.0;
+    double x_max = -9999.0;
+    double y_min =  9999.0;
+    double y_max = -9999.0;
+    double z_min =  9999.0;
+    double z_max = -9999.0;
+
+
+    for(int i = 0; i < pc->size(); i++){
+        double pc_x = pc->at(i).x;
+        double pc_y = pc->at(i).y;
+        double pc_z = pc->at(i).z;
+
+        if(pc_x < x_min) x_min = pc_x;
+        if(pc_y < y_min) y_min = pc_y;
+        if(pc_z < z_min) z_min = pc_z;
+
+        if(pc_x > x_max) x_max = pc_x;
+        if(pc_y > y_max) y_max = pc_y;
+        if(pc_z > z_max) z_max = pc_z;
+    }
+
+    pose.position.x = (x_min + x_max)/2.0;
+    pose.position.y = (y_min + y_max)/2.0;
+    pose.position.z = (z_min + z_max)/2.0;
+    pose.orientation.w = 1.0;
+
+    shape.type = shape.BOX;
+    shape.dimensions.push_back(x_max-x_min);
+    shape.dimensions.push_back(y_max-y_min);
+    shape.dimensions.push_back(z_max-z_min);
+
+
+    ros::Publisher collision_object_publisher = nh.advertise<moveit_msgs::CollisionObject>("collision_object", 1);
+    moveit_msgs::CollisionObject collision_object;
+
+    //TODO Check if it is the good frame
+    collision_object.header.frame_id = "camera_rgb_frame";
+    collision_object.id = "object_to_grasp_obstacle";
+
+    collision_object.primitives.push_back(shape);
+    collision_object.primitive_poses.push_back(pose);
+
+    r.sleep();
+    collision_object.operation = collision_object.REMOVE;
+    r.sleep();
+    collision_object_publisher.publish(collision_object);
+    r.sleep();
+    collision_object.operation = collision_object.ADD;
+    r.sleep();
+    collision_object_publisher.publish(collision_object);
+    r.sleep();
+
+
+}
+
 int main(int argc, char** argv)
 {
 
@@ -161,18 +233,17 @@ int main(int argc, char** argv)
     addObstacleBehindJaco();
 
     // Add an obstacle over jaco
-    addObstacleBehindJaco();
+    //addObstacleBehindJaco();
 
     ros::CallbackQueue queue;
-    ros::SubscribeOptions options = ros::SubscribeOptions::create<geometry_msgs::PoseStamped>("/jaco_command",
-                                                                                              1,
-                                                                                              boost::bind(&callBack,_1),
-                                                                                              ros::VoidPtr(),
-                                                                                              &queue);
-
+    ros::SubscribeOptions options = ros::SubscribeOptions::create<geometry_msgs::PoseStamped>("/jaco_command",1, boost::bind(&callBack,_1), ros::VoidPtr(), &queue);
     ros::Subscriber subA = nh.subscribe(options);
     ros::AsyncSpinner spinner(0, &queue);
     spinner.start();
+
+
+
+    ros::Subscriber subB = nh.subscribe<pcl::PointCloud<pcl::PointXYZRGB> > ("/grasp_object", 1, object_callback);
     ros::spin();
 
 

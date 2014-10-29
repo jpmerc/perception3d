@@ -77,6 +77,11 @@ private:
     std::vector<tf::Transform> transforms_vector;
 
 
+    ros::Publisher ObjectToGrasp_publisher_;
+    boost::thread publish_objectToGrasp_thread_;
+    void publish_objectToGrasp();
+
+
 };
 
 #endif

@@ -14,6 +14,11 @@ Communication::Communication(ObjectExtractor *p_obj_e, FileAPI *p_api, JacoCusto
 
     saveToDBWithoutArmPoseThread = boost::thread(&Communication::saveToDBWithoutArmPose,this);
     transforms_vector.clear();
+
+    ros::NodeHandle node;
+    ObjectToGrasp_publisher_ = node.advertise<pcl::PointCloud<pcl::PointXYZRGB> >("/grasp_object",1);
+    publish_objectToGrasp_thread_ = boost::thread(&Communication::publish_objectToGrasp,this);
+
 //    recognitionViewer.reset(new pcl::visualization::PCLVisualizer("Recognition Tests"));
 //    recognitionViewer->setBackgroundColor (0, 0, 0);
 //    recognitionViewer->initCameraParameters ();
@@ -470,4 +475,16 @@ void Communication::testRecognition(){
 
 
 }
+
+
+void Communication::publish_objectToGrasp(){
+    ros::Rate r(1);
+    ros::NodeHandle node;
+    while(node.ok()){
+        pcl::PointCloud<PointT>::Ptr scan_pc = m_object_ex_ptr->getObjectToGrasp();
+        ObjectToGrasp_publisher_.publish(scan_pc);
+        r.sleep();
+    }
+}
+
 
