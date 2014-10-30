@@ -480,9 +480,33 @@ void Communication::testRecognition(){
 void Communication::publish_objectToGrasp(){
     ros::Rate r(1);
     ros::NodeHandle node;
+    static tf::TransformBroadcaster br;
+    Eigen::Matrix4f camToWorldMatrix; camToWorldMatrix.setZero();camToWorldMatrix(0,2) = 1; camToWorldMatrix(1,0) = -1; camToWorldMatrix(2,1) = -1; camToWorldMatrix(3,3) = 1;
+
     while(node.ok()){
-        pcl::PointCloud<PointT>::Ptr scan_pc = m_object_ex_ptr->getObjectToGrasp();
-        ObjectToGrasp_publisher_.publish(scan_pc);
+        pcl::PointCloud<PointT>::Ptr object_pc = m_object_ex_ptr->getObjectToGrasp();
+        pcl::PointCloud<PointT>::Ptr object_pc_transformed(new pcl::PointCloud<PointT>);
+//        Eigen::Vector4f c = m_object_ex_ptr->getGraspCentroid(); c(3)=1;
+//        tf::Transform simpleTF;
+        tf::StampedTransform camToJacoTf;
+        tf::TransformListener listener;
+        bool tf_ready = listener.waitForTransform("camera_rgb_frame","root",ros::Time(0),ros::Duration(5.0));
+        if(object_pc->size() > 0 && tf_ready){
+            listener.lookupTransform("camera_rgb_frame","root",ros::Time(0),camToJacoTf);
+            Eigen::Matrix4f camToJacoMatrix;
+            pcl_ros::transformAsMatrix(camToJacoTf,camToJacoMatrix);
+
+            Eigen::Matrix4f combinedMatrix = camToJacoMatrix.inverse() * camToWorldMatrix;
+//            Eigen::Vector4f result = combinedMatrix * c;
+//            Eigen::Matrix4f res;  res(0,3) = result(0); res(1,3) = result(1); res(2,3) = result(2); res(3,3) = 1;
+//            simpleTF = tfFromEigen(res);
+//            br.sendTransform(tf::StampedTransform(simpleTF, ros::Time::now(), "root", "object_centroid_test"));
+
+            pcl::transformPointCloud(*object_pc, *object_pc_transformed, combinedMatrix);
+//            std::cout << "old : " << object_pc->at(100) << std::endl;
+//            std::cout << "new : " << object_pc_transformed->at(100) << std::endl;
+            ObjectToGrasp_publisher_.publish(object_pc_transformed);
+        }
         r.sleep();
     }
 }

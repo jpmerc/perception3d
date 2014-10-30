@@ -13,6 +13,8 @@
 #include <pcl_ros/point_cloud.h>
 #include <shape_msgs/SolidPrimitive.h>
 #include <geometry_msgs/Pose.h>
+#include <moveit/planning_scene_monitor/planning_scene_monitor.h>
+
 
 /*
   This is the plugin to communicate with the move_group node.
@@ -23,7 +25,9 @@
   */
 
 using namespace std;
-
+shape_msgs::SolidPrimitive shape_;
+geometry_msgs::Pose pose_;
+void findBoundingBox(const pcl::PointCloud<pcl::PointXYZRGB>::ConstPtr& pc, shape_msgs::SolidPrimitive &shape, geometry_msgs::Pose &pose);
 
 
 
@@ -45,7 +49,7 @@ void callBack(geometry_msgs::PoseStampedConstPtr p_input)
 
     /*  Planner used by default. This planner ﬁrst discretizes the workspace in feasible blocks (similar to octomap)
         distributes nodes in this zone and expands a tree from the start node. It’s a planner that usually works well */
-    group.setPlannerId("KPIECEkConfigDefault");
+//    group.setPlannerId("KPIECEkConfigDefault");
 
     /*  Planner that expands a tree from the start node verifying the feasibility of the
         nodes in every expansion. So the diﬀerence with the KPIECE planner is that in
@@ -56,6 +60,7 @@ void callBack(geometry_msgs::PoseStampedConstPtr p_input)
     /*  planner totally random. For this reason, if there is one solution or it isn’t easy
         to ﬁnd a solution */
 
+    group.setPlannerId("RRTConnectkConfigDefault");
 
     ROS_INFO("Reference frame: %s", group.getPlanningFrame().c_str());
     ROS_INFO("End Effector frame: %s", group.getEndEffectorLink().c_str());
@@ -124,6 +129,8 @@ void addObstacleBehindJaco(){
     // ADD OBSTACLE BEHIND JACO
     moveit_msgs::CollisionObject collision_object;
     collision_object.header.frame_id = group.getPlanningFrame();
+    cout << "Planning frame = " << group.getPlanningFrame() << endl;
+   // collision_object.header.frame_id = "camera_rgb_optical_frame";
     collision_object.id = "wall_behind";
 
     // Define a box to add to the world
@@ -141,8 +148,10 @@ void addObstacleBehindJaco(){
     box_pose.position.y =  0.45;
     box_pose.position.z =  1.0;
 
-    collision_object.primitives.push_back(primitive);
-    collision_object.primitive_poses.push_back(box_pose);
+   // collision_object.primitives.push_back(primitive);
+    //collision_object.primitive_poses.push_back(box_pose);
+     collision_object.primitives.push_back(shape_);
+     collision_object.primitive_poses.push_back(pose_);
 
     r.sleep();
     collision_object.operation = collision_object.REMOVE;
@@ -157,21 +166,74 @@ void addObstacleBehindJaco(){
 }
 
 
-// Find a bounding box around the object to grasp
-// Inspired from https://github.com/unboundedrobotics/ubr1_preview/blob/master/ubr1_grasping/src/shape_extraction.cpp
+
 void object_callback(const pcl::PointCloud<pcl::PointXYZRGB>::ConstPtr& pc){
     ros::NodeHandle nh;
     ros::Rate r(3);
     shape_msgs::SolidPrimitive shape;
     geometry_msgs::Pose pose;
 
+    findBoundingBox(pc, shape, pose);
+//    cout << "Callback is done!" << endl;
+
+
+    bool isTheSameObjectThanLastOne = false;
+
+    if(shape.dimensions.size() >= 3 && shape_.dimensions.size() >= 3){
+       if(shape.dimensions.at(0) == shape_.dimensions.at(0) && shape.dimensions.at(1) == shape_.dimensions.at(1) && shape.dimensions.at(2) == shape_.dimensions.at(2)){
+           if(pose.position.x == pose_.position.x && pose.position.y == pose_.position.y && pose.position.z == pose_.position.z){
+               isTheSameObjectThanLastOne = true;
+           }
+       }
+    }
+
+    shape_ = shape;
+    pose_ =  pose;
+    //    cout << "X : [ " << x_min  << " : " << x_max << " ] " <<  "Y : [ " << y_min  << " : " << y_max << " ] " << "Z : [ " << z_min  << " : " << z_max << " ] " << endl;
+
+
+    if(!isTheSameObjectThanLastOne){
+        ros::Publisher collision_object_publisher = nh.advertise<moveit_msgs::CollisionObject>("collision_object", 1);
+        moveit_msgs::CollisionObject collision_object;
+        collision_object.header.frame_id = "/root";
+        collision_object.id = "bounding_box";
+        collision_object.primitives.push_back(shape);
+        collision_object.primitive_poses.push_back(pose);
+
+        r.sleep();
+        collision_object.operation = collision_object.REMOVE;
+        r.sleep();
+        collision_object_publisher.publish(collision_object);
+        r.sleep();
+        collision_object.operation = collision_object.ADD;
+        r.sleep();
+        collision_object_publisher.publish(collision_object);
+        r.sleep();
+    }
+
+
+
+//    robot_model_loader::RobotModelLoader robot_model_loader("robot_description");
+//    robot_model::RobotModelPtr kinematic_model = robot_model_loader.getModel();
+//    planning_scene::PlanningScene planning_scene(kinematic_model);
+//    collision_detection::AllowedCollisionMatrix acm = planning_scene.getAllowedCollisionMatrix();
+
+//    acm.setEntry();
+}
+
+// Find a bounding box around the object to grasp (pc)
+// Outputs the shape and the pose of the bounding box
+// Inspired from https://github.com/unboundedrobotics/ubr1_preview/blob/master/ubr1_grasping/src/shape_extraction.cpp
+void findBoundingBox(const pcl::PointCloud<pcl::PointXYZRGB>::ConstPtr& pc, shape_msgs::SolidPrimitive &shape, geometry_msgs::Pose &pose){
+
+    ros::NodeHandle nh;
+    ros::Rate r(3);
     double x_min =  9999.0;
     double x_max = -9999.0;
     double y_min =  9999.0;
     double y_max = -9999.0;
     double z_min =  9999.0;
     double z_max = -9999.0;
-
 
     for(int i = 0; i < pc->size(); i++){
         double pc_x = pc->at(i).x;
@@ -197,28 +259,6 @@ void object_callback(const pcl::PointCloud<pcl::PointXYZRGB>::ConstPtr& pc){
     shape.dimensions.push_back(y_max-y_min);
     shape.dimensions.push_back(z_max-z_min);
 
-
-    ros::Publisher collision_object_publisher = nh.advertise<moveit_msgs::CollisionObject>("collision_object", 1);
-    moveit_msgs::CollisionObject collision_object;
-
-    //TODO Check if it is the good frame
-    collision_object.header.frame_id = "camera_rgb_frame";
-    collision_object.id = "object_to_grasp_obstacle";
-
-    collision_object.primitives.push_back(shape);
-    collision_object.primitive_poses.push_back(pose);
-
-    r.sleep();
-    collision_object.operation = collision_object.REMOVE;
-    r.sleep();
-    collision_object_publisher.publish(collision_object);
-    r.sleep();
-    collision_object.operation = collision_object.ADD;
-    r.sleep();
-    collision_object_publisher.publish(collision_object);
-    r.sleep();
-
-
 }
 
 int main(int argc, char** argv)
@@ -229,8 +269,7 @@ int main(int argc, char** argv)
 
     ros::NodeHandle nh;
 
-    // Add an obstacle behind jaco arm to prevent collision with wheelchair user
-    addObstacleBehindJaco();
+
 
     // Add an obstacle over jaco
     //addObstacleBehindJaco();
@@ -244,8 +283,13 @@ int main(int argc, char** argv)
 
 
     ros::Subscriber subB = nh.subscribe<pcl::PointCloud<pcl::PointXYZRGB> > ("/grasp_object", 1, object_callback);
-    ros::spin();
+    ros::spinOnce();
+    sleep(1);
+    ros::spinOnce();
+    // Add an obstacle behind jaco arm to prevent collision with wheelchair user
+//    addObstacleBehindJaco();
 
+    ros::spin();
 
     return 0;
 }
