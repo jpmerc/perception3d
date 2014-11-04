@@ -14,6 +14,7 @@
 #include <shape_msgs/SolidPrimitive.h>
 #include <geometry_msgs/Pose.h>
 #include <moveit/planning_scene_monitor/planning_scene_monitor.h>
+#include <moveit_msgs/GetPlanningScene.h>
 
 
 /*
@@ -27,8 +28,10 @@
 using namespace std;
 shape_msgs::SolidPrimitive shape_;
 geometry_msgs::Pose pose_;
+ros::ServiceClient client_get_scene_;
+ros::Publisher planning_scene_diff_publisher_;
 void findBoundingBox(const pcl::PointCloud<pcl::PointXYZRGB>::ConstPtr& pc, shape_msgs::SolidPrimitive &shape, geometry_msgs::Pose &pose);
-
+void modifyACM();
 
 
 void callBack(geometry_msgs::PoseStampedConstPtr p_input)
@@ -177,6 +180,8 @@ void object_callback(const pcl::PointCloud<pcl::PointXYZRGB>::ConstPtr& pc){
 //    cout << "Callback is done!" << endl;
 
 
+
+    // Check if the object is the same that is already included in moveIt. If it is, then we do not refresh it.
     bool isTheSameObjectThanLastOne = false;
 
     if(shape.dimensions.size() >= 3 && shape_.dimensions.size() >= 3){
@@ -209,16 +214,91 @@ void object_callback(const pcl::PointCloud<pcl::PointXYZRGB>::ConstPtr& pc){
         r.sleep();
         collision_object_publisher.publish(collision_object);
         r.sleep();
+
+        modifyACM();
     }
 
+}
+
+// Inspired from https://groups.google.com/forum/#!topic/moveit-users/EI73skgnGVk
+void modifyACM(){
+
+    moveit_msgs::GetPlanningScene srv;
+    srv.request.components.components =  moveit_msgs::PlanningSceneComponents::WORLD_OBJECT_NAMES;
+
+    bool object_in_world = false;
+    while(!object_in_world){
+        cout << "waiting for box to appear..." << endl;
+        if (client_get_scene_.call(srv))
+        {
+            for (int i = 0; i < (int)srv.response.scene.world.collision_objects.size(); ++i)
+            {
+                if (srv.response.scene.world.collision_objects[i].id == "bounding_box")
+                    object_in_world = true;
+            }
+        }
+    }
+
+    moveit_msgs::PlanningScene currentScene;
+    moveit_msgs::PlanningScene newSceneDiff;
+
+    moveit_msgs::GetPlanningScene scene_srv;
+    scene_srv.request.components.components = scene_srv.request.components.ALLOWED_COLLISION_MATRIX;
+
+    if(!client_get_scene_.call(scene_srv)){
+        cout << "Failed to call service /get_planning_scene" << endl;
+    }
+
+    else{
+        cout << "Initial Scene !" << endl;
+        currentScene = scene_srv.response.scene;
+        moveit_msgs::AllowedCollisionMatrix currentACM = currentScene.allowed_collision_matrix;
+        cout << "size of acm_entry_names before " << currentACM.entry_names.size() << endl;
+        cout << "size of acm_entry_values before " << currentACM.entry_values.size() << endl;
+        cout << "size of acm_entry_values[0].entries before " << currentACM.entry_values[0].enabled.size() << endl;
+
+        currentACM.entry_names.push_back("bounding_box");
+        moveit_msgs::AllowedCollisionEntry entry;
+        entry.enabled.resize(currentACM.entry_names.size());
+
+        // all collisions are accepted in this case
+        for(int i = 0; i < entry.enabled.size(); i++){
+            entry.enabled[i] = true;
+        }
+
+        //add new row to allowed collsion matrix
+        currentACM.entry_values.push_back(entry);
+
+        for(int i = 0; i < currentACM.entry_values.size(); i++){
+            //extend the last column of the matrix
+            currentACM.entry_values[i].enabled.push_back(true);
+        }
+
+        newSceneDiff.is_diff = true;
+        newSceneDiff.allowed_collision_matrix = currentACM;
+
+        planning_scene_diff_publisher_.publish(newSceneDiff);
 
 
-//    robot_model_loader::RobotModelLoader robot_model_loader("robot_description");
-//    robot_model::RobotModelPtr kinematic_model = robot_model_loader.getModel();
-//    planning_scene::PlanningScene planning_scene(kinematic_model);
-//    collision_detection::AllowedCollisionMatrix acm = planning_scene.getAllowedCollisionMatrix();
+        // ------------------------------------------------------------------
+        //Check if it has worked
+        if(!client_get_scene_.call(scene_srv)){
+            cout << "Failed to call service /get_planning_scene" << endl;
+        }
 
-//    acm.setEntry();
+        else{
+            cout << "Modified Scene !" << endl;
+            currentScene = scene_srv.response.scene;
+            moveit_msgs::AllowedCollisionMatrix currentACM = currentScene.allowed_collision_matrix;
+
+            cout << "size of acm_entry_names after " << currentACM.entry_names.size() << endl;
+            cout << "size of acm_entry_values after " << currentACM.entry_values.size() << endl;
+            cout << "size of acm_entry_values[0].entries after " << currentACM.entry_values[0].enabled.size() << endl;
+
+        }
+
+    }
+
 }
 
 // Find a bounding box around the object to grasp (pc)
@@ -280,7 +360,8 @@ int main(int argc, char** argv)
     ros::AsyncSpinner spinner(0, &queue);
     spinner.start();
 
-
+    client_get_scene_ = nh.serviceClient<moveit_msgs::GetPlanningScene>("/get_planning_scene");
+    planning_scene_diff_publisher_ = nh.advertise<moveit_msgs::PlanningScene>("planning_scene", 1);
 
     ros::Subscriber subB = nh.subscribe<pcl::PointCloud<pcl::PointXYZRGB> > ("/grasp_object", 1, object_callback);
     ros::spinOnce();
