@@ -133,7 +133,6 @@ void addObstacleBehindJaco(){
     moveit_msgs::CollisionObject collision_object;
     collision_object.header.frame_id = group.getPlanningFrame();
     cout << "Planning frame = " << group.getPlanningFrame() << endl;
-   // collision_object.header.frame_id = "camera_rgb_optical_frame";
     collision_object.id = "wall_behind";
 
     // Define a box to add to the world
@@ -151,10 +150,8 @@ void addObstacleBehindJaco(){
     box_pose.position.y =  0.45;
     box_pose.position.z =  1.0;
 
-   // collision_object.primitives.push_back(primitive);
-    //collision_object.primitive_poses.push_back(box_pose);
-     collision_object.primitives.push_back(shape_);
-     collision_object.primitive_poses.push_back(pose_);
+    collision_object.primitives.push_back(primitive);
+    collision_object.primitive_poses.push_back(box_pose);
 
     r.sleep();
     collision_object.operation = collision_object.REMOVE;
@@ -215,6 +212,7 @@ void object_callback(const pcl::PointCloud<pcl::PointXYZRGB>::ConstPtr& pc){
         collision_object_publisher.publish(collision_object);
         r.sleep();
 
+        // Allow Collisions between some joints of Jaco and the object/obstacle to grasp in trajectory planning
         modifyACM();
     }
 
@@ -257,22 +255,24 @@ void modifyACM(){
         cout << "size of acm_entry_values before " << currentACM.entry_values.size() << endl;
         cout << "size of acm_entry_values[0].entries before " << currentACM.entry_values[0].enabled.size() << endl;
 
-        currentACM.entry_names.push_back("bounding_box");
-        moveit_msgs::AllowedCollisionEntry entry;
-        entry.enabled.resize(currentACM.entry_names.size());
+        robot_model_loader::RobotModelLoader robot_model_loader("robot_description");
+        robot_model::RobotModelPtr kinematic_model = robot_model_loader.getModel();
+        planning_scene::PlanningScene planning_scene(kinematic_model);
+        collision_detection::AllowedCollisionMatrix acm = planning_scene.getAllowedCollisionMatrix();
 
-        // all collisions are accepted in this case
-        for(int i = 0; i < entry.enabled.size(); i++){
-            entry.enabled[i] = true;
-        }
 
-        //add new row to allowed collsion matrix
-        currentACM.entry_values.push_back(entry);
+        acm.setEntry("bounding_box",false);
+        vector<string> allowedLinksToCollideWithObjectToGrasp;
+        allowedLinksToCollideWithObjectToGrasp.push_back("jaco_link_finger_1");
+        allowedLinksToCollideWithObjectToGrasp.push_back("jaco_link_finger_tip_1");
+        allowedLinksToCollideWithObjectToGrasp.push_back("jaco_link_finger_2");
+        allowedLinksToCollideWithObjectToGrasp.push_back("jaco_link_finger_tip_2");
+        allowedLinksToCollideWithObjectToGrasp.push_back("jaco_link_finger_3");
+        allowedLinksToCollideWithObjectToGrasp.push_back("jaco_link_finger_tip_3");
+        allowedLinksToCollideWithObjectToGrasp.push_back("jaco_link_hand");
+        acm.setEntry("bounding_box",allowedLinksToCollideWithObjectToGrasp,true);
+        acm.getMessage(currentACM);
 
-        for(int i = 0; i < currentACM.entry_values.size(); i++){
-            //extend the last column of the matrix
-            currentACM.entry_values[i].enabled.push_back(true);
-        }
 
         newSceneDiff.is_diff = true;
         newSceneDiff.allowed_collision_matrix = currentACM;
@@ -281,21 +281,27 @@ void modifyACM(){
 
 
         // ------------------------------------------------------------------
-        //Check if it has worked
-        if(!client_get_scene_.call(scene_srv)){
-            cout << "Failed to call service /get_planning_scene" << endl;
-        }
+        //DEBUG : Check if it has worked
+//        if(!client_get_scene_.call(scene_srv)){
+//            cout << "Failed to call service /get_planning_scene" << endl;
+//        }
 
-        else{
-            cout << "Modified Scene !" << endl;
-            currentScene = scene_srv.response.scene;
-            moveit_msgs::AllowedCollisionMatrix currentACM = currentScene.allowed_collision_matrix;
+//        else{
+//            cout << "Modified Scene !" << endl;
+//            currentScene = scene_srv.response.scene;
+//            moveit_msgs::AllowedCollisionMatrix currentACM = currentScene.allowed_collision_matrix;
 
-            cout << "size of acm_entry_names after " << currentACM.entry_names.size() << endl;
-            cout << "size of acm_entry_values after " << currentACM.entry_values.size() << endl;
-            cout << "size of acm_entry_values[0].entries after " << currentACM.entry_values[0].enabled.size() << endl;
 
-        }
+//            for(int i = 0; i < currentACM.entry_names.size(); i++){
+//                string entryName = currentACM.entry_names.at(i);
+//                cout << "Entry : " << entryName << endl;
+//                cout << "Value : " << currentACM.entry_values.at(i) << endl;
+//            }
+
+//            cout << "size of acm_entry_names after " << currentACM.entry_names.size() << endl;
+//            cout << "size of acm_entry_values after " << currentACM.entry_values.size() << endl;
+//            cout << "size of acm_entry_values[0].entries after " << currentACM.entry_values[0].enabled.size() << endl;
+//        }
 
     }
 
@@ -351,8 +357,8 @@ int main(int argc, char** argv)
 
 
 
-    // Add an obstacle over jaco
-    //addObstacleBehindJaco();
+    //Add an obstacle behind jaco to reduce its workspace (do not go too far behind --> kinect is there)
+    addObstacleBehindJaco();
 
     ros::CallbackQueue queue;
     ros::SubscribeOptions options = ros::SubscribeOptions::create<geometry_msgs::PoseStamped>("/jaco_command",1, boost::bind(&callBack,_1), ros::VoidPtr(), &queue);
@@ -364,11 +370,6 @@ int main(int argc, char** argv)
     planning_scene_diff_publisher_ = nh.advertise<moveit_msgs::PlanningScene>("planning_scene", 1);
 
     ros::Subscriber subB = nh.subscribe<pcl::PointCloud<pcl::PointXYZRGB> > ("/grasp_object", 1, object_callback);
-    ros::spinOnce();
-    sleep(1);
-    ros::spinOnce();
-    // Add an obstacle behind jaco arm to prevent collision with wheelchair user
-//    addObstacleBehindJaco();
 
     ros::spin();
 
