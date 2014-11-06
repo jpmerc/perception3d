@@ -30,7 +30,7 @@ void trainFunctionTestThread(Communication *communication_ptr){
 //    }
 
 
-//    communication_ptr->train(true,true);
+    communication_ptr->train(true,true);
 
 
 
@@ -43,7 +43,9 @@ void trainFunctionTestThread(Communication *communication_ptr){
 //    }
 
 //    sleep(10);
-    communication_ptr->repeat();
+
+
+ //   communication_ptr->repeat();
     cout << "The arm finished moving" << endl;
 }
 
@@ -108,16 +110,22 @@ int main (int argc, char** argv){
     ros::Subscriber sub3 = n.subscribe("/android_sender", 1, &Communication::callback_android_listener, communication_ptr);
 
     // Different Callback Queue for Jaco Callbacks (position)
-    const std::string arm_topic = "/jaco_arm_driver/out/tool_position";
-    const std::string fingers_topic = "/jaco_arm_driver/out/finger_position";
-    ros::SubscribeOptions fingers = ros::SubscribeOptions::create<jaco_msgs::FingerPosition>(fingers_topic,1,boost::bind(&JacoCustom::fingers_position_callback,JACO_PTR,_1),ros::VoidPtr(),&jaco_callbacks);
-    ros::Subscriber sub_f = n.subscribe(fingers);
-    ros::SubscribeOptions arm = ros::SubscribeOptions::create<geometry_msgs::PoseStamped>(arm_topic,1,boost::bind(&JacoCustom::arm_position_callback,JACO_PTR,_1),ros::VoidPtr(),&jaco_callbacks);
-    ros::Subscriber sub_a = n.subscribe(arm);
+    // NOT USED ANYMORE (WAS USED WITH JACO-ROS package)
+//    const std::string arm_topic = "/jaco_arm_driver/out/tool_position";
+//    const std::string fingers_topic = "/jaco_arm_driver/out/finger_position";
+//    ros::SubscribeOptions fingers = ros::SubscribeOptions::create<jaco_msgs::FingerPosition>(fingers_topic,1,boost::bind(&JacoCustom::fingers_position_callback,JACO_PTR,_1),ros::VoidPtr(),&jaco_callbacks);
+//    ros::Subscriber sub_f = n.subscribe(fingers);
+//    ros::SubscribeOptions arm = ros::SubscribeOptions::create<geometry_msgs::PoseStamped>(arm_topic,1,boost::bind(&JacoCustom::arm_position_callback,JACO_PTR,_1),ros::VoidPtr(),&jaco_callbacks);
+//    ros::Subscriber sub_a = n.subscribe(arm);
+
+    //New subscribers since using wpi_jaco package instead of jaco-ros
+    const std::string wpi_topic = "/jaco_arm/joint_states";
+    ros::SubscribeOptions wpi_arm = ros::SubscribeOptions::create<geometry_msgs::PoseStamped>(wpi_topic,1,boost::bind(&JacoCustom::joint_state_callback,JACO_PTR,_1),ros::VoidPtr(),&jaco_callbacks);
+    ros::Subscriber sub_wpi = n.subscribe(wpi_arm);
     boost::thread spin_thread(callbackThread);
 
     //Thread to test the training phase of the system
-//   boost::thread trainTest(trainFunctionTestThread,communication_ptr);
+   boost::thread trainTest(trainFunctionTestThread,communication_ptr);
     //boost::thread recognitionTest(recognitionTestsThread,communication_ptr);
   //  boost::thread(sendCommandsToJaco,JACO_PTR);
 

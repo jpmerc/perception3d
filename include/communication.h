@@ -66,6 +66,10 @@ private:
     void publishGraspTF(tf::Transform arm);
     bool m_publish_relative_pose;
 
+    void publishPreGraspTF(double distance);
+    bool m_publish_pre_grasp;
+
+
     int selected_object_index;
     pcl::PointCloud<PointT>::Ptr selected_pointcloud;
     Eigen::Matrix4f calculated_object_transform;

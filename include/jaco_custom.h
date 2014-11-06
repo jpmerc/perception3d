@@ -27,12 +27,16 @@
 #include <moveit_msgs/AttachedCollisionObject.h>
 #include <moveit_msgs/CollisionObject.h>
 
+#include <sensor_msgs/JointState.h>
+
 
 class JacoCustom{
 public:
     JacoCustom(ros::NodeHandle &node);
     void arm_position_callback (const geometry_msgs::PoseStampedConstPtr& input_pose);
     void fingers_position_callback(const jaco_msgs::FingerPositionConstPtr& input_fingers);
+
+    void joint_state_callback (const sensor_msgs::JointStateConstPtr& input_pose);
     void open_fingers();
     void close_fingers();
     void move_up(double distance);

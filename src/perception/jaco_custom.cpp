@@ -66,6 +66,17 @@ void JacoCustom::fingers_position_callback(const jaco_msgs::FingerPositionConstP
 }
 
 
+void JacoCustom::joint_state_callback (const sensor_msgs::JointStateConstPtr& input_pose){
+
+
+
+
+
+}
+
+
+
+
 void JacoCustom::open_fingers(){
     actionlib::SimpleActionClient<jaco_msgs::SetFingersPositionAction> action_client("jaco/finger_joint_angles",true);
     action_client.waitForServer();
