@@ -28,6 +28,10 @@
 #include <moveit_msgs/CollisionObject.h>
 
 #include <sensor_msgs/JointState.h>
+#include <wpi_jaco_msgs/AngularCommand.h>
+#include <wpi_jaco_msgs/CartesianCommand.h>
+#include <wpi_jaco_msgs/GetCartesianPosition.h>
+#include <wpi_jaco_msgs/EulerToQuaternion.h>
 
 
 class JacoCustom{
@@ -42,10 +46,14 @@ public:
     void move_up(double distance);
     void moveToPoint(double x, double y, double z, double rotx, double roty, double rotz, double rotw);
     void moveToPoint(tf::Transform tf_);
+
+
     geometry_msgs::PoseStamped getArmPosition();
-    jaco_msgs::FingerPosition getFingersPosition();
+//    jaco_msgs::FingerPosition getFingersPosition();
     tf::StampedTransform getArmPositionFromCamera();
     tf::StampedTransform getGraspArmPosition();
+
+    std::vector<double> getFingersPosition();
 
     void moveAlongAxis(std::string axis, double distance);
     void moveitPlugin(geometry_msgs::PoseStamped p_pose);//The communication chanel to moveit
@@ -53,16 +61,22 @@ public:
 
 private:
 
-    bool is_same_pose(geometry_msgs::PoseStamped* pose1, const geometry_msgs::PoseStampedConstPtr pose2);
-    bool is_same_pose(jaco_msgs::FingerPosition* pose1, jaco_msgs::FingerPositionConstPtr pose2);
+//    bool is_same_pose(geometry_msgs::PoseStamped* pose1, const geometry_msgs::PoseStampedConstPtr pose2);
+//    bool is_same_pose(jaco_msgs::FingerPosition* pose1, jaco_msgs::FingerPositionConstPtr pose2);
+    bool is_same_pose_arm(sensor_msgs::JointState pose1, sensor_msgs::JointState pose2);
+    bool is_same_pose_fingers(sensor_msgs::JointState pose1, sensor_msgs::JointState pose2);
+
 
     void wait_for_arm_stopped();
     void wait_for_fingers_stopped();
 
     geometry_msgs::PoseStamped arm_pose;
     jaco_msgs::FingerPosition fingers_pose;
+    sensor_msgs::JointStateConstPtr joint_state;
+
     boost::mutex arm_mutex;
     boost::mutex fingers_mutex;
+    boost::mutex joint_mutex;
 
     bool end_program;
 
@@ -77,8 +91,11 @@ private:
     tf::Transform tool_position_tf;
     tf::TransformBroadcaster position_broadcaster;
 
-    ros::Publisher moveitPublisher;//New publisher, from now we absolute need the nodehandle to run this class
+    ros::Publisher moveitPublisher;//New publisher, from now we absolutely need the nodehandle to run this class
+    ros::Publisher angular_publisher;
+    ros::Publisher cartesian_publisher;
 
+    ros::ServiceClient cartesian_position_service_client;
 
 };
 

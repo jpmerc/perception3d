@@ -67,22 +67,24 @@ void recognitionTestsThread(Communication *communication_ptr){
 }
 
 void sendCommandsToJaco(JacoCustom *jaco){
-    while(ros::ok()){
-        std::string input;
-        std::cout << "Enter your command : " << std::endl;
-        std::cin >> input;
-        if(input == "q" || input == "exit" || input == "quit"){
-            break;
-        }
-        else{
-            std::string axis    = input.substr(0,1);
-            std::string distance = input.substr(1,input.size()-1);
-            if(axis == "x" || axis == "y" || axis == "z"){
-                double dist = atof(distance.c_str());
-                jaco->moveAlongAxis(axis,dist);
-            }
-        }
-    }
+    sleep(3);
+//    while(ros::ok()){
+//        std::string input;
+//        std::cout << "Enter your command : " << std::endl;
+//        std::cin >> input;
+//        if(input == "q" || input == "exit" || input == "quit"){
+//            break;
+//        }
+//        else{
+//            std::string axis    = input.substr(0,1);
+//            std::string distance = input.substr(1,input.size()-1);
+//            if(axis == "x" || axis == "y" || axis == "z"){
+//                double dist = atof(distance.c_str());
+//                jaco->moveAlongAxis(axis,dist);
+//            }
+//        }
+//    }
+    if(ros::ok()) jaco->close_fingers();
 }
 
 
@@ -120,14 +122,14 @@ int main (int argc, char** argv){
 
     //New subscribers since using wpi_jaco package instead of jaco-ros
     const std::string wpi_topic = "/jaco_arm/joint_states";
-    ros::SubscribeOptions wpi_arm = ros::SubscribeOptions::create<geometry_msgs::PoseStamped>(wpi_topic,1,boost::bind(&JacoCustom::joint_state_callback,JACO_PTR,_1),ros::VoidPtr(),&jaco_callbacks);
+    ros::SubscribeOptions wpi_arm = ros::SubscribeOptions::create<sensor_msgs::JointState>(wpi_topic,1,boost::bind(&JacoCustom::joint_state_callback,JACO_PTR,_1),ros::VoidPtr(),&jaco_callbacks);
     ros::Subscriber sub_wpi = n.subscribe(wpi_arm);
     boost::thread spin_thread(callbackThread);
 
     //Thread to test the training phase of the system
-   boost::thread trainTest(trainFunctionTestThread,communication_ptr);
+//   boost::thread trainTest(trainFunctionTestThread,communication_ptr);
     //boost::thread recognitionTest(recognitionTestsThread,communication_ptr);
-  //  boost::thread(sendCommandsToJaco,JACO_PTR);
+    boost::thread(sendCommandsToJaco,JACO_PTR);
 
     // Spin threads
     ros::Rate r(5);
