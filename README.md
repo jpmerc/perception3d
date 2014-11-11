@@ -16,5 +16,4 @@
 
 ## How to use the package
 
-    roslaunch perception3d vision.launch
-    rosrun perception3d perception
+    roslaunch perception3d main.launch
