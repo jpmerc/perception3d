@@ -15,6 +15,7 @@
 #include <geometry_msgs/Pose.h>
 #include <moveit/planning_scene_monitor/planning_scene_monitor.h>
 #include <moveit_msgs/GetPlanningScene.h>
+#include <std_msgs/Bool.h>
 
 
 /*
@@ -32,6 +33,7 @@ ros::ServiceClient client_get_scene_;
 ros::Publisher planning_scene_diff_publisher_;
 void findBoundingBox(const pcl::PointCloud<pcl::PointXYZRGB>::ConstPtr& pc, shape_msgs::SolidPrimitive &shape, geometry_msgs::Pose &pose);
 void modifyACM();
+ros::Publisher movement_status_publisher_;
 
 
 void callBack(geometry_msgs::PoseStampedConstPtr p_input)
@@ -109,17 +111,22 @@ void callBack(geometry_msgs::PoseStampedConstPtr p_input)
     /* Sleep to give Rviz time to visualize the plan. */
     sleep(5.0);
 
+    std_msgs::Bool moved_successfully;
     if(success)
     {
         std::cout << "The plan worked!" << std::endl;
-        //group.move();
+        group.move();
+        moved_successfully.data = true;
     }
     else
     {
         std::cout << "The plan failed!" << std::endl;
+        moved_successfully.data = false;
     }
 
     //cout << "The fraction score was : " << fraction << endl;
+
+    movement_status_publisher_.publish(moved_successfully);
 
 }
 
@@ -368,6 +375,7 @@ int main(int argc, char** argv)
 
     client_get_scene_ = nh.serviceClient<moveit_msgs::GetPlanningScene>("/get_planning_scene");
     planning_scene_diff_publisher_ = nh.advertise<moveit_msgs::PlanningScene>("planning_scene", 1);
+    movement_status_publisher_ = nh.advertise<std_msgs::Bool>("/jaco_arm/moveIt_movement_finished",1);
 
     ros::Subscriber subB = nh.subscribe<pcl::PointCloud<pcl::PointXYZRGB> > ("/grasp_object", 1, object_callback);
 
