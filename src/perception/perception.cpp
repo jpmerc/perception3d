@@ -44,7 +44,7 @@ void trainFunctionTestThread(Communication *communication_ptr){
 //    sleep(10);
 
 
- //   communication_ptr->repeat();
+    communication_ptr->repeat();
     cout << "The arm finished moving" << endl;
 }
 
@@ -123,6 +123,9 @@ int main (int argc, char** argv){
     const std::string wpi_topic = "/jaco_arm/joint_states";
     ros::SubscribeOptions wpi_arm = ros::SubscribeOptions::create<sensor_msgs::JointState>(wpi_topic,1,boost::bind(&JacoCustom::joint_state_callback,JACO_PTR,_1),ros::VoidPtr(),&jaco_callbacks);
     ros::Subscriber sub_wpi = n.subscribe(wpi_arm);
+    const std::string moveit_status_topic = "/jaco_arm/moveit_movement_status";
+    ros::SubscribeOptions moveit_options = ros::SubscribeOptions::create<std_msgs::Bool>(moveit_status_topic,1,boost::bind(&JacoCustom::moveit_move_status_callback,JACO_PTR,_1),ros::VoidPtr(),&jaco_callbacks);
+    ros::Subscriber moveit_sub = n.subscribe(moveit_options);
     boost::thread spin_thread(callbackThread);
 
     //Thread to test the training phase of the system

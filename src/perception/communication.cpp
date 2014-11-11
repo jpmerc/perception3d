@@ -291,7 +291,7 @@ void Communication::repeat(){
     m_publish_relative_pose = true;
 
     boost::thread thread(&Communication::publishGraspTF,this,arm_pose_world_frame);
-    tf::StampedTransform goal_pose;
+    tf::StampedTransform grasp_pose;
     tf::StampedTransform pre_grasp_pose;
     tf::TransformListener listener;
 
@@ -313,7 +313,8 @@ void Communication::repeat(){
         tf_ready = listener.waitForTransform("tf_grasp_position","tf_pre_grasp_position",ros::Time(0),ros::Duration(5.0));
     }
 
-    listener.lookupTransform("jaco_api_origin","tf_pre_grasp_position",ros::Time(0),goal_pose);
+    listener.lookupTransform("root","tf_pre_grasp_position",ros::Time(0),pre_grasp_pose);
+    listener.lookupTransform("root","tf_grasp_position",ros::Time(0),grasp_pose);
 
     std::cout << "The arm will start moving in 5 seconds..." << std::endl;
     sleep(5);
@@ -323,8 +324,12 @@ void Communication::repeat(){
 
     std::cout << "now!" << std::endl;
 
-    m_jaco_ptr->moveitPlugin(goal_pose);
+    // MAKE IT RETURN A BOOL, SO THAT I CAN KNOW THE MOVEMENT IS FINISHED AND PROCEED TO THE FINAL MOVEMENT
+    m_jaco_ptr->moveitPlugin(pre_grasp_pose);
 
+    sleep(20);
+
+    m_jaco_ptr->moveitPlugin(grasp_pose);
 
 }
 

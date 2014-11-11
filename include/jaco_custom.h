@@ -34,6 +34,7 @@
 #include <wpi_jaco_msgs/EulerToQuaternion.h>
 #include <wpi_jaco_msgs/ExecuteGraspGoal.h>
 #include <wpi_jaco_msgs/ExecuteGraspAction.h>
+#include <std_msgs/Bool.h>
 
 
 class JacoCustom{
@@ -43,6 +44,7 @@ public:
 //    void fingers_position_callback(const jaco_msgs::FingerPositionConstPtr& input_fingers);
 
     void joint_state_callback (const sensor_msgs::JointStateConstPtr& input_pose);
+    void moveit_move_status_callback (const std_msgs::BoolConstPtr in_status);
     void open_fingers();
     void close_fingers();
     void move_up(double distance);

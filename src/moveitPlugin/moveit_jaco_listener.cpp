@@ -375,7 +375,7 @@ int main(int argc, char** argv)
 
     client_get_scene_ = nh.serviceClient<moveit_msgs::GetPlanningScene>("/get_planning_scene");
     planning_scene_diff_publisher_ = nh.advertise<moveit_msgs::PlanningScene>("planning_scene", 1);
-    movement_status_publisher_ = nh.advertise<std_msgs::Bool>("/jaco_arm/moveIt_movement_finished",1);
+    movement_status_publisher_ = nh.advertise<std_msgs::Bool>("/jaco_arm/moveit_movement_status",1);
 
     ros::Subscriber subB = nh.subscribe<pcl::PointCloud<pcl::PointXYZRGB> > ("/grasp_object", 1, object_callback);
 

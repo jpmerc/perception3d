@@ -109,6 +109,18 @@ void JacoCustom::joint_state_callback (const sensor_msgs::JointStateConstPtr& in
     }
 }
 
+void JacoCustom::moveit_move_status_callback (const std_msgs::BoolConstPtr in_status){
+
+    // Needs a way to tell that the variable in_status is a new one
+
+    // Simplest way I see for the moment is a counter
+    // 1) Check the value before and wait until the variable is incremented
+    // 2) Assign in_status to a class variable
+    // 3) Read the value to check moveit movement status
+
+
+}
+
 
 //void JacoCustom::open_fingers(){
 //    actionlib::SimpleActionClient<jaco_msgs::SetFingersPositionAction> action_client("jaco/finger_joint_angles",true);
@@ -442,4 +454,10 @@ void JacoCustom::moveitPlugin(tf::StampedTransform tf_pose){
 
 
     moveitPublisher.publish(pose);
+
+    // 1) Check the value before and wait until the variable is incremented
+    // 2) Assign in_status to a class variable
+    // 3) Read the value to check moveit movement status
+
+
 }
