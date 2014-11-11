@@ -133,36 +133,19 @@ void JacoCustom::joint_state_callback (const sensor_msgs::JointStateConstPtr& in
 //}
 
 void JacoCustom::open_fingers(){
-
-    wpi_jaco_msgs::CartesianCommand aCommand;
-    aCommand.position = true;
-    aCommand.armCommand = false;
-    aCommand.fingerCommand = true;
-    aCommand.fingers.push_back(0.05);
-    aCommand.fingers.push_back(0.05);
-    aCommand.fingers.push_back(0.05);
-
-    cartesian_publisher.publish(aCommand);
-
+    actionlib::SimpleActionClient<wpi_jaco_msgs::ExecuteGraspAction> action_client("jaco_arm/manipulation/grasp",true);
+    action_client.waitForServer();
+    wpi_jaco_msgs::ExecuteGraspGoal goal = wpi_jaco_msgs::ExecuteGraspGoal();
+    goal.closeGripper = false;
+    action_client.sendGoal(goal);
 }
 
 void JacoCustom::close_fingers(){
-    wpi_jaco_msgs::CartesianCommand aCommand;
-    aCommand.position = true;
-    aCommand.armCommand = false;
-    aCommand.fingerCommand = true;
-    aCommand.repeat = true;
-    aCommand.fingers.push_back(0.95);
-    aCommand.fingers.push_back(0.95);
-    aCommand.fingers.push_back(0.95);
-
-
-    wpi_jaco_msgs::GetCartesianPosition srv;
-    if(cartesian_position_service_client.call(srv)){
-        aCommand.arm = srv.response.pos;
-    }
-
-    cartesian_publisher.publish(aCommand);
+    actionlib::SimpleActionClient<wpi_jaco_msgs::ExecuteGraspAction> action_client("jaco_arm/manipulation/grasp",true);
+    action_client.waitForServer();
+    wpi_jaco_msgs::ExecuteGraspGoal goal = wpi_jaco_msgs::ExecuteGraspGoal();
+    goal.closeGripper = true;
+    action_client.sendGoal(goal);
 }
 
 
@@ -395,43 +378,43 @@ void JacoCustom::wait_for_fingers_stopped(){
 
 
 //A simple test function to test moveit.
-void JacoCustom::moveAlongAxis(std::string axis, double distance){
-    // actionlib::SimpleActionClient<jaco_msgs::ArmPoseAction> action_client("/jaco/arm_pose",true);
-    //action_client.waitForServer();
+//void JacoCustom::moveAlongAxis(std::string axis, double distance){
+//    // actionlib::SimpleActionClient<jaco_msgs::ArmPoseAction> action_client("/jaco/arm_pose",true);
+//    //action_client.waitForServer();
 
-    if(axis == "x" || axis == "y" || axis == "z"){
-        jaco_msgs::ArmPoseGoal pose_goal = jaco_msgs::ArmPoseGoal();
-        double offset_x = 0;
-        double offset_y = 0;
-        double offset_z = 0;
-        if(axis == "x") offset_x = distance;
-        else if (axis == "y") offset_y = distance;
-        else offset_z = distance;
+//    if(axis == "x" || axis == "y" || axis == "z"){
+//        jaco_msgs::ArmPoseGoal pose_goal = jaco_msgs::ArmPoseGoal();
+//        double offset_x = 0;
+//        double offset_y = 0;
+//        double offset_z = 0;
+//        if(axis == "x") offset_x = distance;
+//        else if (axis == "y") offset_y = distance;
+//        else offset_z = distance;
 
-        tf::TransformListener listener;
-        tf::StampedTransform tf_listened;
-        listener.waitForTransform("root","jaco_link_hand",ros::Time(0),ros::Duration(3.0));
-        listener.lookupTransform("root","jaco_link_hand",ros::Time(0),tf_listened);
+//        tf::TransformListener listener;
+//        tf::StampedTransform tf_listened;
+//        listener.waitForTransform("root","jaco_link_hand",ros::Time(0),ros::Duration(3.0));
+//        listener.lookupTransform("root","jaco_link_hand",ros::Time(0),tf_listened);
 
-        geometry_msgs::Transform g_tf;
-        tf::transformTFToMsg(tf_listened, g_tf);
+//        geometry_msgs::Transform g_tf;
+//        tf::transformTFToMsg(tf_listened, g_tf);
 
 
-        arm_mutex.lock();
-        pose_goal.pose.pose.position.x = g_tf.translation.x + offset_x;
-        pose_goal.pose.pose.position.y = g_tf.translation.y + offset_y;
-        pose_goal.pose.pose.position.z = g_tf.translation.z + offset_z;
-        pose_goal.pose.pose.orientation = g_tf.rotation;
-        pose_goal.pose.header.frame_id = "/root";
-        arm_mutex.unlock();
+//        arm_mutex.lock();
+//        pose_goal.pose.pose.position.x = g_tf.translation.x + offset_x;
+//        pose_goal.pose.pose.position.y = g_tf.translation.y + offset_y;
+//        pose_goal.pose.pose.position.z = g_tf.translation.z + offset_z;
+//        pose_goal.pose.pose.orientation = g_tf.rotation;
+//        pose_goal.pose.header.frame_id = "/root";
+//        arm_mutex.unlock();
 
-        std::cout << "x: " << pose_goal.pose.pose.position.x << std::endl;
-        std::cout << "y: " << pose_goal.pose.pose.position.y << std::endl;
-        std::cout << "z: " << pose_goal.pose.pose.position.z << std::endl;
+//        std::cout << "x: " << pose_goal.pose.pose.position.x << std::endl;
+//        std::cout << "y: " << pose_goal.pose.pose.position.y << std::endl;
+//        std::cout << "z: " << pose_goal.pose.pose.position.z << std::endl;
 
-        moveitPlugin(pose_goal.pose);
-    }
-}
+//        moveitPlugin(pose_goal.pose);
+//    }
+//}
 
 /*
   New function to communicate with move_group.

@@ -30,8 +30,7 @@ void trainFunctionTestThread(Communication *communication_ptr){
 //    }
 
 
-    communication_ptr->train(true,true);
-
+//    communication_ptr->train(true,true);
 
 
 //    int count = 0;
@@ -84,7 +83,7 @@ void sendCommandsToJaco(JacoCustom *jaco){
 //            }
 //        }
 //    }
-    if(ros::ok()) jaco->close_fingers();
+    if(ros::ok()) jaco->open_fingers();
 }
 
 
@@ -127,9 +126,9 @@ int main (int argc, char** argv){
     boost::thread spin_thread(callbackThread);
 
     //Thread to test the training phase of the system
-//   boost::thread trainTest(trainFunctionTestThread,communication_ptr);
+    boost::thread trainTest(trainFunctionTestThread,communication_ptr);
     //boost::thread recognitionTest(recognitionTestsThread,communication_ptr);
-    boost::thread(sendCommandsToJaco,JACO_PTR);
+    //boost::thread(sendCommandsToJaco,JACO_PTR);
 
     // Spin threads
     ros::Rate r(5);

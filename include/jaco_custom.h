@@ -5,9 +5,9 @@
 
 #include <actionlib/client/simple_action_client.h>
 #include <actionlib/client/terminal_state.h>
-#include <jaco_msgs/SetFingersPositionAction.h>
-#include <jaco_msgs/ArmPoseAction.h>
-#include <jaco_msgs/FingerPosition.h>
+//#include <jaco_msgs/SetFingersPositionAction.h>
+//#include <jaco_msgs/ArmPoseAction.h>
+//#include <jaco_msgs/FingerPosition.h>
 
 #include <boost/thread/mutex.hpp>
 #include <boost/thread/thread.hpp>
@@ -32,13 +32,15 @@
 #include <wpi_jaco_msgs/CartesianCommand.h>
 #include <wpi_jaco_msgs/GetCartesianPosition.h>
 #include <wpi_jaco_msgs/EulerToQuaternion.h>
+#include <wpi_jaco_msgs/ExecuteGraspGoal.h>
+#include <wpi_jaco_msgs/ExecuteGraspAction.h>
 
 
 class JacoCustom{
 public:
     JacoCustom(ros::NodeHandle &node);
-    void arm_position_callback (const geometry_msgs::PoseStampedConstPtr& input_pose);
-    void fingers_position_callback(const jaco_msgs::FingerPositionConstPtr& input_fingers);
+//    void arm_position_callback (const geometry_msgs::PoseStampedConstPtr& input_pose);
+//    void fingers_position_callback(const jaco_msgs::FingerPositionConstPtr& input_fingers);
 
     void joint_state_callback (const sensor_msgs::JointStateConstPtr& input_pose);
     void open_fingers();
@@ -70,8 +72,8 @@ private:
     void wait_for_arm_stopped();
     void wait_for_fingers_stopped();
 
-    geometry_msgs::PoseStamped arm_pose;
-    jaco_msgs::FingerPosition fingers_pose;
+//    geometry_msgs::PoseStamped arm_pose;
+//    jaco_msgs::FingerPosition fingers_pose;
     sensor_msgs::JointStateConstPtr joint_state;
 
     boost::mutex arm_mutex;
