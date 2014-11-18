@@ -111,13 +111,8 @@ void JacoCustom::joint_state_callback (const sensor_msgs::JointStateConstPtr& in
 
 void JacoCustom::moveit_move_status_callback (const std_msgs::BoolConstPtr in_status){
 
-    // Needs a way to tell that the variable in_status is a new one
-
-    // Simplest way I see for the moment is a counter
-    // 1) Check the value before and wait until the variable is incremented
-    // 2) Assign in_status to a class variable
-    // 3) Read the value to check moveit movement status
-
+    moveit_status_received = true;
+    move_it_status = in_status->data;
 
 }
 
@@ -435,12 +430,14 @@ void JacoCustom::wait_for_fingers_stopped(){
   We need this publisher because the move command needs to be in a separate queue.
   */
 
-void JacoCustom::moveitPlugin(geometry_msgs::PoseStamped p_pose){
+bool JacoCustom::moveitPlugin(geometry_msgs::PoseStamped p_pose){
     moveitPublisher.publish(p_pose);
+    waitForMovementFinished();
+    return move_it_status;
 }
 
 
-void JacoCustom::moveitPlugin(tf::StampedTransform tf_pose){
+bool JacoCustom::moveitPlugin(tf::StampedTransform tf_pose){
 
     geometry_msgs::Transform g_tf;
     tf::transformTFToMsg(tf_pose, g_tf);
@@ -455,9 +452,18 @@ void JacoCustom::moveitPlugin(tf::StampedTransform tf_pose){
 
     moveitPublisher.publish(pose);
 
-    // 1) Check the value before and wait until the variable is incremented
-    // 2) Assign in_status to a class variable
-    // 3) Read the value to check moveit movement status
+    waitForMovementFinished();
 
+    return move_it_status;
+}
+
+void JacoCustom::waitForMovementFinished(){
+    moveit_status_received = false;
+    ros::Rate r(3);
+
+    // Waits until a message is received on the moveit status topic
+    while(!moveit_status_received){
+        r.sleep();
+    }
 
 }

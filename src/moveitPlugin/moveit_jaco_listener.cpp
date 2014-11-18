@@ -16,6 +16,9 @@
 #include <moveit/planning_scene_monitor/planning_scene_monitor.h>
 #include <moveit_msgs/GetPlanningScene.h>
 #include <std_msgs/Bool.h>
+#include <tf/transform_broadcaster.h>
+#include <moveit_msgs/Grasp.h>
+#include <moveit_msgs/CollisionObject.h>
 
 
 /*
@@ -36,39 +39,65 @@ void modifyACM();
 ros::Publisher movement_status_publisher_;
 
 
+
+moveit_msgs::Grasp tryMoveItPickMessage(geometry_msgs::PoseStampedConstPtr p_input){
+
+    moveit_msgs::Grasp grasp;
+
+    grasp.grasp_pose = *p_input;
+
+    grasp.pre_grasp_approach.direction.vector.z = 1.0;
+    grasp.pre_grasp_approach.direction.header.frame_id = "jaco_link_hand";
+    grasp.pre_grasp_approach.min_distance = 0.05;
+    grasp.pre_grasp_approach.desired_distance = 0.1;
+    grasp.pre_grasp_approach.direction.header.stamp = ros::Time::now();
+
+    grasp.post_grasp_retreat.direction.vector.z = 1.0;
+    grasp.post_grasp_retreat.min_distance = 0.05;
+    grasp.post_grasp_retreat.desired_distance = 0.1;
+    grasp.post_grasp_retreat.direction.header.frame_id = "jaco_link_hand";
+    grasp.post_grasp_retreat.direction.header.stamp = ros::Time::now();
+
+   return grasp;
+}
+
 void callBack(geometry_msgs::PoseStampedConstPtr p_input)
 {
+
+
+    //moveit_msgs::Grasp grasp = tryMoveItPickMessage(p_input);
+    // Publish TF TO check if target is good!
+//    static tf::TransformBroadcaster br;
+//    tf::Transform trans;
+//    trans.setOrigin(tf::Vector3(p_input->pose.position.x, p_input->pose.position.y, p_input->pose.position.z));
+//    tf::Quaternion quat;
+//    tf::quaternionMsgToTF(p_input->pose.orientation, quat);
+//    trans.setRotation(quat);
+//    cout << "Sending transform!" << endl;
+
+//    br.sendTransform(tf::StampedTransform(trans, ros::Time::now(), "root", "moveit_target_pose"));
+//    sleep(1);
+//    br.sendTransform(tf::StampedTransform(trans, ros::Time::now(), "root", "moveit_target_pose"));
+//    sleep(1);
+//    br.sendTransform(tf::StampedTransform(trans, ros::Time::now(), "root", "moveit_target_pose"));
+//    sleep(1);
+
     moveit::planning_interface::MoveGroup group("arm");
     group.setPoseReferenceFrame(std::string("root"));
     group.setEndEffectorLink(std::string("jaco_link_hand"));
-    group.setNumPlanningAttempts(5);
-
-
-    //     group.setPlannerId("RRTstarkConfigDefault");
-
-    /*  Planner similar to EST but expands two trees from the start and goal nodes.
-        For this reason, the solutions found by the planner follow two diﬀerent trajectories.
-        The ﬁrstone escapes from the start and the other approachs to the goal. */
-
-    //group.setPlannerId("SBLkConfigDefault");
-
-    /*  Planner used by default. This planner ﬁrst discretizes the workspace in feasible blocks (similar to octomap)
-        distributes nodes in this zone and expands a tree from the start node. It’s a planner that usually works well */
-//    group.setPlannerId("KPIECEkConfigDefault");
-
-    /*  Planner that expands a tree from the start node verifying the feasibility of the
-        nodes in every expansion. So the diﬀerence with the KPIECE planner is that in
-        KPIECE the veriﬁcation of the feasibility it’s made before the expansion of the whole
-        tree. It’s good for scenes where there are narrow paths to achieve the goal node.       */
-    //     group.setPlannerId("ESTkConfigDefault");
-
-    /*  planner totally random. For this reason, if there is one solution or it isn’t easy
-        to ﬁnd a solution */
-
+    group.setNumPlanningAttempts(10);
     group.setPlannerId("RRTConnectkConfigDefault");
+    //group.setStartStateToCurrentState();
+    group.setPoseTarget(*p_input);
+    group.setPlanningTime(10.0);
+    group.setWorkspace(-1, -1.5 , 0.1, 1, 0.4, 1.2);
+   // group.setWorkspace(-2,-2,-2,2,2,2);
+    group.setGoalPositionTolerance(0.05);
+
+    //cout << " tolerance : " << group.getGoalPositionTolerance() << endl;
 
     ROS_INFO("Reference frame: %s", group.getPlanningFrame().c_str());
-    ROS_INFO("End Effector frame: %s", group.getEndEffectorLink().c_str());
+   // ROS_INFO("End Effector frame: %s", group.getEndEffectorLink().c_str());
 
     ros::NodeHandle node_handle;
     ros::Publisher display_publisher = node_handle.advertise<moveit_msgs::DisplayTrajectory>("/move_group/display_planned_path", 1, true);
@@ -76,35 +105,66 @@ void callBack(geometry_msgs::PoseStampedConstPtr p_input)
 
 
     moveit::planning_interface::MoveGroup::Plan myPlan;
-    group.setStartStateToCurrentState();
-    group.setPoseTarget(*p_input);
-    group.setPlanningTime(10.0);
-
-    //    std::cout << "IT IS NOW TIME TO PLAN!" << std::endl;
-
-    //    geometry_msgs::Pose pose_target = group.getCurrentPose("jaco_link_hand").pose;
-    //    geometry_msgs::Pose pose_target2 = p_input->pose;
-    //    std::vector<geometry_msgs::Pose> waypoints;
-    //    waypoints.push_back(pose_target);
-    //    waypoints.push_back(pose_target2);
-    //    moveit_msgs::RobotTrajectory trajectory_msg;
-    //    double fraction = group.computeCartesianPath(waypoints, 0.01, 0, trajectory_msg, true);
-    //    robot_trajectory::RobotTrajectory robot_trajectory(group.getCurrentState()->getRobotModel(),"arm");
-    //    robot_trajectory.setRobotTrajectoryMsg(*group.getCurrentState(), trajectory_msg);
 
 
-    //    trajectory_processing::IterativeParabolicTimeParameterization iptp;
-    //    bool success = iptp.computeTimeStamps(robot_trajectory);
-    //    robot_trajectory.getRobotTrajectoryMsg(trajectory_msg);
 
-    //    myPlan.trajectory_ = trajectory_msg;
+
+    // CHECK THE COLLISION WORLD AND ALLOWED COLLISION MATRIX JUST BEFORE PLANNING
+    moveit_msgs::GetPlanningScene srv;
+    srv.request.components.components =  moveit_msgs::PlanningSceneComponents::WORLD_OBJECT_NAMES;
+
+
+
+    //cout << "waiting for box to appear..." << endl;
+    if (client_get_scene_.call(srv))
+    {
+        bool object_in_world = false;
+        while(!object_in_world){
+            for (int i = 0; i < (int)srv.response.scene.world.collision_objects.size(); ++i)
+            {
+                if (srv.response.scene.world.collision_objects[i].id == "bounding_box")
+                    object_in_world = true;
+            }
+        }
+//        cout << "WORLD OBJECTS : " << endl;
+//        for (int i = 0; i < (int)srv.response.scene.world.collision_objects.size(); ++i){
+//            cout << srv.response.scene.world.collision_objects[i].id << endl;
+//        }
+
+    }
+
+
+
+//    moveit_msgs::PlanningScene currentScene;
+//    moveit_msgs::GetPlanningScene scene_srv;
+//    scene_srv.request.components.components = scene_srv.request.components.ALLOWED_COLLISION_MATRIX;
+
+//    if(client_get_scene_.call(scene_srv)){
+//        currentScene = scene_srv.response.scene;
+//        moveit_msgs::AllowedCollisionMatrix currentACM = currentScene.allowed_collision_matrix;
+////        cout << "size of acm_entry_names " << currentACM.entry_names.size() << endl;
+//        cout << "acm_entry_values :" << endl << currentACM << endl;
+////        cout << "size of acm_entry_values[0].entries " << currentACM.entry_values[0].enabled.size() << endl;
+
+//    }
+
+
+//    moveit_msgs::RobotState state;
+//    moveit_msgs::GetPlanningScene scene_srv;
+//    scene_srv.request.components.components = scene_srv.request.components.ROBOT_STATE;
+//    if(client_get_scene_.call(scene_srv)){
+//            state = scene_srv.response.scene.robot_state;
+
+//    }
+
+
+
 
     bool success = group.plan(myPlan);
 
     cout << "Size of plan : " << myPlan.trajectory_.joint_trajectory.points.size() << endl;
     cout << "Plan :" << endl << myPlan.trajectory_.joint_trajectory << endl;
 
-    ROS_INFO("Visualizing plan 1 (again)");
     display_trajectory.trajectory_start = myPlan.start_state_;
     display_trajectory.trajectory.push_back(myPlan.trajectory_);
     display_publisher.publish(display_trajectory);
@@ -115,7 +175,7 @@ void callBack(geometry_msgs::PoseStampedConstPtr p_input)
     if(success)
     {
         std::cout << "The plan worked!" << std::endl;
-        group.move();
+        //group.move();
         moved_successfully.data = true;
     }
     else
@@ -139,7 +199,6 @@ void addObstacleBehindJaco(){
     // ADD OBSTACLE BEHIND JACO
     moveit_msgs::CollisionObject collision_object;
     collision_object.header.frame_id = group.getPlanningFrame();
-    cout << "Planning frame = " << group.getPlanningFrame() << endl;
     collision_object.id = "wall_behind";
 
     // Define a box to add to the world
@@ -209,6 +268,22 @@ void object_callback(const pcl::PointCloud<pcl::PointXYZRGB>::ConstPtr& pc){
         collision_object.primitives.push_back(shape);
         collision_object.primitive_poses.push_back(pose);
 
+
+//        collision_object.operation = collision_object.ADD;
+
+        ros::NodeHandle node_handle;
+        ros::Publisher planning_scene_diff_publisher = node_handle.advertise<moveit_msgs::PlanningScene>("planning_scene", 1);
+
+
+        ros::WallDuration sleep_time(0.5);
+        moveit_msgs::PlanningScene planning_scene;
+//        planning_scene.world.collision_objects.push_back(collision_object);
+//        planning_scene.is_diff = true;
+        planning_scene_diff_publisher.publish(planning_scene);
+        sleep_time.sleep();
+
+
+
         r.sleep();
         collision_object.operation = collision_object.REMOVE;
         r.sleep();
@@ -221,7 +296,7 @@ void object_callback(const pcl::PointCloud<pcl::PointXYZRGB>::ConstPtr& pc){
 
         // Allow Collisions between some joints of Jaco and the object/obstacle to grasp in trajectory planning
         modifyACM();
-    }
+   }
 
 }
 
@@ -233,7 +308,7 @@ void modifyACM(){
 
     bool object_in_world = false;
     while(!object_in_world){
-        cout << "waiting for box to appear..." << endl;
+        //cout << "waiting for box to appear..." << endl;
         if (client_get_scene_.call(srv))
         {
             for (int i = 0; i < (int)srv.response.scene.world.collision_objects.size(); ++i)
@@ -258,9 +333,9 @@ void modifyACM(){
         cout << "Initial Scene !" << endl;
         currentScene = scene_srv.response.scene;
         moveit_msgs::AllowedCollisionMatrix currentACM = currentScene.allowed_collision_matrix;
-        cout << "size of acm_entry_names before " << currentACM.entry_names.size() << endl;
-        cout << "size of acm_entry_values before " << currentACM.entry_values.size() << endl;
-        cout << "size of acm_entry_values[0].entries before " << currentACM.entry_values[0].enabled.size() << endl;
+//        cout << "size of acm_entry_names before " << currentACM.entry_names.size() << endl;
+//        cout << "size of acm_entry_values before " << currentACM.entry_values.size() << endl;
+//        cout << "size of acm_entry_values[0].entries before " << currentACM.entry_values[0].enabled.size() << endl;
 
         robot_model_loader::RobotModelLoader robot_model_loader("robot_description");
         robot_model::RobotModelPtr kinematic_model = robot_model_loader.getModel();
@@ -268,16 +343,25 @@ void modifyACM(){
         collision_detection::AllowedCollisionMatrix acm = planning_scene.getAllowedCollisionMatrix();
 
 
-        acm.setEntry("bounding_box",false);
-        vector<string> allowedLinksToCollideWithObjectToGrasp;
-        allowedLinksToCollideWithObjectToGrasp.push_back("jaco_link_finger_1");
-        allowedLinksToCollideWithObjectToGrasp.push_back("jaco_link_finger_tip_1");
-        allowedLinksToCollideWithObjectToGrasp.push_back("jaco_link_finger_2");
-        allowedLinksToCollideWithObjectToGrasp.push_back("jaco_link_finger_tip_2");
-        allowedLinksToCollideWithObjectToGrasp.push_back("jaco_link_finger_3");
-        allowedLinksToCollideWithObjectToGrasp.push_back("jaco_link_finger_tip_3");
-        allowedLinksToCollideWithObjectToGrasp.push_back("jaco_link_hand");
-        acm.setEntry("bounding_box",allowedLinksToCollideWithObjectToGrasp,true);
+//        acm.setEntry("bounding_box",false);
+//        vector<string> allowedLinksToCollideWithObjectToGrasp;
+//        allowedLinksToCollideWithObjectToGrasp.push_back("jaco_link_finger_1");
+//        allowedLinksToCollideWithObjectToGrasp.push_back("jaco_link_finger_tip_1");
+//        allowedLinksToCollideWithObjectToGrasp.push_back("jaco_link_finger_2");
+//        allowedLinksToCollideWithObjectToGrasp.push_back("jaco_link_finger_tip_2");
+//        allowedLinksToCollideWithObjectToGrasp.push_back("jaco_link_finger_3");
+//        allowedLinksToCollideWithObjectToGrasp.push_back("jaco_link_finger_tip_3");
+//        allowedLinksToCollideWithObjectToGrasp.push_back("jaco_link_hand");
+//        allowedLinksToCollideWithObjectToGrasp.push_back("jaco_small_ring_cover_3");
+
+//        //TEST
+////        allowedLinksToCollideWithObjectToGrasp.push_back("jaco_link_3");
+////        allowedLinksToCollideWithObjectToGrasp.push_back("jaco_link_4");
+////        allowedLinksToCollideWithObjectToGrasp.push_back("jaco_link_5");
+
+//        acm.setEntry("bounding_box",allowedLinksToCollideWithObjectToGrasp,true);
+
+        acm.setEntry("bounding_box",true);
         acm.getMessage(currentACM);
 
 

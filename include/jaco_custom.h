@@ -60,8 +60,8 @@ public:
     std::vector<double> getFingersPosition();
 
     void moveAlongAxis(std::string axis, double distance);
-    void moveitPlugin(geometry_msgs::PoseStamped p_pose);//The communication chanel to moveit
-    void moveitPlugin(tf::StampedTransform tf_pose);
+    bool moveitPlugin(geometry_msgs::PoseStamped p_pose);//The communication chanel to moveit
+    bool moveitPlugin(tf::StampedTransform tf_pose);
 
 private:
 
@@ -73,6 +73,7 @@ private:
 
     void wait_for_arm_stopped();
     void wait_for_fingers_stopped();
+    void waitForMovementFinished();
 
 //    geometry_msgs::PoseStamped arm_pose;
 //    jaco_msgs::FingerPosition fingers_pose;
@@ -100,6 +101,9 @@ private:
     ros::Publisher cartesian_publisher;
 
     ros::ServiceClient cartesian_position_service_client;
+
+    bool moveit_status_received;
+    bool move_it_status;
 
 };
 

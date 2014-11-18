@@ -317,7 +317,7 @@ void Communication::repeat(){
     listener.lookupTransform("root","tf_grasp_position",ros::Time(0),grasp_pose);
 
     std::cout << "The arm will start moving in 5 seconds..." << std::endl;
-    sleep(5);
+    //sleep(5);
     m_publish_relative_pose = false;
     thread.join();
     thread_pre_grasp.join();
@@ -325,11 +325,14 @@ void Communication::repeat(){
     std::cout << "now!" << std::endl;
 
     // MAKE IT RETURN A BOOL, SO THAT I CAN KNOW THE MOVEMENT IS FINISHED AND PROCEED TO THE FINAL MOVEMENT
-    m_jaco_ptr->moveitPlugin(pre_grasp_pose);
+    bool succeeded = m_jaco_ptr->moveitPlugin(pre_grasp_pose);
 
-    sleep(20);
+//    sleep(20);
 
-    m_jaco_ptr->moveitPlugin(grasp_pose);
+//    if(succeeded){
+//        m_jaco_ptr->moveitPlugin(grasp_pose);
+//    }
+
 
 }
 
