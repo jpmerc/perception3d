@@ -61,6 +61,18 @@ moveit_msgs::Grasp tryMoveItPickMessage(geometry_msgs::PoseStampedConstPtr p_inp
    return grasp;
 }
 
+bool acceptOrRejectTrajectory(){
+    cout << "Do you accept the trajectory planned by MoveIt! ? (y or n) " << endl;
+
+    string accept = "";
+    cin >> accept;
+
+    char c = accept[0];
+    if(c == 'y') return true;
+    else return false;
+
+}
+
 void callBack(geometry_msgs::PoseStampedConstPtr p_input)
 {
 
@@ -94,26 +106,16 @@ void callBack(geometry_msgs::PoseStampedConstPtr p_input)
    // group.setWorkspace(-2,-2,-2,2,2,2);
     group.setGoalPositionTolerance(0.05);
 
-    //cout << " tolerance : " << group.getGoalPositionTolerance() << endl;
-
-    ROS_INFO("Reference frame: %s", group.getPlanningFrame().c_str());
-   // ROS_INFO("End Effector frame: %s", group.getEndEffectorLink().c_str());
 
     ros::NodeHandle node_handle;
     ros::Publisher display_publisher = node_handle.advertise<moveit_msgs::DisplayTrajectory>("/move_group/display_planned_path", 1, true);
     moveit_msgs::DisplayTrajectory display_trajectory;
-
-
     moveit::planning_interface::MoveGroup::Plan myPlan;
-
-
 
 
     // CHECK THE COLLISION WORLD AND ALLOWED COLLISION MATRIX JUST BEFORE PLANNING
     moveit_msgs::GetPlanningScene srv;
     srv.request.components.components =  moveit_msgs::PlanningSceneComponents::WORLD_OBJECT_NAMES;
-
-
 
     //cout << "waiting for box to appear..." << endl;
     if (client_get_scene_.call(srv))
@@ -134,49 +136,33 @@ void callBack(geometry_msgs::PoseStampedConstPtr p_input)
     }
 
 
-
-//    moveit_msgs::PlanningScene currentScene;
-//    moveit_msgs::GetPlanningScene scene_srv;
-//    scene_srv.request.components.components = scene_srv.request.components.ALLOWED_COLLISION_MATRIX;
-
-//    if(client_get_scene_.call(scene_srv)){
-//        currentScene = scene_srv.response.scene;
-//        moveit_msgs::AllowedCollisionMatrix currentACM = currentScene.allowed_collision_matrix;
-////        cout << "size of acm_entry_names " << currentACM.entry_names.size() << endl;
-//        cout << "acm_entry_values :" << endl << currentACM << endl;
-////        cout << "size of acm_entry_values[0].entries " << currentACM.entry_values[0].enabled.size() << endl;
-
-//    }
-
-
-//    moveit_msgs::RobotState state;
-//    moveit_msgs::GetPlanningScene scene_srv;
-//    scene_srv.request.components.components = scene_srv.request.components.ROBOT_STATE;
-//    if(client_get_scene_.call(scene_srv)){
-//            state = scene_srv.response.scene.robot_state;
-
-//    }
-
-
-
-
     bool success = group.plan(myPlan);
 
-    cout << "Size of plan : " << myPlan.trajectory_.joint_trajectory.points.size() << endl;
-    cout << "Plan :" << endl << myPlan.trajectory_.joint_trajectory << endl;
 
+    // PRINT TRAJECTORY POINTS
+    // cout << "Size of plan : " << myPlan.trajectory_.joint_trajectory.points.size() << endl;
+    // cout << "Plan :" << endl << myPlan.trajectory_.joint_trajectory << endl;
+
+    // DISPLAY IN RVIZ
     display_trajectory.trajectory_start = myPlan.start_state_;
     display_trajectory.trajectory.push_back(myPlan.trajectory_);
     display_publisher.publish(display_trajectory);
-    /* Sleep to give Rviz time to visualize the plan. */
     sleep(5.0);
+    /* Sleep to give Rviz time to visualize the plan. */
+
 
     std_msgs::Bool moved_successfully;
     if(success)
     {
         std::cout << "The plan worked!" << std::endl;
-        //group.move();
-        moved_successfully.data = true;
+        bool accept = acceptOrRejectTrajectory();
+        if(accept) {
+            group.move();
+            moved_successfully.data = true;
+        }
+        else{
+            moved_successfully.data = false;
+        }
     }
     else
     {
