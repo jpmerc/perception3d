@@ -316,6 +316,23 @@ void Communication::repeat(){
     listener.lookupTransform("root","tf_pre_grasp_position",ros::Time(0),pre_grasp_pose);
     listener.lookupTransform("root","tf_grasp_position",ros::Time(0),grasp_pose);
 
+    // Add listeners for pose in jaco api referential
+    tf::StampedTransform api_referential_tf;
+    listener.lookupTransform("jaco_link_hand","jaco_tool_position",ros::Time(0),api_referential_tf);
+    tf::Transform pre_grasp_api = pre_grasp_pose.Transform * api_referential_tf;
+    tf::Transform grasp_api = grasp_pose.Transform * api_referential_tf;
+
+    // Add a thread and publish the tf to help debugging
+
+    // SOME CODE
+    // ....
+    // ....
+    // ....
+    // ....
+    // ....
+    // ....
+
+
     std::cout << "The arm will start moving in 5 seconds..." << std::endl;
     //sleep(5);
     m_publish_relative_pose = false;

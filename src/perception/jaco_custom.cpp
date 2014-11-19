@@ -19,7 +19,9 @@ JacoCustom::JacoCustom(ros::NodeHandle &node)
     angular_publisher   = node.advertise<wpi_jaco_msgs::AngularCommand>("jaco_arm/angular_cmd", 1);
     cartesian_publisher = node.advertise<wpi_jaco_msgs::CartesianCommand>("jaco_arm/cartesian_cmd", 1);
 
-    cartesian_position_service_client = node.serviceClient<wpi_jaco_msgs::GetCartesianPosition>("jaco_arm/get_cartesian_position");
+    cartesian_position_service_client  = node.serviceClient<wpi_jaco_msgs::GetCartesianPosition>("jaco_arm/get_cartesian_position");
+    euler_to_quaternion_service_client = node.serviceClient<wpi_jaco_msgs::EulerToQuaternion>("jaco_conversions/euler_to_quaternion");
+    quaternion_to_euler_service_client = node.serviceClient<wpi_jaco_msgs::QuaternionToEuler>("jaco_conversions/quaternion_to_euler");
 
 }
 
@@ -99,13 +101,23 @@ void JacoCustom::joint_state_callback (const sensor_msgs::JointStateConstPtr& in
 
 
     // Publish the topic data received to a TF
-    wpi_jaco_msgs::GetCartesianPosition srv;
-    if(cartesian_position_service_client.call(srv)){
-        tool_position_tf.setOrigin(tf::Vector3(srv.response.pos.linear.x, srv.response.pos.linear.y ,srv.response.pos.linear.z));
-        tf::Quaternion quat;
-        quat.setEuler(srv.response.pos.angular.z, srv.response.pos.angular.y, srv.response.pos.angular.x);
-        tool_position_tf.setRotation(quat);
-        position_broadcaster.sendTransform(tf::StampedTransform(tool_position_tf,ros::Time::now(),"jaco_link_base","jaco_tool_position"));
+    wpi_jaco_msgs::GetCartesianPosition c_pos;
+    if(cartesian_position_service_client.call(c_pos)){
+        geometry_msgs::Twist position = c_pos.response.pos;
+        tool_position_tf.setOrigin(tf::Vector3(position.linear.x, position.linear.y, position.linear.z));
+
+
+        wpi_jaco_msgs::EulerToQuaternion conv;
+        conv.request.roll   = position.angular.x;
+        conv.request.pitch  = position.angular.y;
+        conv.request.yaw    = position.angular.z;
+        if(euler_to_quaternion_service_client.call(conv)){
+            geometry_msgs::Quaternion geo_quat = conv.response.orientation;
+            tf::Quaternion quat(geo_quat.x, geo_quat.y, geo_quat.z, geo_quat.w);
+            tool_position_tf.setRotation(quat);
+            position_broadcaster.sendTransform(tf::StampedTransform(tool_position_tf,ros::Time::now(),"jaco_link_base","jaco_tool_position"));
+        }
+        //quat.setEuler(c_pos.response.pos.angular.z, c_pos.response.pos.angular.y, c_pos.response.pos.angular.x);
     }
 }
 
@@ -157,7 +169,7 @@ void JacoCustom::close_fingers(){
 
 
 
-//void JacoCustom::move_up(double distance){
+void JacoCustom::move_up(double distance){
 //    actionlib::SimpleActionClient<jaco_msgs::ArmPoseAction> action_client("/jaco/arm_pose",true);
 //    action_client.waitForServer();
 //    jaco_msgs::ArmPoseGoal pose_goal = jaco_msgs::ArmPoseGoal();
@@ -170,7 +182,20 @@ void JacoCustom::close_fingers(){
 
 //    action_client.sendGoal(pose_goal);
 //    wait_for_arm_stopped();
-//}
+
+    wpi_jaco_msgs::GetCartesianPosition srv;
+    if(cartesian_position_service_client.call(srv)){
+        wpi_jaco_msgs::CartesianCommand cmd;
+        cmd.position = true;
+        cmd.armCommand = true;
+        cmd.fingerCommand = false;
+        cmd.repeat = false;
+        geometry_msgs::Twist arm = srv.response.pos;
+        arm.linear.z = arm.linear.z + distance;
+        cartesian_publisher.publish(cmd);
+    }
+
+}
 
 //void JacoCustom::moveToPoint(double x, double y, double z, double rotx, double roty, double rotz, double rotw){
 //    actionlib::SimpleActionClient<jaco_msgs::ArmPoseAction> action_client("/jaco/arm_pose",true);

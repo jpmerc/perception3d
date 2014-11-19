@@ -27,14 +27,18 @@
 #include <moveit_msgs/AttachedCollisionObject.h>
 #include <moveit_msgs/CollisionObject.h>
 
+#include <std_msgs/Bool.h>
 #include <sensor_msgs/JointState.h>
+
 #include <wpi_jaco_msgs/AngularCommand.h>
 #include <wpi_jaco_msgs/CartesianCommand.h>
 #include <wpi_jaco_msgs/GetCartesianPosition.h>
 #include <wpi_jaco_msgs/EulerToQuaternion.h>
 #include <wpi_jaco_msgs/ExecuteGraspGoal.h>
 #include <wpi_jaco_msgs/ExecuteGraspAction.h>
-#include <std_msgs/Bool.h>
+#include <wpi_jaco_msgs/EulerToQuaternion.h>
+#include <wpi_jaco_msgs/QuaternionToEuler.h>
+
 
 
 class JacoCustom{
@@ -101,6 +105,8 @@ private:
     ros::Publisher cartesian_publisher;
 
     ros::ServiceClient cartesian_position_service_client;
+    ros::ServiceClient euler_to_quaternion_service_client;
+    ros::ServiceClient quaternion_to_euler_service_client;
 
     bool moveit_status_received;
     bool move_it_status;
