@@ -104,7 +104,7 @@ void callBack(geometry_msgs::PoseStampedConstPtr p_input)
     group.setPlanningTime(10.0);
     group.setWorkspace(-1, -1.5 , 0.1, 1, 0.4, 1.2);
    // group.setWorkspace(-2,-2,-2,2,2,2);
-    group.setGoalPositionTolerance(0.05);
+    group.setGoalPositionTolerance(0.10);
 
 
     ros::NodeHandle node_handle;
@@ -261,16 +261,16 @@ void object_callback(const pcl::PointCloud<pcl::PointXYZRGB>::ConstPtr& pc){
 
 //        collision_object.operation = collision_object.ADD;
 
-        ros::NodeHandle node_handle;
-        ros::Publisher planning_scene_diff_publisher = node_handle.advertise<moveit_msgs::PlanningScene>("planning_scene", 1);
+//        ros::NodeHandle node_handle;
+//        ros::Publisher planning_scene_diff_publisher = node_handle.advertise<moveit_msgs::PlanningScene>("planning_scene", 1);
 
 
-        ros::WallDuration sleep_time(0.5);
-        moveit_msgs::PlanningScene planning_scene;
-//        planning_scene.world.collision_objects.push_back(collision_object);
-//        planning_scene.is_diff = true;
-        planning_scene_diff_publisher.publish(planning_scene);
-        sleep_time.sleep();
+//        ros::WallDuration sleep_time(0.5);
+//        moveit_msgs::PlanningScene planning_scene;
+////        planning_scene.world.collision_objects.push_back(collision_object);
+////        planning_scene.is_diff = true;
+//        planning_scene_diff_publisher.publish(planning_scene);
+//        sleep_time.sleep();
 
 
 
@@ -439,7 +439,7 @@ int main(int argc, char** argv)
 
 
     //Add an obstacle behind jaco to reduce its workspace (do not go too far behind --> kinect is there)
-    addObstacleBehindJaco();
+    //addObstacleBehindJaco();
 
     ros::CallbackQueue queue;
     ros::SubscribeOptions options = ros::SubscribeOptions::create<geometry_msgs::PoseStamped>("/jaco_command",1, boost::bind(&callBack,_1), ros::VoidPtr(), &queue);

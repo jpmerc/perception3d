@@ -343,17 +343,19 @@ void Communication::repeat(){
 
     std::cout << "now!" << std::endl;
 
-    bool succeeded = m_jaco_ptr->moveitPlugin(pre_grasp_pose1);
+    bool succeeded = m_jaco_ptr->moveitPlugin(pre_grasp_pose2);
 
     // REMOVE ALL THE SLEEPS SOON!
     sleep(10);
 
     if(succeeded){
-        m_jaco_ptr->moveToPoint(pre_grasp_api1);
-        sleep(10);
+//        m_jaco_ptr->moveToPoint(pre_grasp_api1);
+//        sleep(10);
         m_jaco_ptr->moveToPoint(pre_grasp_api2);
         sleep(10);
         m_jaco_ptr->moveToPoint(grasp_api);
+        sleep(10);
+        m_jaco_ptr->close_fingers();
         sleep(10);
         m_jaco_ptr->move_up(0.1);
         sleep(10);
