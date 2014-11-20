@@ -291,8 +291,7 @@ void Communication::repeat(){
     m_publish_relative_pose = true;
 
     boost::thread thread(&Communication::publishGraspTF,this,arm_pose_world_frame);
-    tf::StampedTransform grasp_pose;
-    tf::StampedTransform pre_grasp_pose;
+
     tf::TransformListener listener;
 
     // Wait to be sure that "tf_grasp_position" is being published
@@ -303,46 +302,49 @@ void Communication::repeat(){
         tf_ready = listener.waitForTransform("camera_rgb_frame","tf_grasp_position",ros::Time(0),ros::Duration(5.0));
     }
 
-    double distanceToPreGrasp = 0.1; //in meters
-    boost::thread thread_pre_grasp(&Communication::publishPreGraspTF, this, distanceToPreGrasp);
+    boost::thread thread_pre_grasp1(&Communication::publishPreGraspTF, this, 0.10, "tf_pre_grasp_position1");
+    boost::thread thread_pre_grasp2(&Communication::publishPreGraspTF, this, 0.05, "tf_pre_grasp_position2");
 
     // Wait to be sure "tf_pre_grasp_position" is being published
     tf_ready = false;
     while(!tf_ready){
         freq.sleep();
-        tf_ready = listener.waitForTransform("tf_grasp_position","tf_pre_grasp_position",ros::Time(0),ros::Duration(5.0));
+        tf_ready = listener.waitForTransform("tf_grasp_position","tf_pre_grasp_position1",ros::Time(0),ros::Duration(5.0));
     }
 
-    listener.lookupTransform("root","tf_pre_grasp_position",ros::Time(0),pre_grasp_pose);
+    tf::StampedTransform pre_grasp_pose1;
+    tf::StampedTransform pre_grasp_pose2;
+    tf::StampedTransform grasp_pose;
+    listener.lookupTransform("root","tf_pre_grasp_position1",ros::Time(0),pre_grasp_pose1);
+    listener.lookupTransform("root","tf_pre_grasp_position2",ros::Time(0),pre_grasp_pose2);
     listener.lookupTransform("root","tf_grasp_position",ros::Time(0),grasp_pose);
 
     // Add listeners for pose in jaco api referential
     tf::StampedTransform api_referential_tf;
     listener.lookupTransform("jaco_link_hand","jaco_tool_position",ros::Time(0),api_referential_tf);
-    tf::Transform pre_grasp_api = pre_grasp_pose.Transform * api_referential_tf;
-    tf::Transform grasp_api = grasp_pose.Transform * api_referential_tf;
+    tf::Transform pre_grasp_api1 = pre_grasp_pose1 * api_referential_tf;
+    tf::Transform pre_grasp_api2 = pre_grasp_pose2 * api_referential_tf;
+    tf::Transform grasp_api = grasp_pose * api_referential_tf;
 
     // Add a thread and publish the tf to help debugging
-
-    // SOME CODE
-    // ....
-    // ....
-    // ....
-    // ....
-    // ....
-    // ....
-
+    boost::thread thread1(&Communication::publishTF, this, pre_grasp_api1, "root", "tf_pre_grasp_api_1");
+    boost::thread thread2(&Communication::publishTF, this, pre_grasp_api2, "root", "tf_pre_grasp_api_2");
+    boost::thread thread3(&Communication::publishTF, this, grasp_api, "root", "tf_grasp_api");
 
     std::cout << "The arm will start moving in 5 seconds..." << std::endl;
-    //sleep(5);
+    sleep(5);
     m_publish_relative_pose = false;
     thread.join();
-    thread_pre_grasp.join();
+    thread_pre_grasp1.join();
+    thread_pre_grasp2.join();
+    thread1.join();
+    thread2.join();
+    thread3.join();
 
     std::cout << "now!" << std::endl;
 
     // MAKE IT RETURN A BOOL, SO THAT I CAN KNOW THE MOVEMENT IS FINISHED AND PROCEED TO THE FINAL MOVEMENT
-    bool succeeded = m_jaco_ptr->moveitPlugin(pre_grasp_pose);
+//    bool succeeded = m_jaco_ptr->moveitPlugin(pre_grasp_pose);
 
 //    sleep(20);
 
@@ -363,7 +365,7 @@ void Communication::publishGraspTF(tf::Transform arm){
     }
 }
 
-void Communication::publishPreGraspTF(double distance){
+void Communication::publishPreGraspTF(double distance, std::string target_frame){
     static tf::TransformBroadcaster br;
     ros::Rate r(10);
 
@@ -372,8 +374,20 @@ void Communication::publishPreGraspTF(double distance){
     pre_grasp_tf.setOrigin(tf::Vector3(0,0,distance));
 
     while(m_publish_relative_pose){
-        tf::StampedTransform pre_grasp_pose_world = tf::StampedTransform(pre_grasp_tf, ros::Time::now(), "tf_grasp_position", "tf_pre_grasp_position");
+        tf::StampedTransform pre_grasp_pose_world = tf::StampedTransform(pre_grasp_tf, ros::Time::now(), "tf_grasp_position", target_frame);
         br.sendTransform(pre_grasp_pose_world);
+        r.sleep();
+    }
+}
+
+
+void Communication::publishTF(tf::Transform in_tf, std::string src, std::string target){
+    static tf::TransformBroadcaster br;
+    ros::Rate r(10);
+
+    while(m_publish_relative_pose){
+        tf::StampedTransform st_tf = tf::StampedTransform(in_tf, ros::Time::now(), src, target);
+        br.sendTransform(st_tf);
         r.sleep();
     }
 }

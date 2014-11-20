@@ -63,11 +63,10 @@ private:
     bool m_train_received;
 
     tf::Transform m_relative_pose;
-    void publishGraspTF(tf::Transform arm);
     bool m_publish_relative_pose;
-
-    void publishPreGraspTF(double distance);
-    bool m_publish_pre_grasp;
+    void publishGraspTF(tf::Transform arm);
+    void publishPreGraspTF(double distance, std::string target_frame);
+    void publishTF(tf::Transform in_tf, std::string src, std::string target);
 
 
     int selected_object_index;
