@@ -343,16 +343,21 @@ void Communication::repeat(){
 
     std::cout << "now!" << std::endl;
 
-    // MAKE IT RETURN A BOOL, SO THAT I CAN KNOW THE MOVEMENT IS FINISHED AND PROCEED TO THE FINAL MOVEMENT
-//    bool succeeded = m_jaco_ptr->moveitPlugin(pre_grasp_pose);
+    bool succeeded = m_jaco_ptr->moveitPlugin(pre_grasp_pose1);
 
-//    sleep(20);
+    // REMOVE ALL THE SLEEPS SOON!
+    sleep(10);
 
-//    if(succeeded){
-//        m_jaco_ptr->moveitPlugin(grasp_pose);
-//    }
-
-
+    if(succeeded){
+        m_jaco_ptr->moveToPoint(pre_grasp_api1);
+        sleep(10);
+        m_jaco_ptr->moveToPoint(pre_grasp_api2);
+        sleep(10);
+        m_jaco_ptr->moveToPoint(grasp_api);
+        sleep(10);
+        m_jaco_ptr->move_up(0.1);
+        sleep(10);
+    }
 }
 
 void Communication::publishGraspTF(tf::Transform arm){

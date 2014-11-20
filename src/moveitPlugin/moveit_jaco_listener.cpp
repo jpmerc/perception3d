@@ -156,6 +156,10 @@ void callBack(geometry_msgs::PoseStampedConstPtr p_input)
     {
         std::cout << "The plan worked!" << std::endl;
         bool accept = acceptOrRejectTrajectory();
+
+        // TO REMOVE WHEN FINISHED WITH TESTS
+        sleep(10);
+
         if(accept) {
             group.move();
             moved_successfully.data = true;
