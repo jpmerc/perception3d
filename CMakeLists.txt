@@ -10,8 +10,6 @@ find_package(catkin REQUIRED COMPONENTS
   std_msgs
   pcl_msgs
   image_transport
-  jaco_driver
-  jaco_msgs
   moveit_ros_planning_interface
   tf
   tf_conversions
@@ -122,17 +120,21 @@ add_dependencies(testMoveit perception3d_gencpp)
 add_executable(terminalListener src/moveitTest/terminalListener.cpp)
 target_link_libraries(terminalListener ${catkin_LIBRARIES} ${PCL_LIBRARIES})
 
-add_executable(arm_action_server src/moveitPlugin/arm_action_server.cpp)
-target_link_libraries(arm_action_server ${catkin_LIBRARIES} ${PCL_LIBRARIES})
+#add_executable(arm_action_server src/moveitPlugin/arm_action_server.cpp)
+#target_link_libraries(arm_action_server ${catkin_LIBRARIES} ${PCL_LIBRARIES})
 
 add_executable( moveit_jaco_listener src/moveitPlugin/moveit_jaco_listener.cpp)
 target_link_libraries(moveit_jaco_listener ${catkin_LIBRARIES} ${PCL_LIBRARIES} lperception)
 
-add_executable( data_publisher_joint_test src/data_publisher_joint_test.cpp)
-target_link_libraries(data_publisher_joint_test ${catkin_LIBRARIES} ${PCL_LIBRARIES} lperception)
+add_executable( pointcloud_object_remover src/moveitPlugin/pointcloud_object_remover.cpp)
+target_link_libraries(pointcloud_object_remover ${catkin_LIBRARIES} ${PCL_LIBRARIES} lperception)
 
-add_executable(redoPose src/moveitTest/redoPose.cpp)
-target_link_libraries(redoPose ${catkin_LIBRARIES} ${PCL_LIBRARIES} lperception )
+
+#add_executable( data_publisher_joint_test src/data_publisher_joint_test.cpp)
+#target_link_libraries(data_publisher_joint_test ${catkin_LIBRARIES} ${PCL_LIBRARIES} lperception)
+
+#add_executable(redoPose src/moveitTest/redoPose.cpp)
+#target_link_libraries(redoPose ${catkin_LIBRARIES} ${PCL_LIBRARIES} lperception )
 
 add_executable(icp_test src/tests/icp_test.cpp)
 target_link_libraries(icp_test ${catkin_LIBRARIES} ${PCL_LIBRARIES} lperception)

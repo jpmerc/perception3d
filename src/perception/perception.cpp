@@ -83,13 +83,13 @@ void sendCommandsToJaco(JacoCustom *jaco){
 //            }
 //        }
 //    }
-    if(ros::ok()){
-        jaco->close_fingers();
-        sleep(10);
-        jaco->move_up(0.05);
-        sleep(10);
-        jaco->open_fingers();
-    }
+//    if(ros::ok()){
+//        jaco->close_fingers();
+//        sleep(10);
+//        jaco->move_up(0.05);
+//        sleep(10);
+//        jaco->open_fingers();
+//    }
 
 }
 

@@ -343,7 +343,7 @@ void Communication::repeat(){
 
     std::cout << "now!" << std::endl;
 
-    bool succeeded = m_jaco_ptr->moveitPlugin(pre_grasp_pose2);
+    bool succeeded = m_jaco_ptr->moveitPlugin(pre_grasp_pose1);
 
     // REMOVE ALL THE SLEEPS SOON!
     sleep(10);

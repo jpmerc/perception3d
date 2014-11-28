@@ -1,5 +1,5 @@
 #include <ros/ros.h>
-#include <jaco_msgs/JointVelocity.h>
+//#include <jaco_msgs/JointVelocity.h>
 
 /*
   This is a script to test the joint velocity.  You can choose how many velocity you want to send.

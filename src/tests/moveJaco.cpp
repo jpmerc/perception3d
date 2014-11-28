@@ -21,14 +21,18 @@ int main (int argc, char** argv){
 
     ros::Publisher moveitPublisher = n.advertise<geometry_msgs::PoseStamped>("jaco_command",1);
 
+
+
+//    geometry_msgs::PoseStamped pose;
     geometry_msgs::PoseStamped pose;
-    pose.pose.position.x = 0.22209;
-    pose.pose.position.y = -0.58097;
-    pose.pose.position.z = 0.38685;
-    pose.pose.orientation.x = -0.03459;
-    pose.pose.orientation.y = 0.14507;
-    pose.pose.orientation.z = 0.94773;
-    pose.pose.orientation.w = -0.28206;
+    pose.pose.position.x = 0.0270004;
+    pose.pose.position.y = -0.597257;
+    pose.pose.position.z = 0.323911;
+    tf::Quaternion tf_quat;
+    tf_quat.setEulerZYX(0.0931827053428, 1.05136871338, 1.51835548878);
+    geometry_msgs::Quaternion quat;
+    tf::quaternionTFToMsg(tf_quat, quat);
+    pose.pose.orientation = quat;
     pose.header.frame_id = "/root";
 
     r.sleep();

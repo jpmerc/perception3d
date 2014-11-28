@@ -100,11 +100,28 @@ void callBack(geometry_msgs::PoseStampedConstPtr p_input)
     group.setNumPlanningAttempts(10);
     group.setPlannerId("RRTConnectkConfigDefault");
     //group.setStartStateToCurrentState();
-    group.setPoseTarget(*p_input);
+    geometry_msgs::Pose target_pose1;
+    target_pose1.position.x = p_input->pose.position.x;
+    target_pose1.position.y = p_input->pose.position.y;
+    target_pose1.position.z = p_input->pose.position.z;
+    target_pose1.orientation.x = p_input->pose.orientation.x;
+    target_pose1.orientation.y = p_input->pose.orientation.y;
+    target_pose1.orientation.z = p_input->pose.orientation.z;
+    target_pose1.orientation.w = p_input->pose.orientation.w;
+
+
+    cout << "x : " << p_input->pose.orientation.x << endl;
+    cout << "y : " << p_input->pose.orientation.y << endl;
+    cout << "z : " << p_input->pose.orientation.z << endl;
+    cout << "w : " << p_input->pose.orientation.w << endl;
+
+   // group.setPoseTarget(*p_input,std::string("jaco_link_hand"));
+    group.setPoseTarget(target_pose1, std::string("jaco_link_hand"));
     group.setPlanningTime(10.0);
     group.setWorkspace(-1, -1.5 , 0.1, 1, 0.4, 1.2);
    // group.setWorkspace(-2,-2,-2,2,2,2);
-    group.setGoalPositionTolerance(0.10);
+    //group.setGoalPositionTolerance(0.10);
+    group.setGoalTolerance(0.10);
 
 
     ros::NodeHandle node_handle;
@@ -113,27 +130,27 @@ void callBack(geometry_msgs::PoseStampedConstPtr p_input)
     moveit::planning_interface::MoveGroup::Plan myPlan;
 
 
-    // CHECK THE COLLISION WORLD AND ALLOWED COLLISION MATRIX JUST BEFORE PLANNING
-    moveit_msgs::GetPlanningScene srv;
-    srv.request.components.components =  moveit_msgs::PlanningSceneComponents::WORLD_OBJECT_NAMES;
+//    // CHECK THE COLLISION WORLD AND ALLOWED COLLISION MATRIX JUST BEFORE PLANNING
+//    moveit_msgs::GetPlanningScene srv;
+//    srv.request.components.components =  moveit_msgs::PlanningSceneComponents::WORLD_OBJECT_NAMES;
 
-    //cout << "waiting for box to appear..." << endl;
-    if (client_get_scene_.call(srv))
-    {
-        bool object_in_world = false;
-        while(!object_in_world){
-            for (int i = 0; i < (int)srv.response.scene.world.collision_objects.size(); ++i)
-            {
-                if (srv.response.scene.world.collision_objects[i].id == "bounding_box")
-                    object_in_world = true;
-            }
-        }
-//        cout << "WORLD OBJECTS : " << endl;
-//        for (int i = 0; i < (int)srv.response.scene.world.collision_objects.size(); ++i){
-//            cout << srv.response.scene.world.collision_objects[i].id << endl;
+//    //cout << "waiting for box to appear..." << endl;
+//    if (client_get_scene_.call(srv))
+//    {
+//        bool object_in_world = false;
+//        while(!object_in_world){
+//            for (int i = 0; i < (int)srv.response.scene.world.collision_objects.size(); ++i)
+//            {
+//                if (srv.response.scene.world.collision_objects[i].id == "bounding_box")
+//                    object_in_world = true;
+//            }
 //        }
+////        cout << "WORLD OBJECTS : " << endl;
+////        for (int i = 0; i < (int)srv.response.scene.world.collision_objects.size(); ++i){
+////            cout << srv.response.scene.world.collision_objects[i].id << endl;
+////        }
 
-    }
+//    }
 
 
     bool success = group.plan(myPlan);
@@ -158,10 +175,10 @@ void callBack(geometry_msgs::PoseStampedConstPtr p_input)
         bool accept = acceptOrRejectTrajectory();
 
         // TO REMOVE WHEN FINISHED WITH TESTS
-        sleep(10);
+        //sleep(10);
 
         if(accept) {
-            group.move();
+//            group.move();
             moved_successfully.data = true;
         }
         else{
@@ -451,7 +468,7 @@ int main(int argc, char** argv)
     planning_scene_diff_publisher_ = nh.advertise<moveit_msgs::PlanningScene>("planning_scene", 1);
     movement_status_publisher_ = nh.advertise<std_msgs::Bool>("/jaco_arm/moveit_movement_status",1);
 
-    ros::Subscriber subB = nh.subscribe<pcl::PointCloud<pcl::PointXYZRGB> > ("/grasp_object", 1, object_callback);
+    //ros::Subscriber subB = nh.subscribe<pcl::PointCloud<pcl::PointXYZRGB> > ("/grasp_object", 1, object_callback);
 
     ros::spin();
 

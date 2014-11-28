@@ -2,9 +2,9 @@
 #include <actionlib/server/simple_action_server.h>
 #include <control_msgs/FollowJointTrajectoryAction.h>
 #include <control_msgs/JointTolerance.h>
-#include <jaco_msgs/JointVelocity.h>
-#include <jaco_msgs/JointAngles.h>
-#include <jaco_msgs/ArmJointAnglesAction.h>
+//#include <jaco_msgs/JointVelocity.h>
+//#include <jaco_msgs/JointAngles.h>
+//#include <jaco_msgs/ArmJointAnglesAction.h>
 #include <trajectory_msgs/JointTrajectoryPoint.h>
 #include <actionlib/client/simple_action_client.h>
 #include <angles/angles.h>
