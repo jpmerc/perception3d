@@ -175,7 +175,7 @@ void callBack(geometry_msgs::PoseStampedConstPtr p_input)
         bool accept = acceptOrRejectTrajectory();
 
         // TO REMOVE WHEN FINISHED WITH TESTS
-        //sleep(10);
+        sleep(10);
 
         if(accept) {
 //            group.move();

@@ -11,13 +11,6 @@
 
 
 using namespace std;
-shape_msgs::SolidPrimitive shape_;
-geometry_msgs::Pose pose_;
-boost::mutex object_mutex;
-BoundingBox findBoundingBox(const pcl::PointCloud<pcl::PointXYZRGB>::ConstPtr& pc);
-const float bad_point = std::numeric_limits<float>::quiet_NaN();
-ros::Publisher pc_publisher;
-
 
 struct BoundingBox{
     double x_min;
@@ -28,6 +21,12 @@ struct BoundingBox{
     double z_max;
 };
 
+shape_msgs::SolidPrimitive shape_;
+geometry_msgs::Pose pose_;
+boost::mutex object_mutex;
+BoundingBox findBoundingBox(const pcl::PointCloud<pcl::PointXYZRGB>::ConstPtr& pc);
+const float bad_point = std::numeric_limits<float>::quiet_NaN();
+ros::Publisher pc_publisher;
 struct BoundingBox myBoundingBox;
 
 
