@@ -83,6 +83,7 @@ private:
     ros::Publisher ObjectToGrasp_publisher_;
     boost::thread publish_objectToGrasp_thread_;
     void publish_objectToGrasp();
+    void publish_objectToGrasp_moveitFormat();
 
 
 };

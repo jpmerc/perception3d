@@ -351,14 +351,14 @@ void Communication::repeat(){
     if(succeeded){
 //        m_jaco_ptr->moveToPoint(pre_grasp_api1);
 //        sleep(10);
-        m_jaco_ptr->moveToPoint(pre_grasp_api2);
-        sleep(10);
-        m_jaco_ptr->moveToPoint(grasp_api);
-        sleep(10);
-        m_jaco_ptr->close_fingers();
-        sleep(10);
-        m_jaco_ptr->move_up(0.1);
-        sleep(10);
+//        m_jaco_ptr->moveToPoint(pre_grasp_api2);
+//        sleep(10);
+//        m_jaco_ptr->moveToPoint(grasp_api);
+//        sleep(10);
+//        m_jaco_ptr->close_fingers();
+//        sleep(10);
+//        m_jaco_ptr->move_up(0.1);
+//        sleep(10);
     }
 }
 
@@ -560,7 +560,7 @@ void Communication::testRecognition(){
 }
 
 
-void Communication::publish_objectToGrasp(){
+void Communication::publish_objectToGrasp_moveitFormat(){
     ros::Rate r(1);
     ros::NodeHandle node;
     static tf::TransformBroadcaster br;
@@ -590,6 +590,17 @@ void Communication::publish_objectToGrasp(){
 //            std::cout << "new : " << object_pc_transformed->at(100) << std::endl;
             ObjectToGrasp_publisher_.publish(object_pc_transformed);
         }
+        r.sleep();
+    }
+}
+
+void Communication::publish_objectToGrasp(){
+    ros::Rate r(10);
+    ros::NodeHandle node;
+
+    while(node.ok()){
+        pcl::PointCloud<PointT>::Ptr object_pc = m_object_ex_ptr->getObjectToGrasp();
+        ObjectToGrasp_publisher_.publish(object_pc);
         r.sleep();
     }
 }

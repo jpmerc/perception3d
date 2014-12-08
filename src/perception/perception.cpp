@@ -136,7 +136,7 @@ int main (int argc, char** argv){
     boost::thread spin_thread(callbackThread);
 
     //Thread to test the training phase of the system
-    boost::thread trainTest(trainFunctionTestThread,communication_ptr);
+//    boost::thread trainTest(trainFunctionTestThread,communication_ptr);
     //boost::thread recognitionTest(recognitionTestsThread,communication_ptr);
     //boost::thread(sendCommandsToJaco,JACO_PTR);
 

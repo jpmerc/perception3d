@@ -27,7 +27,12 @@ boost::mutex object_mutex;
 BoundingBox findBoundingBox(const pcl::PointCloud<pcl::PointXYZRGB>::ConstPtr& pc);
 const float bad_point = std::numeric_limits<float>::quiet_NaN();
 ros::Publisher pc_publisher;
+ros::Publisher bb_publisher;
 struct BoundingBox myBoundingBox;
+void printBoundingBox(BoundingBox in_bb);
+void publishBoundingBoxAsPointCloud(BoundingBox in_bb);
+int bbox_seq_number = 0;
+
 
 
 void object_callback(const pcl::PointCloud<pcl::PointXYZRGB>::ConstPtr& pc){
@@ -43,6 +48,14 @@ void object_callback(const pcl::PointCloud<pcl::PointXYZRGB>::ConstPtr& pc){
 void scene_callback(const pcl::PointCloud<pcl::PointXYZRGB>::ConstPtr& scene_cloud){
 
     pcl::PointCloud<pcl::PointXYZRGB> pc = *scene_cloud;
+    cout << "Frame_id = " << pc.header.frame_id << endl;
+
+    object_mutex.lock();
+    struct BoundingBox BB = myBoundingBox;
+    object_mutex.unlock();
+
+    publishBoundingBoxAsPointCloud(BB);
+    printBoundingBox(BB);
 
     for(int i = 0; i < scene_cloud->points.size(); i++){
 
@@ -50,14 +63,10 @@ void scene_callback(const pcl::PointCloud<pcl::PointXYZRGB>::ConstPtr& scene_clo
         double y = pc.points.at(i).y;
         double z = pc.points.at(i).z;
 
-        object_mutex.lock();
-        struct BoundingBox BB = myBoundingBox;
-        object_mutex.unlock();
-
         if(x >= BB.x_min && x <= BB.x_max && y >= BB.y_min && y <= BB.y_max && z >= BB.x_min && z <= BB.x_max ){
-           pc.points.at(i).x =  bad_point;
-           pc.points.at(i).y =  bad_point;
-           pc.points.at(i).z =  bad_point;
+            pc.points.at(i).x =  bad_point;
+            pc.points.at(i).y =  bad_point;
+            pc.points.at(i).z =  bad_point;
         }
     }
 
@@ -110,6 +119,53 @@ BoundingBox findBoundingBox(const pcl::PointCloud<pcl::PointXYZRGB>::ConstPtr& p
 
 }
 
+void printBoundingBox(BoundingBox in_bb){
+
+    cout << "X : [" << in_bb.x_min << " -> " << in_bb.x_max << "]" << endl;
+    cout << "Y : [" << in_bb.y_min << " -> " << in_bb.y_max << "]" << endl;
+    cout << "Z : [" << in_bb.z_min << " -> " << in_bb.z_max << "]" << endl;
+
+}
+
+
+void publishBoundingBoxAsPointCloud(BoundingBox in_bb){
+    pcl::PointCloud<pcl::PointXYZRGB> pc;
+    pc.header.frame_id = "/camera_rgb_optical_frame";
+    pc.header.seq = bbox_seq_number;
+    //pc.header.stamp = ros::Time::now().toSec();
+    bbox_seq_number++;
+
+//    int NumberOfPointsPerAxis = 10;
+//    double x_increment = (in_bb.x_max - in_bb.x_min) / NumberOfPointsPerAxis;
+//    double y_increment = (in_bb.y_max - in_bb.y_min) / NumberOfPointsPerAxis;
+//    double z_increment = (in_bb.z_max - in_bb.z_min) / NumberOfPointsPerAxis;
+
+//    for(double x = in_bb.x_min; x < in_bb.x_max; x+=x_increment){
+//        for(double y = in_bb.y_min; y < in_bb.y_max; y+=y_increment){
+//            for(double z = in_bb.z_min; z < in_bb.z_max; z+=z_increment){
+//                pcl::PointXYZ pt(x,y,z);
+//                pc.push_back(pt);
+//            }
+//        }
+//    }
+
+    pcl::PointXYZRGB pt;
+    pt.x = in_bb.x_min; pt.y = in_bb.y_min; pt.z = in_bb.z_min; pc.push_back(pt);
+    pt.x = in_bb.x_min; pt.y = in_bb.y_min; pt.z = in_bb.z_max; pc.push_back(pt);
+    pt.x = in_bb.x_min; pt.y = in_bb.y_max; pt.z = in_bb.z_min; pc.push_back(pt);
+    pt.x = in_bb.x_min; pt.y = in_bb.y_max; pt.z = in_bb.z_max; pc.push_back(pt);
+
+    pt.x = in_bb.x_max; pt.y = in_bb.y_min; pt.z = in_bb.z_min; pc.push_back(pt);
+    pt.x = in_bb.x_max; pt.y = in_bb.y_min; pt.z = in_bb.z_max; pc.push_back(pt);
+    pt.x = in_bb.x_max; pt.y = in_bb.y_max; pt.z = in_bb.z_min; pc.push_back(pt);
+    pt.x = in_bb.x_max; pt.y = in_bb.y_max; pt.z = in_bb.z_max; pc.push_back(pt);
+
+    cout << "bbox published as pointcloud of size " << pc.size() << endl;
+    bb_publisher.publish(pc);
+
+}
+
+
 int main(int argc, char** argv)
 {
 
@@ -122,6 +178,7 @@ int main(int argc, char** argv)
     ros::Subscriber subB = nh.subscribe<pcl::PointCloud<pcl::PointXYZRGB> > ("/grasp_object", 1, object_callback);
 
     pc_publisher = nh.advertise<pcl::PointCloud<pcl::PointXYZRGB> >("/point_cloud_minus_object", 1);
+    bb_publisher = nh.advertise<pcl::PointCloud<pcl::PointXYZRGB> >("/object_to_grasp_bounding_box_DEBUG", 1);
 
 //    myBoundingBox.x_min = 0;
 //    myBoundingBox.x_max = 2;
@@ -130,11 +187,13 @@ int main(int argc, char** argv)
 //    myBoundingBox.z_min = 0;
 //    myBoundingBox.z_max = 2;
 
-    ros::Rate r(5);
-    while(ros::ok()){
-        ros::spinOnce();
-        r.sleep();
-    }
+//    ros::Rate r(5);
+//    while(ros::ok()){
+//        ros::spinOnce();
+//        r.sleep();
+//    }
+
+    ros::spin();
 
     return 0;
 }
