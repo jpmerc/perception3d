@@ -8,7 +8,8 @@
 #include <shape_msgs/SolidPrimitive.h>
 #include <geometry_msgs/Pose.h>
 #include <boost/thread/mutex.hpp>
-
+#include <moveit_msgs/PlanningScene.h>
+#include <moveit_msgs/GetPlanningScene.h>
 
 using namespace std;
 
@@ -28,10 +29,18 @@ BoundingBox findBoundingBox(const pcl::PointCloud<pcl::PointXYZRGB>::ConstPtr& p
 const float bad_point = std::numeric_limits<float>::quiet_NaN();
 ros::Publisher pc_publisher;
 ros::Publisher bb_publisher;
+ros::Publisher planning_scene_publisher;
 struct BoundingBox myBoundingBox;
+struct BoundingBox oldBoundinxBox;
+int bbox_seq_number = 0;
+double object_removal_padding_cm; // ROS PARAM
+ros::ServiceClient client_get_scene_;
+
+void resetOctomap();
 void printBoundingBox(BoundingBox in_bb);
 void publishBoundingBoxAsPointCloud(BoundingBox in_bb);
-int bbox_seq_number = 0;
+void addPaddingToBoundingBox(BoundingBox &in_bb);
+bool areSameBoundingBoxes(BoundingBox bb1, BoundingBox bb2);
 
 
 
@@ -48,14 +57,23 @@ void object_callback(const pcl::PointCloud<pcl::PointXYZRGB>::ConstPtr& pc){
 void scene_callback(const pcl::PointCloud<pcl::PointXYZRGB>::ConstPtr& scene_cloud){
 
     pcl::PointCloud<pcl::PointXYZRGB> pc = *scene_cloud;
-    cout << "Frame_id = " << pc.header.frame_id << endl;
+    //cout << "Frame_id = " << pc.header.frame_id << endl;
 
     object_mutex.lock();
     struct BoundingBox BB = myBoundingBox;
     object_mutex.unlock();
 
-    publishBoundingBoxAsPointCloud(BB);
-    printBoundingBox(BB);
+    bool areTheSame = areSameBoundingBoxes(BB, oldBoundinxBox);
+    oldBoundinxBox = BB;
+
+    if(!areTheSame){
+        resetOctomap();
+    }
+
+    addPaddingToBoundingBox(BB);
+
+   // publishBoundingBoxAsPointCloud(BB);
+   // printBoundingBox(BB);
 
     for(int i = 0; i < scene_cloud->points.size(); i++){
 
@@ -63,7 +81,7 @@ void scene_callback(const pcl::PointCloud<pcl::PointXYZRGB>::ConstPtr& scene_clo
         double y = pc.points.at(i).y;
         double z = pc.points.at(i).z;
 
-        if(x >= BB.x_min && x <= BB.x_max && y >= BB.y_min && y <= BB.y_max && z >= BB.x_min && z <= BB.x_max ){
+        if(x >= BB.x_min && x <= BB.x_max && y >= BB.y_min && y <= BB.y_max && z >= BB.z_min && z <= BB.z_max ){
             pc.points.at(i).x =  bad_point;
             pc.points.at(i).y =  bad_point;
             pc.points.at(i).z =  bad_point;
@@ -165,6 +183,68 @@ void publishBoundingBoxAsPointCloud(BoundingBox in_bb){
 
 }
 
+void addPaddingToBoundingBox(BoundingBox &in_bb){
+
+    double padding_m = object_removal_padding_cm / 100;
+
+    in_bb.x_min -= padding_m;
+    in_bb.x_max += padding_m;
+    in_bb.y_min -= padding_m;
+    in_bb.y_max += padding_m;
+    in_bb.z_min -= padding_m;
+    in_bb.z_max += padding_m;
+}
+
+
+/* Publishes an empty scene to reset/refresh it */
+void resetOctomap(){
+    cout << "Clearing Octomap !" << endl;
+    moveit_msgs::PlanningScene planning_scene;
+
+    moveit_msgs::GetPlanningScene scene_srv;
+    scene_srv.request.components.components =   scene_srv.request.components.ALLOWED_COLLISION_MATRIX +
+                                                scene_srv.request.components.LINK_PADDING_AND_SCALING +
+                                                scene_srv.request.components.OBJECT_COLORS +
+                                                scene_srv.request.components.OCTOMAP +
+                                                scene_srv.request.components.ROBOT_STATE +
+                                                scene_srv.request.components.ROBOT_STATE_ATTACHED_OBJECTS +
+                                                scene_srv.request.components.SCENE_SETTINGS +
+                                                scene_srv.request.components.TRANSFORMS +
+                                                scene_srv.request.components.WORLD_OBJECT_GEOMETRY +
+                                                scene_srv.request.components.WORLD_OBJECT_NAMES;
+
+
+
+    if(client_get_scene_.call(scene_srv)){
+         moveit_msgs::PlanningScene planning_scene = scene_srv.response.scene;
+         planning_scene.world.octomap.octomap.data.clear();
+         ros::WallDuration sleep_time(0.5);
+         //planning_scene.is_diff = true;
+         planning_scene_publisher.publish(planning_scene);
+         sleep_time.sleep();
+    }
+}
+
+
+bool areSameBoundingBoxes(BoundingBox bb1, BoundingBox bb2){
+
+    if(bb1.x_min == bb2.x_min &&
+            bb1.y_min == bb2.y_min &&
+            bb1.z_min == bb2.z_min &&
+            bb1.x_max == bb2.x_max &&
+            bb1.y_max == bb2.y_max &&
+            bb1.z_max == bb2.z_max
+            )
+    {
+        return true;
+    }
+
+    else {
+        return false;
+    }
+
+}
+
 
 int main(int argc, char** argv)
 {
@@ -174,11 +254,24 @@ int main(int argc, char** argv)
 
     ros::NodeHandle nh;
 
+    oldBoundinxBox.x_min = 0;
+    oldBoundinxBox.x_max = 0;
+    oldBoundinxBox.y_min = 0;
+    oldBoundinxBox.y_max = 0;
+    oldBoundinxBox.z_min = 0;
+    oldBoundinxBox.z_max = 0;
+
+
     ros::Subscriber subA = nh.subscribe<pcl::PointCloud<pcl::PointXYZRGB> > ("/camera/depth_registered/points", 1, scene_callback);
     ros::Subscriber subB = nh.subscribe<pcl::PointCloud<pcl::PointXYZRGB> > ("/grasp_object", 1, object_callback);
 
     pc_publisher = nh.advertise<pcl::PointCloud<pcl::PointXYZRGB> >("/point_cloud_minus_object", 1);
     bb_publisher = nh.advertise<pcl::PointCloud<pcl::PointXYZRGB> >("/object_to_grasp_bounding_box_DEBUG", 1);
+    planning_scene_publisher = nh.advertise<moveit_msgs::PlanningScene>("planning_scene", 1);
+    client_get_scene_ = nh.serviceClient<moveit_msgs::GetPlanningScene>("/get_planning_scene");
+
+    nh.param<double>("object_removal_padding_cm", object_removal_padding_cm, 0.5);
+
 
 //    myBoundingBox.x_min = 0;
 //    myBoundingBox.x_max = 2;
@@ -186,6 +279,8 @@ int main(int argc, char** argv)
 //    myBoundingBox.y_max = 2;
 //    myBoundingBox.z_min = 0;
 //    myBoundingBox.z_max = 2;
+
+
 
 //    ros::Rate r(5);
 //    while(ros::ok()){

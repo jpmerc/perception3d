@@ -471,6 +471,7 @@ int main(int argc, char** argv)
     //ros::Subscriber subB = nh.subscribe<pcl::PointCloud<pcl::PointXYZRGB> > ("/grasp_object", 1, object_callback);
 
     ros::spin();
+    spinner.stop();
 
     return 0;
 }
