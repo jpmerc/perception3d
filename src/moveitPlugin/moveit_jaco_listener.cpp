@@ -99,30 +99,42 @@ void callBack(geometry_msgs::PoseStampedConstPtr p_input)
     group.setEndEffectorLink(std::string("jaco_link_hand"));
     group.setNumPlanningAttempts(10);
     group.setPlannerId("RRTConnectkConfigDefault");
-    //group.setStartStateToCurrentState();
-    geometry_msgs::Pose target_pose1;
-    target_pose1.position.x = p_input->pose.position.x;
-    target_pose1.position.y = p_input->pose.position.y;
-    target_pose1.position.z = p_input->pose.position.z;
-    target_pose1.orientation.x = p_input->pose.orientation.x;
-    target_pose1.orientation.y = p_input->pose.orientation.y;
-    target_pose1.orientation.z = p_input->pose.orientation.z;
-    target_pose1.orientation.w = p_input->pose.orientation.w;
+    group.setStartStateToCurrentState();
+//    geometry_msgs::Pose target_pose1;
+//    target_pose1.position.x = p_input->pose.position.x;
+//    target_pose1.position.y = p_input->pose.position.y;
+//    target_pose1.position.z = p_input->pose.position.z;
+//    target_pose1.orientation.x = p_input->pose.orientation.x;
+//    target_pose1.orientation.y = p_input->pose.orientation.y;
+//    target_pose1.orientation.z = p_input->pose.orientation.z;
+//    target_pose1.orientation.w = p_input->pose.orientation.w;
 
 
-    cout << "x : " << p_input->pose.orientation.x << endl;
-    cout << "y : " << p_input->pose.orientation.y << endl;
-    cout << "z : " << p_input->pose.orientation.z << endl;
-    cout << "w : " << p_input->pose.orientation.w << endl;
+//    cout << "x : " << p_input->pose.orientation.x << endl;
+//    cout << "y : " << p_input->pose.orientation.y << endl;
+//    cout << "z : " << p_input->pose.orientation.z << endl;
+//    cout << "w : " << p_input->pose.orientation.w << endl;
 
-   // group.setPoseTarget(*p_input,std::string("jaco_link_hand"));
-    group.setPoseTarget(target_pose1, std::string("jaco_link_hand"));
+    group.setPoseTarget(*p_input,std::string("jaco_link_hand"));
+    //group.setPoseTarget(target_pose1, std::string("jaco_link_hand"));
     group.setPlanningTime(10.0);
     group.setWorkspace(-1, -1.5 , 0.1, 1, 0.4, 1.2);
    // group.setWorkspace(-2,-2,-2,2,2,2);
-    //group.setGoalPositionTolerance(0.10);
-    group.setGoalTolerance(0.10);
+    //group.setGoalPositionTolerance(0.05);
+    group.setGoalTolerance(0.05);
 
+    // Add a constraint so that the arm do not go behind (always towards front)
+    moveit_msgs::Constraints path_constraint;
+    path_constraint.name = "do_not_go_behind_constraint";
+    moveit_msgs::JointConstraint c;
+    c.joint_name = "jaco_joint_1";
+    double pi = 3.141592;
+    c.position = -pi/2;
+    c.tolerance_above = pi/2;
+    c.tolerance_below = pi/2;
+    c.weight = 1;
+    path_constraint.joint_constraints.push_back(c);
+    group.setPathConstraints(path_constraint);
 
     ros::NodeHandle node_handle;
     ros::Publisher display_publisher = node_handle.advertise<moveit_msgs::DisplayTrajectory>("/move_group/display_planned_path", 1, true);
@@ -172,7 +184,8 @@ void callBack(geometry_msgs::PoseStampedConstPtr p_input)
     if(success)
     {
         std::cout << "The plan worked!" << std::endl;
-        bool accept = acceptOrRejectTrajectory();
+        //bool accept = acceptOrRejectTrajectory();
+        bool accept = true; // FOR DEBUG ONLY
 
         // TO REMOVE WHEN FINISHED WITH TESTS
         sleep(10);

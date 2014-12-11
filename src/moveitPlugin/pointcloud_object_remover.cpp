@@ -250,7 +250,7 @@ int main(int argc, char** argv)
 {
 
 
-    ros::init(argc,argv,"moveit_jaco_listener");
+    ros::init(argc,argv,"point_cloud_object_remover");
 
     ros::NodeHandle nh;
 
@@ -282,13 +282,13 @@ int main(int argc, char** argv)
 
 
 
-//    ros::Rate r(5);
-//    while(ros::ok()){
-//        ros::spinOnce();
-//        r.sleep();
-//    }
+    ros::Rate r(3);
+    while(ros::ok()){
+        ros::spinOnce();
+        r.sleep();
+    }
 
-    ros::spin();
+  //  ros::spin();
 
     return 0;
 }

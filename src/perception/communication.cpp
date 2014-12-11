@@ -290,34 +290,41 @@ void Communication::repeat(){
     // Find TF in jaco coordinate system and send command to MoveIt
     m_publish_relative_pose = true;
 
-    boost::thread thread(&Communication::publishGraspTF,this,arm_pose_world_frame);
-
     tf::TransformListener listener;
 
-    // Wait to be sure that "tf_grasp_position" is being published
+    //---- Grasp Position
+    boost::thread thread_grasp(&Communication::publishGraspTF,this,arm_pose_world_frame);
     ros::Rate freq(5);
     bool tf_ready = false;
     while(!tf_ready){
         freq.sleep();
-        tf_ready = listener.waitForTransform("camera_rgb_frame","tf_grasp_position",ros::Time(0),ros::Duration(5.0));
+        tf_ready = listener.waitForTransform("root","tf_grasp_position",ros::Time(0),ros::Duration(5.0));
     }
+    tf::StampedTransform grasp_pose;
+    listener.lookupTransform("root","tf_grasp_position",ros::Time(0),grasp_pose);
 
+
+    //---- Pre-grasp position #1
     boost::thread thread_pre_grasp1(&Communication::publishPreGraspTF, this, 0.10, "tf_pre_grasp_position1");
-    boost::thread thread_pre_grasp2(&Communication::publishPreGraspTF, this, 0.05, "tf_pre_grasp_position2");
-
-    // Wait to be sure "tf_pre_grasp_position" is being published
     tf_ready = false;
     while(!tf_ready){
         freq.sleep();
-        tf_ready = listener.waitForTransform("tf_grasp_position","tf_pre_grasp_position1",ros::Time(0),ros::Duration(5.0));
+        tf_ready = listener.waitForTransform("root","tf_pre_grasp_position1",ros::Time(0),ros::Duration(5.0));
     }
-
     tf::StampedTransform pre_grasp_pose1;
-    tf::StampedTransform pre_grasp_pose2;
-    tf::StampedTransform grasp_pose;
     listener.lookupTransform("root","tf_pre_grasp_position1",ros::Time(0),pre_grasp_pose1);
+
+
+    //---- Pre-grasp position #2
+    boost::thread thread_pre_grasp2(&Communication::publishPreGraspTF, this, 0.05, "tf_pre_grasp_position2");
+    tf_ready = false;
+    while(!tf_ready){
+        freq.sleep();
+        tf_ready = listener.waitForTransform("root","tf_pre_grasp_position2",ros::Time(0),ros::Duration(5.0));
+    }
+    tf::StampedTransform pre_grasp_pose2;
     listener.lookupTransform("root","tf_pre_grasp_position2",ros::Time(0),pre_grasp_pose2);
-    listener.lookupTransform("root","tf_grasp_position",ros::Time(0),grasp_pose);
+
 
     // Add listeners for pose in jaco api referential
     tf::StampedTransform api_referential_tf;
@@ -334,7 +341,7 @@ void Communication::repeat(){
     std::cout << "The arm will start moving in 5 seconds..." << std::endl;
     sleep(5);
     m_publish_relative_pose = false;
-    thread.join();
+    thread_grasp.join();
     thread_pre_grasp1.join();
     thread_pre_grasp2.join();
     thread1.join();
@@ -349,6 +356,7 @@ void Communication::repeat(){
     sleep(10);
 
     if(succeeded){
+        std::cout << "Moving the arm to pre-grasp position!" << std::endl;
 //        m_jaco_ptr->moveToPoint(pre_grasp_api1);
 //        sleep(10);
 //        m_jaco_ptr->moveToPoint(pre_grasp_api2);
