@@ -73,26 +73,21 @@ bool acceptOrRejectTrajectory(){
 
 }
 
-void callBack(geometry_msgs::PoseStampedConstPtr p_input)
-{
+bool restartPlanification(){
+    cout << "Do you want to restart trajectory planification by MoveIt! ? (y or n) " << endl;
 
+    string accept = "";
+    cin >> accept;
 
-    //moveit_msgs::Grasp grasp = tryMoveItPickMessage(p_input);
-    // Publish TF TO check if target is good!
-//    static tf::TransformBroadcaster br;
-//    tf::Transform trans;
-//    trans.setOrigin(tf::Vector3(p_input->pose.position.x, p_input->pose.position.y, p_input->pose.position.z));
-//    tf::Quaternion quat;
-//    tf::quaternionMsgToTF(p_input->pose.orientation, quat);
-//    trans.setRotation(quat);
-//    cout << "Sending transform!" << endl;
+    char c = accept[0];
+    if(c == 'y') return true;
+    else return false;
 
-//    br.sendTransform(tf::StampedTransform(trans, ros::Time::now(), "root", "moveit_target_pose"));
-//    sleep(1);
-//    br.sendTransform(tf::StampedTransform(trans, ros::Time::now(), "root", "moveit_target_pose"));
-//    sleep(1);
-//    br.sendTransform(tf::StampedTransform(trans, ros::Time::now(), "root", "moveit_target_pose"));
-//    sleep(1);
+}
+
+bool PlanAndMoveJaco(geometry_msgs::PoseStampedConstPtr p_input){
+
+    cout << endl << "Starting Planification!" << endl << endl;
 
     moveit::planning_interface::MoveGroup group("arm");
     group.setPoseReferenceFrame(std::string("root"));
@@ -100,32 +95,15 @@ void callBack(geometry_msgs::PoseStampedConstPtr p_input)
     group.setNumPlanningAttempts(10);
     group.setPlannerId("RRTConnectkConfigDefault");
     group.setStartStateToCurrentState();
-//    geometry_msgs::Pose target_pose1;
-//    target_pose1.position.x = p_input->pose.position.x;
-//    target_pose1.position.y = p_input->pose.position.y;
-//    target_pose1.position.z = p_input->pose.position.z;
-//    target_pose1.orientation.x = p_input->pose.orientation.x;
-//    target_pose1.orientation.y = p_input->pose.orientation.y;
-//    target_pose1.orientation.z = p_input->pose.orientation.z;
-//    target_pose1.orientation.w = p_input->pose.orientation.w;
-
-
-//    cout << "x : " << p_input->pose.orientation.x << endl;
-//    cout << "y : " << p_input->pose.orientation.y << endl;
-//    cout << "z : " << p_input->pose.orientation.z << endl;
-//    cout << "w : " << p_input->pose.orientation.w << endl;
-
     group.setPoseTarget(*p_input,std::string("jaco_link_hand"));
-    //group.setPoseTarget(target_pose1, std::string("jaco_link_hand"));
     group.setPlanningTime(10.0);
     group.setWorkspace(-1, -1.5 , 0.1, 1, 0.4, 1.2);
-   // group.setWorkspace(-2,-2,-2,2,2,2);
-    //group.setGoalPositionTolerance(0.05);
     group.setGoalTolerance(0.05);
 
-    // Add a constraint so that the arm do not go behind (always towards front)
     moveit_msgs::Constraints path_constraint;
     path_constraint.name = "do_not_go_behind_constraint";
+
+    // Add a constraint so that the arm do not go behind (always towards front)
     moveit_msgs::JointConstraint c;
     c.joint_name = "jaco_joint_1";
     double pi = 3.141592;
@@ -134,80 +112,82 @@ void callBack(geometry_msgs::PoseStampedConstPtr p_input)
     c.tolerance_below = pi/2;
     c.weight = 1;
     path_constraint.joint_constraints.push_back(c);
+
+
+    // Add a constraint so that the arm do not go too low (table not seen by kinect in experiment setting)
+    moveit_msgs::JointConstraint c2;
+    c2.joint_name = "jaco_joint_2";
+    double min = 2.86;
+    double max = 4.7;
+    double plusOrMinus = (max-min)/2;
+    c2.position = min + plusOrMinus;
+    c2.tolerance_above = plusOrMinus;
+    c2.tolerance_below = plusOrMinus;
+    c2.weight = 1;
+    path_constraint.joint_constraints.push_back(c2);
+
     group.setPathConstraints(path_constraint);
+
 
     ros::NodeHandle node_handle;
     ros::Publisher display_publisher = node_handle.advertise<moveit_msgs::DisplayTrajectory>("/move_group/display_planned_path", 1, true);
     moveit_msgs::DisplayTrajectory display_trajectory;
     moveit::planning_interface::MoveGroup::Plan myPlan;
 
-
-//    // CHECK THE COLLISION WORLD AND ALLOWED COLLISION MATRIX JUST BEFORE PLANNING
-//    moveit_msgs::GetPlanningScene srv;
-//    srv.request.components.components =  moveit_msgs::PlanningSceneComponents::WORLD_OBJECT_NAMES;
-
-//    //cout << "waiting for box to appear..." << endl;
-//    if (client_get_scene_.call(srv))
-//    {
-//        bool object_in_world = false;
-//        while(!object_in_world){
-//            for (int i = 0; i < (int)srv.response.scene.world.collision_objects.size(); ++i)
-//            {
-//                if (srv.response.scene.world.collision_objects[i].id == "bounding_box")
-//                    object_in_world = true;
-//            }
-//        }
-////        cout << "WORLD OBJECTS : " << endl;
-////        for (int i = 0; i < (int)srv.response.scene.world.collision_objects.size(); ++i){
-////            cout << srv.response.scene.world.collision_objects[i].id << endl;
-////        }
-
-//    }
-
-
     bool success = group.plan(myPlan);
-
-
-    // PRINT TRAJECTORY POINTS
-    // cout << "Size of plan : " << myPlan.trajectory_.joint_trajectory.points.size() << endl;
-    // cout << "Plan :" << endl << myPlan.trajectory_.joint_trajectory << endl;
 
     // DISPLAY IN RVIZ
     display_trajectory.trajectory_start = myPlan.start_state_;
     display_trajectory.trajectory.push_back(myPlan.trajectory_);
     display_publisher.publish(display_trajectory);
     sleep(5.0);
-    /* Sleep to give Rviz time to visualize the plan. */
 
 
-    std_msgs::Bool moved_successfully;
+    bool moved_successfully;
     if(success)
     {
         std::cout << "The plan worked!" << std::endl;
-        //bool accept = acceptOrRejectTrajectory();
-        bool accept = true; // FOR DEBUG ONLY
+        bool accept = acceptOrRejectTrajectory();
+        //bool accept = true; // FOR DEBUG ONLY
 
         // TO REMOVE WHEN FINISHED WITH TESTS
-        sleep(10);
+        sleep(2);
 
         if(accept) {
-//            group.move();
-            moved_successfully.data = true;
+            group.move();
+            moved_successfully = true;
         }
         else{
-            moved_successfully.data = false;
+            moved_successfully = false;
         }
     }
     else
     {
         std::cout << "The plan failed!" << std::endl;
-        moved_successfully.data = false;
+        moved_successfully = false;
     }
 
-    //cout << "The fraction score was : " << fraction << endl;
+    // Send moved_successfully message to perception3d node
+    std_msgs::Bool moved_successfully_msg;
+    moved_successfully_msg.data = true;
+    movement_status_publisher_.publish(moved_successfully_msg);
 
-    movement_status_publisher_.publish(moved_successfully);
+    return moved_successfully;
+}
 
+void callBack(geometry_msgs::PoseStampedConstPtr p_input)
+{
+
+    bool moved_successfully = PlanAndMoveJaco(p_input);
+
+    // Loops until the planification and the movement of Jaco are successful OR until the user wants to stop
+    while(!moved_successfully){
+        bool restart = restartPlanification();
+        if(!restart) break;
+        else{
+            moved_successfully = PlanAndMoveJaco(p_input);
+        }
+    }
 }
 
 void addObstacleBehindJaco(){
@@ -484,7 +464,7 @@ int main(int argc, char** argv)
     //ros::Subscriber subB = nh.subscribe<pcl::PointCloud<pcl::PointXYZRGB> > ("/grasp_object", 1, object_callback);
 
     ros::spin();
-    spinner.stop();
+
 
     return 0;
 }

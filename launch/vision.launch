@@ -40,6 +40,10 @@
   </node>-->
 	
   <node pkg="perception3d" type="image_transport_node" name="image_transport_node" respawn="false" output="screen"/>
+  
+  
+  <node pkg="perception3d" type="pointcloud_object_remover" name="pointcloud_object_remover" respawn="true" output="screen"/>
+  
 	
 </launch>
 
