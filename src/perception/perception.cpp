@@ -84,7 +84,9 @@ void sendCommandsToJaco(JacoCustom *jaco){
 //        }
 //    }
     if(ros::ok()){
-        jaco->moveToPoint( 0.22, -0.27, 0.55, 1.53, 1.05, 0.06);
+ //       jaco->moveToPoint( 0.22, -0.27, 0.55, 1.53, 1.05, 0.06);
+
+//    jaco->move_relatively(0.05 , -0.05 , 0);
 //        jaco->close_fingers();
 //        sleep(10);
 //        jaco->move_up(0.05);
@@ -137,9 +139,9 @@ int main (int argc, char** argv){
     boost::thread spin_thread(callbackThread);
 
     //Thread to test the training phase of the system
-    boost::thread trainTest(trainFunctionTestThread,communication_ptr);
+   // boost::thread trainTest(trainFunctionTestThread,communication_ptr);
     //boost::thread recognitionTest(recognitionTestsThread,communication_ptr);
-//    boost::thread(sendCommandsToJaco,JACO_PTR);
+    boost::thread(sendCommandsToJaco,JACO_PTR);
 
     // Spin threads
     ros::Rate r(5);
