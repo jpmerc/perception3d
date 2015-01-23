@@ -112,6 +112,7 @@ void JacoCustom::move_up(double distance){
         cmd.repeat = false;
         geometry_msgs::Twist arm = srv.response.pos;
         arm.linear.z = arm.linear.z + distance;
+        cmd.arm = arm;
         cartesian_publisher.publish(cmd);
         wait_for_arm_stopped();
     }
@@ -119,11 +120,7 @@ void JacoCustom::move_up(double distance){
 
 // Move the end effector (tf jaco_tool_position) to a certain position
 void JacoCustom::moveToPoint(tf::Transform tf_){
-    wpi_jaco_msgs::CartesianCommand cmd;
-    cmd.position = true;
-    cmd.armCommand = true;
-    cmd.fingerCommand = false;
-    cmd.repeat = false;
+
     geometry_msgs::Twist arm;
     arm.linear.x = tf_.getOrigin().getX();
     arm.linear.y = tf_.getOrigin().getY();
@@ -139,8 +136,7 @@ void JacoCustom::moveToPoint(tf::Transform tf_){
         arm.angular.z = conv.response.yaw;
     }
 
-    cartesian_publisher.publish(cmd);
-    wait_for_arm_stopped();
+    moveToPoint(arm);
 }
 
 // Move the end effector (tf jaco_tool_position) to a certain position
@@ -149,6 +145,30 @@ void JacoCustom::moveToPoint(double x, double y, double z, double rotx, double r
     tf_.setOrigin(tf::Vector3(x,y,z));
     tf_.setRotation(tf::Quaternion(rotx,roty,rotz,rotw));
     moveToPoint(tf_);
+}
+
+void JacoCustom::moveToPoint(geometry_msgs::Twist arm){
+    wpi_jaco_msgs::CartesianCommand cmd;
+    cmd.position = true;
+    cmd.armCommand = true;
+    cmd.fingerCommand = false;
+    cmd.repeat = false;
+    cmd.arm = arm;
+    cartesian_publisher.publish(cmd);
+    wait_for_arm_stopped();
+
+}
+
+void JacoCustom::moveToPoint(double x, double y, double z, double angle_x, double angle_y, double angle_z){
+    geometry_msgs::Twist arm;
+    arm.linear.x = x;
+    arm.linear.y = y;
+    arm.linear.z = z;
+    arm.angular.x = angle_x;
+    arm.angular.y = angle_y;
+    arm.angular.z = angle_z;
+
+    moveToPoint(arm);
 }
 
 // Get the transform from the camera to the hand link

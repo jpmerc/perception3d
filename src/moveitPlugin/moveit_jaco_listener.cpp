@@ -151,10 +151,11 @@ bool PlanAndMoveJaco(geometry_msgs::PoseStampedConstPtr p_input){
         //bool accept = true; // FOR DEBUG ONLY
 
         // TO REMOVE WHEN FINISHED WITH TESTS
-        sleep(2);
+        sleep(5);
 
         if(accept) {
-            group.move();
+            // group.move();
+            group.execute(myPlan);
             moved_successfully = true;
         }
         else{

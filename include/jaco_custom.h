@@ -52,8 +52,11 @@ public:
     void open_fingers();
     void close_fingers();
     void move_up(double distance);
+
     void moveToPoint(double x, double y, double z, double rotx, double roty, double rotz, double rotw);
+    void moveToPoint(double x, double y, double z, double angle_x, double angle_y, double angle_z);
     void moveToPoint(tf::Transform tf_);
+    void moveToPoint(geometry_msgs::Twist arm);
 
 
     geometry_msgs::PoseStamped getArmPosition();
