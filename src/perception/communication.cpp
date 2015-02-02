@@ -353,20 +353,20 @@ void Communication::repeat(){
     bool succeeded = m_jaco_ptr->moveitPlugin(pre_grasp_pose1);
 
     // REMOVE ALL THE SLEEPS SOON!
-    sleep(10);
+    sleep(1);
 
     if(succeeded){
         std::cout << "Moving the arm to pre-grasp position!" << std::endl;
         m_jaco_ptr->moveToPoint(pre_grasp_api1);
-        sleep(3);
+        //sleep(3);
         m_jaco_ptr->moveToPoint(pre_grasp_api2);
-        sleep(3);
+        //sleep(3);
         m_jaco_ptr->moveToPoint(grasp_api);
-        sleep(3);
+       // sleep(3);
         m_jaco_ptr->close_fingers();
-        sleep(3);
+       // sleep(3);
         m_jaco_ptr->move_up(0.3);
-        sleep(3);
+      //  sleep(3);
     }
 }
 

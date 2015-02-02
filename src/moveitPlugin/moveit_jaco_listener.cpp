@@ -172,7 +172,7 @@ bool PlanAndMoveJaco(geometry_msgs::PoseStampedConstPtr p_input){
 
     // Send moved_successfully message to perception3d node
     std_msgs::Bool moved_successfully_msg;
-    moved_successfully_msg.data = true;
+    moved_successfully_msg.data = moved_successfully;
     movement_status_publisher_.publish(moved_successfully_msg);
 
     return moved_successfully;
