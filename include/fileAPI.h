@@ -61,6 +61,8 @@ public:
 
     int fileAlreadyLoad(const std::string& p_filename);
 
+    void clearDatabase();
+
 private:
 
     std::string findDefaultName();

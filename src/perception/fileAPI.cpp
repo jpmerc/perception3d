@@ -51,7 +51,7 @@ FileAPI::FileAPI(const string & directory):
     }
     else
     {
-        std::cerr << "The path to the librairie doesn't exist" << std::endl;
+        std::cerr << "The path to the library doesn't exist" << std::endl;
         //throw(runtime_error("load fail"));
     }
 
@@ -59,7 +59,7 @@ FileAPI::FileAPI(const string & directory):
 
 /*
   The function to create a new object.  Will make sure that the new name is consitant for the BD.
-  It is the only fonction to create an object and ensure no name clash.
+  It is the only function to create an object and ensure no name clash.
   param[in] object_signature the OURCVFH signature for the object.
   param[in] object_pointCloud the original point cloud for the object.
   param[in] relative_arm_pose the the arm pose for the object
@@ -845,4 +845,17 @@ int FileAPI::fileAlreadyLoad(const string &p_filename)
             position = i;
     }
     return position;
+}
+
+
+void FileAPI::clearDatabase(){
+    boost::filesystem3::remove_all(m_pathToBd);
+    boost::filesystem3::create_directory(m_pathToBd);
+    boost::filesystem3::create_directory(m_pathcvfh);
+    boost::filesystem3::create_directory(m_pathPointCloud);
+    boost::filesystem3::create_directory(m_pathPoseObject);
+    boost::filesystem3::create_directory(m_pathPoseArm);
+    boost::filesystem3::create_directory(m_pathTransform);
+    m_bdObjectVector.clear();
+    m_pcvfh->clear();
 }
