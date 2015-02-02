@@ -145,7 +145,7 @@ bool PlanAndMoveJaco(geometry_msgs::PoseStampedConstPtr p_input){
     sleep(10.0);
 
 
-    bool moved_successfully;
+    bool moved_successfully = false;
     if(success)
     {
         std::cout << "The plan worked!" << std::endl;

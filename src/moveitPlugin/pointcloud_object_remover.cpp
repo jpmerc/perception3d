@@ -270,7 +270,7 @@ int main(int argc, char** argv)
     planning_scene_publisher = nh.advertise<moveit_msgs::PlanningScene>("planning_scene", 1);
     client_get_scene_ = nh.serviceClient<moveit_msgs::GetPlanningScene>("/get_planning_scene");
 
-    nh.param<double>("object_removal_padding_cm", object_removal_padding_cm, 0.5);
+    nh.param<double>("object_removal_padding_cm", object_removal_padding_cm, 3.0);
 
 
 //    myBoundingBox.x_min = 0;
