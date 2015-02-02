@@ -1,4 +1,5 @@
 #include "jaco_custom.h"
+#include <angles/angles.h>
 
 using namespace std;
 
@@ -59,26 +60,49 @@ void JacoCustom::joint_state_callback (const sensor_msgs::JointStateConstPtr& in
         geometry_msgs::Twist position = c_pos.response.pos;
         tool_position_tf.setOrigin(tf::Vector3(position.linear.x, position.linear.y, position.linear.z));
 
-        tf::Quaternion quat;
-        quat.setRPY( position.angular.x , position.angular.y, position.angular.z);
 
-        tool_position_tf.setRotation(quat);
-        position_broadcaster.sendTransform(tf::StampedTransform(tool_position_tf,ros::Time::now(),"jaco_link_base","jaco_tool_position"));
+// Adapted version of code found on Kinova Robotics github (https://github.com/Kinovarobotics/jaco-ros)
+// Since the conversion provided with wpi_jaco package does not work
+// ------------------------------------------------------------------------------------
+//        tf::Quaternion quat;
+        double ThetaX  = angles::normalize_angle_positive(position.angular.x);
+        double ThetaY = angles::normalize_angle_positive(position.angular.y);
+        double ThetaZ   = angles::normalize_angle_positive(position.angular.z);
+        tf::Quaternion position_quaternion;
+        tf::Matrix3x3 mx(           1,            0,            0,
+                                    0,  cos(ThetaX), -sin(ThetaX),
+                                    0,  sin(ThetaX),  cos(ThetaX));
+        tf::Matrix3x3 my( cos(ThetaY),            0,  sin(ThetaY),
+                          0,            1,            0,
+                          -sin(ThetaY),            0,  cos(ThetaY));
+        tf::Matrix3x3 mz( cos(ThetaZ), -sin(ThetaZ),            0,
+                          sin(ThetaZ),  cos(ThetaZ),            0,
+                          0,            0,            1);
 
+        tf::Matrix3x3  mg = mx * my * mz;
+        mg.getRotation(position_quaternion);
+        tf::Transform adaptedTransform;
+        adaptedTransform.setOrigin(tf::Vector3(position.linear.x, position.linear.y, position.linear.z));
+        adaptedTransform.setRotation(position_quaternion);
+//        std::cout << "Published Angles 1: [" << ThetaX << ", " << ThetaY << ", " << ThetaZ << "]" << std::endl;
+//        std::cout << "Published Quaternioon 1: [" << position_quaternion.getX() << ", " << position_quaternion.getY() << ", " << position_quaternion.getZ() << ", " << position_quaternion.getW() << ", " << "]" << std::endl;
+
+        position_broadcaster.sendTransform(tf::StampedTransform(adaptedTransform,ros::Time::now(),"jaco_link_base","jaco_tool_position"));
+// ---------------------------------------------------------------
 
 //        wpi_jaco_msgs::EulerToQuaternion conv;
-//        conv.request.roll   = position.angular.x;
-//        conv.request.pitch  = position.angular.y;
-//        conv.request.yaw    = position.angular.z;
+//        conv.request.roll   = ThetaX;
+//        conv.request.pitch  = ThetaY;
+//        conv.request.yaw    = ThetaZ;
 //        if(euler_to_quaternion_service_client.call(conv)){
-//           // geometry_msgs::Quaternion geo_quat = conv.response.orientation;
-//            //tf::Quaternion quat(geo_quat.x, geo_quat.y, geo_quat.z, geo_quat.w);
-
-//            tf::Quaternion quat;
-//            quat.setRPY( position.angular.x , position.angular.y, position.angular.z);
+//            geometry_msgs::Quaternion geo_quat = conv.response.orientation;
+//            tf::Quaternion quat(geo_quat.x, geo_quat.y, geo_quat.z, geo_quat.w);
 
 //            tool_position_tf.setRotation(quat);
 //            position_broadcaster.sendTransform(tf::StampedTransform(tool_position_tf,ros::Time::now(),"jaco_link_base","jaco_tool_position"));
+
+//            std::cout << "Published Angles : [" << ThetaX << ", " << ThetaY << ", " << ThetaZ << "]" << std::endl;
+//            std::cout << "Published Quaternioon : [" << quat.getX() << ", " << quat.getY() << ", " << quat.getZ() << ", " << quat.getW() << ", " << "]" << std::endl;
 //        }
         //quat.setEuler(c_pos.response.pos.angular.z, c_pos.response.pos.angular.y, c_pos.response.pos.angular.x);
     }
@@ -155,11 +179,19 @@ void JacoCustom::moveToPoint(tf::Transform tf_){
     arm.linear.y = tf_.getOrigin().getY();
     arm.linear.z = tf_.getOrigin().getZ();
 
+//    double roll, pitch, yaw;
+//    tf_.getBasis().getRPY(roll,pitch, yaw);
+//    arm.angular.x = roll;
+//    arm.angular.y = pitch;
+//    arm.angular.z = yaw;
+
+
+
     wpi_jaco_msgs::QuaternionToEuler conv;
     geometry_msgs::Quaternion quat;
     tf::quaternionTFToMsg(tf_.getRotation(), quat);
     conv.request.orientation = quat;
-    if(euler_to_quaternion_service_client.call(conv)){
+    if(quaternion_to_euler_service_client.call(conv)){
         arm.angular.x = conv.response.roll;
         arm.angular.y = conv.response.pitch;
         arm.angular.z = conv.response.yaw;
