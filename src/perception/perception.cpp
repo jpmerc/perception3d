@@ -10,6 +10,7 @@ ObjectExtractor *OBJ_EXTRACTOR_PTR;
 JacoCustom *JACO_PTR;
 FileAPI *API_PTR;
 ros::CallbackQueue jaco_callbacks;
+bool _continueProgram;
 
 using namespace std;
 
@@ -21,31 +22,47 @@ void callbackThread(){
     }
 }
 
-void trainFunctionTestThread(Communication *communication_ptr){
-    ros::NodeHandle n;ros::Rate r(10);sleep(10);
+void trainFunctionTestThread(Communication *communication_ptr,FileAPI *api_ptr){
+    ros::NodeHandle n;ros::Rate r(10);sleep(5);
+    bool continueLoop = true;
+
+    while(continueLoop){
+
+        std::cout << "Choose one of the following options and press enter : "   << std::endl;
+        std::cout << "1) Train the system to grasp"                             << std::endl;
+        std::cout << "2) Grasp object (repeat trained grasp)"                   << std::endl;
+        std::cout << "3) Clear database models"                                 << std::endl;
+        std::cout << "4) Quit"                                                  << std::endl;
+
+        string selection = "";
+        std::cin >> selection;
+        if(selection == "1") {
+            communication_ptr->train(true,true);
+            std::cout << "Training done!"                                       << std::endl;
+        }
+        else if(selection == "2"){
+            communication_ptr->repeat();
+            std::cout << "Grasp Done!"                                          << std::endl;
+        }
+        else if(selection == "3"){
+            api_ptr->clearDatabase();
+            std::cout << "Database cleared!"                                    << std::endl;
+        }
+        else{
+            continueLoop = false;
+            _continueProgram = false;
+        }
+    }
+
+
+
 //    while(n.ok()){
 //        //communication_ptr->testTFandSurfaceTransforms();
 //        communication_ptr->train(true,true);
 //        r.sleep();
 //    }
 
-
-//    communication_ptr->train(true,true);
-
-
-//    int count = 0;
-//    int timeToWait = 60;
-//    while(true){
-//        sleep(1);
-//        cout << count++ << endl;
-//        if(count >= timeToWait) break;
-//    }
-
-//    sleep(10);
-
-
-    communication_ptr->repeat();
-    cout << "The arm finished moving" << endl;
+    cout << "Goodbye!" << endl;
 }
 
 void recognitionTestsThread(Communication *communication_ptr){
@@ -89,7 +106,8 @@ void sendCommandsToJaco(JacoCustom *jaco){
 //    jaco->move_relatively(0.05 , -0.05 , 0);
 //        jaco->close_fingers();
 //        sleep(10);
-//        jaco->move_up(0.05);
+        std::cout << "moving!" << std::endl;
+//        jaco->move_up(0.15);
 //        sleep(10);
 //        jaco->open_fingers();
     }
@@ -101,6 +119,8 @@ int main (int argc, char** argv){
     ros::init (argc, argv, "perception");
     ros::NodeHandle n;
     ros::NodeHandle nh("~");
+
+    _continueProgram = true;
 
     // Load parameters from launch file
     bool show_objects_in_viewer;
@@ -139,13 +159,13 @@ int main (int argc, char** argv){
     boost::thread spin_thread(callbackThread);
 
     //Thread to test the training phase of the system
-   // boost::thread trainTest(trainFunctionTestThread,communication_ptr);
+    boost::thread trainTest(trainFunctionTestThread,communication_ptr, API_PTR);
     //boost::thread recognitionTest(recognitionTestsThread,communication_ptr);
-    boost::thread(sendCommandsToJaco,JACO_PTR);
+//    boost::thread(sendCommandsToJaco,JACO_PTR);
 
     // Spin threads
     ros::Rate r(5);
-    while (ros::ok() && !OBJ_EXTRACTOR_PTR->pclViewer->wasStopped()) {
+    while (ros::ok() && !OBJ_EXTRACTOR_PTR->pclViewer->wasStopped() && _continueProgram) {
         ros::spinOnce();
         OBJ_EXTRACTOR_PTR->pclViewer->spinOnce (100);
         //communication_ptr->recognitionViewer->spinOnce(100);

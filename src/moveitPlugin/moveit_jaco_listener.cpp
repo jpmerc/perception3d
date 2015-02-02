@@ -98,7 +98,9 @@ bool PlanAndMoveJaco(geometry_msgs::PoseStampedConstPtr p_input){
     group.setPoseTarget(*p_input,std::string("jaco_link_hand"));
     group.setPlanningTime(10.0);
     group.setWorkspace(-1, -1.5 , 0.1, 1, 0.4, 1.2);
-    group.setGoalTolerance(0.05);
+   // group.setGoalTolerance(0.05);
+    group.setGoalPositionTolerance(0.05);
+    //group.setGoalOrientationTolerance();
 
     moveit_msgs::Constraints path_constraint;
     path_constraint.name = "do_not_go_behind_constraint";
@@ -140,7 +142,7 @@ bool PlanAndMoveJaco(geometry_msgs::PoseStampedConstPtr p_input){
     display_trajectory.trajectory_start = myPlan.start_state_;
     display_trajectory.trajectory.push_back(myPlan.trajectory_);
     display_publisher.publish(display_trajectory);
-    sleep(5.0);
+    sleep(10.0);
 
 
     bool moved_successfully;

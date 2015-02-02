@@ -358,15 +358,15 @@ void Communication::repeat(){
     if(succeeded){
         std::cout << "Moving the arm to pre-grasp position!" << std::endl;
         m_jaco_ptr->moveToPoint(pre_grasp_api1);
-        sleep(10);
+        sleep(3);
         m_jaco_ptr->moveToPoint(pre_grasp_api2);
-        sleep(10);
+        sleep(3);
         m_jaco_ptr->moveToPoint(grasp_api);
-        sleep(10);
+        sleep(3);
         m_jaco_ptr->close_fingers();
-        sleep(10);
-        m_jaco_ptr->move_up(0.1);
-        sleep(10);
+        sleep(3);
+        m_jaco_ptr->move_up(0.3);
+        sleep(3);
     }
 }
 
