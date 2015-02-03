@@ -97,7 +97,7 @@ bool PlanAndMoveJaco(geometry_msgs::PoseStampedConstPtr p_input){
     group.setStartStateToCurrentState();
     group.setPoseTarget(*p_input,std::string("jaco_link_hand"));
     group.setPlanningTime(10.0);
-    group.setWorkspace(-1, -1.5 , 0.1, 1, 0.4, 1.2);
+    group.setWorkspace(-1, -1 , 0.1, 0.4, 0.2, 1);
    // group.setGoalTolerance(0.05);
     group.setGoalPositionTolerance(0.05);
     //group.setGoalOrientationTolerance();
@@ -127,6 +127,39 @@ bool PlanAndMoveJaco(geometry_msgs::PoseStampedConstPtr p_input){
     c2.tolerance_below = plusOrMinus;
     c2.weight = 1;
     path_constraint.joint_constraints.push_back(c2);
+
+
+
+//// Position constraint on jaco link hand (with offset to center of the hand)
+//    shape_msgs::SolidPrimitive box_prim;
+//    box_prim.type = box_prim.BOX;
+//    box_prim.dimensions.resize(3);
+//    box_prim.dimensions[box_prim.BOX_X] = 1.4;
+//    box_prim.dimensions[box_prim.BOX_Y] = 1.2;
+//    box_prim.dimensions[box_prim.BOX_Z] = 0.9;
+
+//    geometry_msgs::Pose p;
+//    p.position.x = -0.3;
+//    p.position.y = -0.4;
+//    p.position.z =  0.9;
+//    p.orientation.w = 1;
+
+//    moveit_msgs::BoundingVolume bounding_vol;
+//    bounding_vol.primitives.push_back(box_prim);
+//    bounding_vol.primitive_poses.push_back(p);
+
+//    moveit_msgs::PositionConstraint pc;
+//    pc.header.stamp = ros::Time::now();
+//    pc.header.frame_id = "root";
+//    pc.constraint_region = bounding_vol;
+//    pc.link_name = "jaco_link_hand";
+//    pc.weight = 1.0;
+//    geometry_msgs::Vector3 offset;
+//    offset.z = -0.18;
+//    pc.target_point_offset = offset;
+
+    path_constraint.position_constraints.push_back(pc);
+
 
     group.setPathConstraints(path_constraint);
 
