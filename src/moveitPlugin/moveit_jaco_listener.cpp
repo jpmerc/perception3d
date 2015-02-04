@@ -158,7 +158,7 @@ bool PlanAndMoveJaco(geometry_msgs::PoseStampedConstPtr p_input){
 //    offset.z = -0.18;
 //    pc.target_point_offset = offset;
 
-    path_constraint.position_constraints.push_back(pc);
+    //path_constraint.position_constraints.push_back(pc);
 
 
     group.setPathConstraints(path_constraint);
@@ -251,6 +251,48 @@ void addObstacleBehindJaco(){
     box_pose.position.x =  0.0;
     box_pose.position.y =  0.45;
     box_pose.position.z =  1.0;
+
+    collision_object.primitives.push_back(primitive);
+    collision_object.primitive_poses.push_back(box_pose);
+
+    r.sleep();
+    collision_object.operation = collision_object.REMOVE;
+    r.sleep();
+    collision_object_publisher.publish(collision_object);
+    r.sleep();
+    collision_object.operation = collision_object.ADD;
+    r.sleep();
+    collision_object_publisher.publish(collision_object);
+    r.sleep();
+
+}
+
+
+void addObstacleJacoLeft(){
+    ros::NodeHandle nh;
+    ros::Rate r(3);
+    moveit::planning_interface::MoveGroup group("arm");
+    ros::Publisher collision_object_publisher = nh.advertise<moveit_msgs::CollisionObject>("collision_object", 1);
+
+    // ADD OBSTACLE ON JACO'S LEFT
+    moveit_msgs::CollisionObject collision_object;
+    collision_object.header.frame_id = group.getPlanningFrame();
+    collision_object.id = "left_wall";
+
+    // Define a box to add to the world
+    shape_msgs::SolidPrimitive primitive;
+    primitive.type = primitive.BOX;
+    primitive.dimensions.resize(3);
+    primitive.dimensions[0] = 0.1;
+    primitive.dimensions[1] = 2;
+    primitive.dimensions[2] = 0.6;
+
+    // A pose for the box (specified relative to frame_id root)
+    geometry_msgs::Pose box_pose;
+    box_pose.orientation.w = 1.0;
+    box_pose.position.x =  0.48;
+    box_pose.position.y =  -1;
+    box_pose.position.z =  0.4;
 
     collision_object.primitives.push_back(primitive);
     collision_object.primitive_poses.push_back(box_pose);
@@ -485,7 +527,8 @@ int main(int argc, char** argv)
 
 
     //Add an obstacle behind jaco to reduce its workspace (do not go too far behind --> kinect is there)
-    //addObstacleBehindJaco();
+   // addObstacleBehindJaco();
+    addObstacleJacoLeft();
 
     ros::CallbackQueue queue;
     ros::SubscribeOptions options = ros::SubscribeOptions::create<geometry_msgs::PoseStamped>("/jaco_command",1, boost::bind(&callBack,_1), ros::VoidPtr(), &queue);
