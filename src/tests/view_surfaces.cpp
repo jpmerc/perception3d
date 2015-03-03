@@ -134,7 +134,7 @@ int main (int argc, char** argv){
     ros::NodeHandle nh;
     ros::NodeHandle n("~");
 
-    pcl::io::loadPCDFile("/home/jp/devel/src/perception3d/screenshots/test_kleenex_translation4.pcd", *input_cloud);
+    pcl::io::loadPCDFile("/home/jp/devel/src/perception3d/screenshots/upsampling.pcd", *input_cloud);
 
     Eigen::Matrix4f t; t.setZero(); t(0,0)=1; t(1,1)=1; t(2,2)=1; t(3,3)=1;
     t(0,3)= 0.2; // X translation of 20 cm
