@@ -16,8 +16,8 @@
        /use_sim_time : false
     </rosparam>
 
-<!-- Openning Rviz for visualization-->
-<node name="rviz" pkg="rviz" type="rviz"/>
+<!-- Openning Rviz for visualization
+<node name="rviz" pkg="rviz" type="rviz"/>-->
 
   <!-- Launching first kinect-->
     <include file="$(find openni_launch)/launch/openni.launch">

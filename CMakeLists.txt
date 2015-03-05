@@ -157,6 +157,10 @@ add_executable(upsampling src/tests/upsampling.cpp)
 target_link_libraries(upsampling ${catkin_LIBRARIES} ${PCL_LIBRARIES} lperception)
 add_dependencies(upsampling perception3d_gencpp)
 
+add_executable(multipleKinects src/tests/multipleKinects.cpp)
+target_link_libraries(multipleKinects ${catkin_LIBRARIES} ${PCL_LIBRARIES})
+add_dependencies(multipleKinects perception3d_gencpp)
+
 add_executable(moveJaco src/tests/moveJaco.cpp)
 target_link_libraries(moveJaco ${catkin_LIBRARIES} ${PCL_LIBRARIES} lperception)
 add_dependencies(moveJaco perception3d_gencpp)
