@@ -100,6 +100,21 @@ void keyboardEventOccurred (const pcl::visualization::KeyboardEvent &event, void
 }
 
 
+Eigen::Matrix4f computeMatrixFromTransform(double x, double y, double z, double rx, double ry, double rz, double rw){
+
+    Eigen::Vector3f vec(x, y, z);
+    Eigen::Quaternionf quat(rw, rx, ry, rz);
+    Eigen::Matrix3f rot = quat.toRotationMatrix();
+
+    Eigen::Matrix4f mat;
+    mat.setZero();
+    mat.block(0, 0, 3, 3) = rot;
+    mat.block(0, 3, 3, 1) = vec;
+    mat(3,3) = 1;
+
+    return mat;
+}
+
 pcl::PointCloud<PointT>::Ptr computeUniformSampling(pcl::PointCloud<PointT>::Ptr p_cloudIn, double radius)
 {
 
@@ -146,22 +161,26 @@ int main (int argc, char** argv){
 
 
 
-    pcl::io::loadPCDFile("/home/jp/Devel/perceptionWS/src/perception3d/src/tests/device1_1.pcd", *in1);
-    pcl::io::loadPCDFile("/home/jp/Devel/perceptionWS/src/perception3d/src/tests/device2_1.pcd", *in2);
+    pcl::io::loadPCDFile("/home/jp/devel/src/perception3d/src/tests/device1_1.pcd", *in1);
+    pcl::io::loadPCDFile("/home/jp/devel/src/perception3d/src/tests/device2_1.pcd", *in2);
 
 
 
-    tf::Transform tf1;
-    tf1.setOrigin(tf::Vector3(-0.012687, 0.2937498, 1.0124953));
-    tf1.setRotation(tf::Quaternion(-0.36378023, -0.32528895, -0.56674915, 0.663812041));
-    Eigen::Matrix4f tf1_matrix;
-    pcl_ros::transformAsMatrix(tf1, tf1_matrix);
+//    tf::Transform tf1;
+//    tf1.setOrigin(tf::Vector3(-0.012687, 0.2937498, 1.0124953));
+//    tf1.setRotation(tf::Quaternion(-0.36378023, -0.32528895, -0.56674915, 0.663812041));
+//    Eigen::Matrix4f tf1_matrix;
+//    pcl_ros::transformAsMatrix(tf1, tf1_matrix);
 
-    tf::Transform tf2;
-    tf2.setOrigin(tf::Vector3(-0.1223497, 0.28168088, 1.1013584));
-    tf2.setRotation(tf::Quaternion(-0.5120674, -0.0235908, -0.04915027, 0.85721325));
-    Eigen::Matrix4f tf2_matrix;
-    pcl_ros::transformAsMatrix(tf2, tf2_matrix);
+
+//    tf::Transform tf2;
+//    tf2.setOrigin(tf::Vector3(-0.1223497, 0.28168088, 1.1013584));
+//    tf2.setRotation(tf::Quaternion(-0.5120674, -0.0235908, -0.04915027, 0.85721325));
+//    Eigen::Matrix4f tf2_matrix;
+//    pcl_ros::transformAsMatrix(tf2, tf2_matrix);
+
+    Eigen::Matrix4f tf1_matrix = computeMatrixFromTransform(-0.012687, 0.2937498, 1.0124953, -0.36378023, -0.32528895, -0.56674915, 0.663812041);
+    Eigen::Matrix4f tf2_matrix = computeMatrixFromTransform(-0.1223497, 0.28168088, 1.1013584, -0.5120674, -0.0235908, -0.04915027, 0.85721325);
 
 
     Eigen::Matrix4f coord_transform = tf1_matrix * tf2_matrix.inverse();
@@ -169,16 +188,16 @@ int main (int argc, char** argv){
 
     in1 = computeUniformSampling(in1, 0.01);
     in2 = computeUniformSampling(in2, 0.01);
-        pcl::IterativeClosestPointNonLinear<PointT, PointT> icp;
-        icp.setInputSource(in2);
-        icp.setInputTarget(in1);
-        icp.setMaxCorrespondenceDistance(0.1);
-        icp.setMaximumIterations(30);
-        pcl::PointCloud<PointT>::Ptr Final(new pcl::PointCloud<PointT>());
-        icp.align(*Final,coord_transform);
-        Eigen::Matrix4f icp_transform = icp.getFinalTransformation();
+//        pcl::IterativeClosestPointNonLinear<PointT, PointT> icp;
+//        icp.setInputSource(in2);
+//        icp.setInputTarget(in1);
+//        icp.setMaxCorrespondenceDistance(0.1);
+//        icp.setMaximumIterations(30);
+//        pcl::PointCloud<PointT>::Ptr Final(new pcl::PointCloud<PointT>());
+//        icp.align(*Final,coord_transform);
+//        Eigen::Matrix4f icp_transform = icp.getFinalTransformation();
 
-    pcl::transformPointCloud(*in2, *in2_transformed, icp_transform);
+    pcl::transformPointCloud(*in2, *in2_transformed, coord_transform);
 
 
     *out = *in1 + *in2_transformed;
